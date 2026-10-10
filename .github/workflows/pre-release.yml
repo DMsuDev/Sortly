@@ -1,0 +1,126 @@
+name: Prerelease
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prerelease
+  cancel-in-progress: true
+
+jobs:
+  prerelease:
+    name: Create prerelease
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-WIP$ ]]; then
+            echo "::error::VERSION '${VERSION}' does not end with -WIP. \
+                  Prerelease workflow only runs for WIP versions."
+            exit 1
+          fi
+
+          TAG="v${VERSION}"
+          echo "Version: ${VERSION}"
+          echo "Tag:     ${TAG}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"         >> "$GITHUB_OUTPUT"
+
+      - name: Find previous stable release
+        id: previous
+        shell: bash
+        run: |
+          PREVIOUS="$(
+            git tag --sort=-version:refname |
+            grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+            head -1
+          )"
+
+          if [[ -z "${PREVIOUS}" ]]; then
+            echo "No previous stable tag found — changelog from beginning."
+          else
+            echo "Previous stable release: ${PREVIOUS}"
+          fi
+
+          echo "tag=${PREVIOUS}" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update prerelease tag
+        shell: bash
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          SHA="${GITHUB_SHA}"
+
+          if git rev-parse --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag '${TAG}' already exists — updating to '${SHA}'"
+            git tag --force "${TAG}" "${SHA}"
+            git push --force origin "refs/tags/${TAG}"
+          else
+            echo "Creating tag '${TAG}' at '${SHA}'"
+            git tag "${TAG}" "${SHA}"
+            git push origin "refs/tags/${TAG}"
+          fi
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # 2.87.7
+        with:
+          tool: git-cliff
+
+      - name: Generate changelog
+        shell: bash
+        run: |
+          PREVIOUS="${{ steps.previous.outputs.tag }}"
+          CURRENT="${{ steps.version.outputs.tag }}"
+
+          if [[ -z "${PREVIOUS}" ]]; then
+            RANGE="${CURRENT}"
+          else
+            RANGE="${PREVIOUS}..${CURRENT}"
+          fi
+
+          echo "Changelog range: ${RANGE}"
+
+          cat > CHANGES.md << 'EOF'
+          > [!WARNING]
+          > **This is a work-in-progress prerelease and is not intended for production use.**
+          > APIs may change without notice. Pin to a stable release tag for production.
+
+          EOF
+
+          git cliff "${RANGE}" \
+            --tag "${CURRENT}"  \
+            --config cliff.toml \
+            >> CHANGES.md
+
+          if [[ -n "${PREVIOUS}" ]]; then
+            echo "" >> CHANGES.md
+            echo "---" >> CHANGES.md
+            echo "**Full Changelog**: https://github.com/DMsuDev/Sortly/compare/${PREVIOUS}...${CURRENT}" >> CHANGES.md
+          fi
+
+          echo
+          echo "Generated changelog:"
+          echo "===================="
+          cat CHANGES.md
+
+      - name: Publish prerelease
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: CHANGES.md
+          prerelease: true
+          make_latest: false

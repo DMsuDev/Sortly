@@ -1,0 +1,12 @@
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "third_party/foundry"]
+	path = third_party/foundry
+	url = https://github.com/DMsuDev/foundry.git
+[submodule "third_party/vigil"]
+	path = third_party/vigil
+	url = https://github.com/DMsuDev/vigil.git
+[submodule "third_party/CLI11"]
+	path = third_party/CLI11
+	url = https://github.com/CLIUtils/CLI11
