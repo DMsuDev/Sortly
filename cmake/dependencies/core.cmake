@@ -1,13 +1,12 @@
 # ==============================================================================
 #  SORTLY - CORE DEPENDENCIES
 # ==============================================================================
-#  Description: Third-party libraries required by the core (libs/sorting)
-#               and shared by every frontend.
+#  Description: Third-party libraries required by the sorting and application
+#               libraries. Desktop graphics dependencies live in gui.cmake.
 #
 #  Copyright (c) 2026 @DMsuDev. Licensed under the MIT License.
 #  See LICENSE file in the project root for full license text.
 # ==============================================================================
-
 
 include_guard()
 

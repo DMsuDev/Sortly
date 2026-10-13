@@ -13,8 +13,6 @@ cmake_minimum_required(VERSION 3.28)
 # ------------------------------------------------------------------------------
 #  Project Options
 # ------------------------------------------------------------------------------
-option(SORTLY_BUILD_GUI           "Build the graphical frontend (apps/gui)"                  ON )
-option(SORTLY_BUILD_CLI           "Build the command-line frontend (apps/cli)"               ON )
 option(SORTLY_ENABLE_LTO          "Enables Link Time Optimizations if possible"              OFF)
 option(SORTLY_ENABLE_CXX_MODULES  "Enable C++20 Module compilation. Testing only!"           OFF)
 option(SORTLY_ENABLE_UNIT_TESTS   "Enable building unit tests"                               ON )
@@ -47,7 +45,7 @@ sortly_load_version(SORTLY_VERSION SORTLY_VERSION_CORE SORTLY_VERSION_PRERELEASE
 project(Sortly
   LANGUAGES   CXX
   VERSION     ${SORTLY_VERSION_CORE}
-  DESCRIPTION "Sorting algorithm visualizer"
+  DESCRIPTION "Desktop sorting algorithm visualizer"
 )
 message(STATUS "${PROJECT_NAME} version: ${SORTLY_VERSION}")
 
@@ -71,7 +69,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
 # ------------------------------------------------------------------------------
-#  Core Dependencies (shared by every frontend)
+#  Core Dependencies
 # ------------------------------------------------------------------------------
 include("${SORTLY_BASE_FOLDER}/cmake/dependencies/core.cmake")
 
@@ -111,12 +109,6 @@ add_subdirectory(libs/sorting)
 add_subdirectory(libs/app)
 
 # ------------------------------------------------------------------------------
-#  Applications
+#  Desktop Application
 # ------------------------------------------------------------------------------
-if(SORTLY_BUILD_CLI)
-  add_subdirectory(apps/cli)
-endif()
-
-if(SORTLY_BUILD_GUI)
-  add_subdirectory(apps/gui)
-endif()
+add_subdirectory(apps/gui)

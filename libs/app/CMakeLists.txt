@@ -1,8 +1,8 @@
 # ==============================================================================
 #  SORTLY - APP LIBRARY
 # ==============================================================================
-#  Description: Application layer shared by every frontend (lifecycle,
-#               session management). Must never depend on ImGui/GLFW/CLI11.
+#  Description: Desktop application lifecycle and session management. This
+#               library stays independent from ImGui and GLFW.
 #
 #  Copyright (c) 2026 @DMsuDev. Licensed under the MIT License.
 #  See LICENSE file in the project root for full license text.
