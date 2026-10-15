@@ -123,19 +123,19 @@ commit_parsers = [
   # Commit groups
   # ==========================================================================
 
-  { message = "^chore\\(project\\)", group = "<!-- 01 -->🏗️ Project Setup" },
-  { message = "^feat",               group = "<!-- 02 -->🚀 Features" },
-  { message = "^fix",                group = "<!-- 03 -->🐛 Bug Fixes" },
-  { message = "^refactor",           group = "<!-- 04 -->🚜 Refactor" },
-  { message = "^perf",               group = "<!-- 05 -->⚡ Performance" },
-  { message = "^build",              group = "<!-- 06 -->🛠️ Build System" },
+  { message = "^(feat|chore)\\(project\\)", group = "<!-- 01 -->🏗️ Project Setup" },
+  { message = "^feat",                      group = "<!-- 02 -->🚀 Features" },
+  { message = "^fix",                       group = "<!-- 03 -->🐛 Bug Fixes" },
+  { message = "^refactor",                  group = "<!-- 04 -->🚜 Refactor" },
+  { message = "^perf",                      group = "<!-- 05 -->⚡ Performance" },
+  { message = "^build",                     group = "<!-- 06 -->🛠️ Build System" },
 
-  { message = "^docs\\(api\\)",      group = "<!-- 07 -->📚 Documentation" },
+  { message = "^docs\\(api\\)",             group = "<!-- 07 -->📚 Documentation" },
   { message = "^docs", skip = true },
 
-  { message = "^(chore|ci|test)",    group = "<!-- 08 -->🔧 Maintenance" },
-  { body = "(?i)security",           group = "<!-- 09 -->🛡️ Security" },
-  { message = "^revert",             group = "<!-- 10 -->◀️ Reverts" },
+  { message = "^(chore|ci|test)",           group = "<!-- 08 -->🔧 Maintenance" },
+  { body = "(?i)security",                  group = "<!-- 09 -->🛡️ Security" },
+  { message = "^revert",                    group = "<!-- 10 -->◀️ Reverts" },
 
   # ==========================================================================
   # Catch-all (must remain last)
