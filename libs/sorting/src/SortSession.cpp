@@ -1,57 +1,39 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Sorting/Session/SortSession.hpp"
+#include "Sortly/Sorting/SortSession.hpp"
 #include "Sortly/Sorting/Data/DataSetBuilder.hpp"
-#include "Sortly/Sorting/Operations/detail/SortRecorder.hpp"
+#include "Sortly/Sorting/Operations/SortRecorder.hpp"
 
 #include <vigil/vigil.h>
 
-#include <algorithm>
 #include <chrono>
-#include <stdexcept>
+#include <exception>
+#include <utility>
 
 namespace Sortly {
 
-//================================================//
-//            CONSTRUCTORS / ASSIGNMENT
-//================================================//
+namespace {
 
-SortSession::SortSession(SortSession&& other) noexcept
-    : m_SessionId(other.m_SessionId)
-    , m_DataSet(std::move(other.m_DataSet))
-    , m_Config(std::move(other.m_Config))
-    , m_Algorithm(std::move(other.m_Algorithm))
-    , m_Operations(std::move(other.m_Operations))
-    , m_WorkBuffer(std::move(other.m_WorkBuffer))
-    , m_Statistics(other.m_Statistics)
-    , m_Playback(std::move(other.m_Playback))
-    , m_LastComputeStatus(other.m_LastComputeStatus)
-    , m_ComputeInProgress(other.m_ComputeInProgress)
+// How many algorithm steps run between two reads of the clock. Reading steady_clock on every
+// step would cost more than the step itself for the cheap steps of the O(n^2) algorithms.
+constexpr std::size_t kStepsPerClockCheck = 256;
+
+} // namespace
+
+// Logging policy for this library:
+//  - Failures are reported to the caller through return values (ComputeStatus/ComputeError,
+//    bool); the logs are diagnostics for developers.
+//  - ERROR: bugs and unrecoverable failures (an algorithm threw).
+//  - WARN : abnormal but handled situations the caller may not be able to see.
+//  - INFO : rare lifecycle events (one per completed run).
+//  - DEBUG/TRACE: state transitions and detail. Never inside per-step loops.
+//  - Setters that a UI may call every frame only log when something actually changed.
+
+SortSession::ComputeStatus SortSession::fail(ComputeError error)
 {
-    // SortPlayback stores a raw pointer into m_DataSet; rebind after the move.
-    m_Playback.bind(m_DataSet.mutableValues());
-}
-
-SortSession& SortSession::operator=(SortSession&& other) noexcept
-{
-    if (this == &other)
-        return *this;
-
-    m_SessionId = other.m_SessionId;
-    m_DataSet = std::move(other.m_DataSet);
-    m_Config = std::move(other.m_Config);
-    m_Algorithm = std::move(other.m_Algorithm);
-    m_Operations = std::move(other.m_Operations);
-    m_WorkBuffer = std::move(other.m_WorkBuffer);
-    m_Statistics = other.m_Statistics;
-    m_Playback = std::move(other.m_Playback);
-    m_LastComputeStatus = other.m_LastComputeStatus;
-    m_ComputeInProgress = other.m_ComputeInProgress;
-
-    m_Playback.bind(m_DataSet.mutableValues());
-
-    return *this;
+    m_LastComputeError = error;
+    return m_LastComputeStatus = ComputeStatus::Failed;
 }
 
 //================================================//
@@ -60,9 +42,12 @@ SortSession& SortSession::operator=(SortSession&& other) noexcept
 
 void SortSession::setDataSetConfig(const DataSetConfig& config)
 {
-    m_Config = std::make_unique<DataSetConfig>(config);
+    if (config == m_Config)
+        return; // Immediate-mode UIs call setters every frame; nothing to do, nothing to log.
+
+    m_Config = config;
     VIGIL_LOG_DEBUG("SortSession: Dataset configuration updated (count={}, minCount={}, maxCount={}, maxValue={})",
-              config.count, config.minCount, config.maxCount, config.maxValue);
+                    config.count, config.minCount, config.maxCount, config.maxValue);
 }
 
 void SortSession::setAlgorithm(std::unique_ptr<SortAlgorithm> algorithm)
@@ -79,30 +64,27 @@ void SortSession::setAlgorithm(std::unique_ptr<SortAlgorithm> algorithm)
 
 bool SortSession::buildDataSet(std::mt19937& rng)
 {
-    if (!m_Config)
-    {
-        VIGIL_LOG_WARN("SortSession: No dataset configuration provided. Creating default configuration.");
-        setDataSetConfig(DataSetConfig{});
-    }
-
-    // Clamp the count to the configured min/max range before building the dataset.
-    // This is an early sanity check to avoid generating an empty dataset or exceeding the max count.
-    int clampedCount = std::clamp(m_Config->count, m_Config->minCount, m_Config->maxCount);
-    if (clampedCount <= 0)
-        return false;
-
     DataSet newDataSet;
-    try {
-        newDataSet = DataSetBuilder::buildShuffled(*m_Config, rng);
+    try
+    {
+        newDataSet = DataSetBuilder::buildShuffled(m_Config, rng);
     }
-    catch (const std::exception& e) {
-        VIGIL_LOG_ERROR("SortSession: Failed to build dataset (count={}): {}", clampedCount, e.what());
+    catch (const std::exception& e)
+    {
+        VIGIL_LOG_ERROR("SortSession: Failed to build dataset (count={}): {}", m_Config.effectiveCount(), e.what());
+        return false;
+    }
+
+    if (newDataSet.empty())
+    {
+        // buildDataSet() returns false, so the caller already knows; this is only a hint for developers.
+        VIGIL_LOG_DEBUG("SortSession: Dataset configuration yields no elements (count={}); keeping the current dataset",
+                        m_Config.effectiveCount());
         return false;
     }
 
     clearOperations();
     m_DataSet = std::move(newDataSet);
-    m_Playback.bind(m_DataSet.mutableValues());
 
     return true;
 }
@@ -110,7 +92,6 @@ bool SortSession::buildDataSet(std::mt19937& rng)
 void SortSession::shuffleData(std::mt19937& rng)
 {
     DataSetBuilder::shuffle(m_DataSet, rng);
-    m_Playback.bind(m_DataSet.mutableValues());
     clearOperations();
 
     VIGIL_LOG_DEBUG("SortSession: Shuffled data ({} elements)", m_DataSet.size());
@@ -122,10 +103,16 @@ void SortSession::shuffleData(std::mt19937& rng)
 
 SortSession::ComputeStatus SortSession::computeOperations(std::chrono::microseconds budget)
 {
-    if (!m_Algorithm || !m_Config)
+    if (!m_Algorithm)
     {
-        VIGIL_LOG_WARN("SortSession: Cannot compute operations. Algorithm or dataset configuration is not set.");
-        return m_LastComputeStatus = ComputeStatus::Failed;
+        VIGIL_LOG_DEBUG("SortSession: computeOperations() ignored: no algorithm set");
+        return fail(ComputeError::NoAlgorithm);
+    }
+
+    if (m_DataSet.empty())
+    {
+        VIGIL_LOG_DEBUG("SortSession: computeOperations() ignored: dataset is empty");
+        return fail(ComputeError::NoData);
     }
 
     const bool unlimited = (budget == std::chrono::microseconds::zero());
@@ -135,34 +122,32 @@ SortSession::ComputeStatus SortSession::computeOperations(std::chrono::microseco
     // budgeted call - resuming unlimited must never bypass this guard.
     if (unlimited && m_DataSet.size() > DataSetConfig::kQuadraticSafeLimit)
     {
-        VIGIL_LOG_ERROR("SortSession: data size ({}) exceeds safe generation limit ({}). "
-                    "Reduce the dataset size, choose a different algorithm, or pass a "
-                    "budget to computeOperations() to compute it cooperatively instead.",
-                    m_DataSet.size(), DataSetConfig::kQuadraticSafeLimit);
-        return m_LastComputeStatus = ComputeStatus::Failed;
+        // An expected situation (the UI can check kQuadraticSafeLimit up front), not a bug: WARN.
+        VIGIL_LOG_WARN("SortSession: data size ({}) exceeds the safe limit for blocking runs ({}). "
+                       "Reduce the dataset size or pass a budget to computeOperations().",
+                       m_DataSet.size(), DataSetConfig::kQuadraticSafeLimit);
+        return fail(ComputeError::TooLargeForBlocking);
     }
 
     // Starting a fresh computation (not resuming a budgeted one already in progress).
     if (!m_ComputeInProgress)
     {
         VIGIL_LOG_DEBUG("SortSession: Computing operations for algorithm '{}' on {} elements",
-                  getAlgorithmName(), m_DataSet.size());
+                        getAlgorithmName(), m_DataSet.size());
 
         clearOperations();
 
-        // Work on a local copy so the DataSet stays in its shuffled state.
-        // The SortPlayback will replay operations on top of the DataSet directly.
-        m_WorkBuffer.assign(m_DataSet.values().begin(), m_DataSet.values().end());
-
         try
         {
-            m_Algorithm->load(m_WorkBuffer);
+            // The algorithm copies the data into its own working buffer, so the DataSet
+            // stays in its shuffled state.
+            m_Algorithm->load(m_DataSet.values());
         }
         catch (const std::exception& e)
         {
             VIGIL_LOG_ERROR("SortSession: Algorithm '{}' threw an exception while loading: {}", getAlgorithmName(), e.what());
             clearOperations();
-            return m_LastComputeStatus = ComputeStatus::Failed;
+            return fail(ComputeError::AlgorithmThrew);
         }
 
         m_ComputeInProgress = true;
@@ -174,9 +159,11 @@ SortSession::ComputeStatus SortSession::computeOperations(std::chrono::microseco
     {
         SortRecorder recorder(m_Statistics);
 
-        while (true)
+        for (std::size_t steps = 0; ; ++steps)
         {
-            if (!unlimited && (std::chrono::steady_clock::now() - t0) >= budget)
+            // Never check on the first step, so every call makes progress even with a tiny budget.
+            if (!unlimited && steps != 0 && steps % kStepsPerClockCheck == 0
+                && (std::chrono::steady_clock::now() - t0) >= budget)
                 break; // Budget exhausted; resume on the next call.
 
             auto op = m_Algorithm->step(recorder);
@@ -193,14 +180,17 @@ SortSession::ComputeStatus SortSession::computeOperations(std::chrono::microseco
     catch (const std::exception& e)
     {
         VIGIL_LOG_ERROR("SortSession: Algorithm '{}' threw an exception while computing operations: {}. "
-                  "Discarding partially recorded operations.",
-                  getAlgorithmName(), e.what());
+                        "Discarding partially recorded operations.",
+                        getAlgorithmName(), e.what());
         clearOperations();
-        return m_LastComputeStatus = ComputeStatus::Failed;
+        return fail(ComputeError::AlgorithmThrew);
     }
 
     const auto t1 = std::chrono::steady_clock::now();
     m_Statistics.computeTimeMs += std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+    // Reaching this point means this call did not fail, even if an earlier call was refused.
+    m_LastComputeError = ComputeError::None;
 
     if (m_ComputeInProgress)
     {
@@ -218,11 +208,26 @@ void SortSession::clearOperations()
     {
         VIGIL_LOG_TRACE("SortSession: Cleared {} operations", m_Operations.size());
         m_Operations.clear();
+        // O(n^2) runs can hold hundreds of MB; clear() alone would keep that capacity forever.
+        m_Operations.shrink_to_fit();
     }
 
     m_Statistics.reset();
     m_ComputeInProgress = false;
     m_LastComputeStatus = ComputeStatus::Complete;
+    m_LastComputeError  = ComputeError::None;
+
+    // The loaded playback replays operations that no longer apply.
+    m_Playback.clear();
+}
+
+bool SortSession::loadPlayback()
+{
+    if (m_ComputeInProgress || m_Operations.empty())
+        return false;
+
+    // Playback starts from the session's dataset - the exact data the operations were computed against.
+    return m_Playback.load(m_DataSet.values(), m_Operations);
 }
 
 bool SortSession::preparePlayback()
@@ -231,10 +236,7 @@ bool SortSession::preparePlayback()
     if (computeOperations() != ComputeStatus::Complete)
         return false;
 
-    // Bind the visual buffer and load the operations into playback.
-    // This insures that the playback is always in sync with the current dataset and operations.
-    m_Playback.bind(m_DataSet.mutableValues());
-    return m_Playback.loadOperations(m_Operations);
+    return loadPlayback();
 }
 
 } // namespace Sortly

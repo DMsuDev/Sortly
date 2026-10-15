@@ -1,9 +1,22 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Sorting/Operations/detail/SortRecorder.hpp"
+#include "Sortly/Sorting/Operations/SortRecorder.hpp"
+
+#include <cassert>
+#include <utility>
 
 namespace Sortly {
+
+namespace {
+
+// Operations store indices as int so -1 can mean "not applicable"; convert once, here.
+constexpr int toIndex(std::size_t index) noexcept
+{
+    return static_cast<int>(index);
+}
+
+} // namespace
 
 SortOperation SortRecorder::record(SortOperation op)
 {
@@ -11,33 +24,43 @@ SortOperation SortRecorder::record(SortOperation op)
     return op;
 }
 
-SortOperation SortRecorder::compare(int indexA, int indexB, int valueA, int valueB)
+SortOperation SortRecorder::compare(std::span<const int> buffer, std::size_t i, std::size_t j)
 {
+    assert(i < buffer.size() && j < buffer.size());
+
     ++m_Statistics.comparisons;
     m_Statistics.reads += 2;
 
     return record(SortOperation{
         .type = SortOperation::Type::Compare,
-        .indexA = indexA, .indexB = indexB,
-        .valueA = valueA, .valueB = valueB
+        .indexA = toIndex(i), .indexB = toIndex(j),
+        .valueA = buffer[i], .valueB = buffer[j]
     });
 }
 
-SortOperation SortRecorder::swap(int indexA, int indexB, int valueA, int valueB)
+SortOperation SortRecorder::swap(std::span<int> buffer, std::size_t i, std::size_t j)
 {
+    assert(i < buffer.size() && j < buffer.size());
+
+    const int valueA = buffer[i];
+    const int valueB = buffer[j];
+    std::swap(buffer[i], buffer[j]);
+
     ++m_Statistics.swaps;
     m_Statistics.reads  += 2;
     m_Statistics.writes += 2;
 
     return record(SortOperation{
         .type = SortOperation::Type::Swap,
-        .indexA = indexA, .indexB = indexB,
+        .indexA = toIndex(i), .indexB = toIndex(j),
         .valueA = valueA, .valueB = valueB
     });
 }
 
-SortOperation SortRecorder::overwrite(std::span<int> buffer, int index, int newValue)
+SortOperation SortRecorder::overwrite(std::span<int> buffer, std::size_t index, int newValue)
 {
+    assert(index < buffer.size());
+
     const int oldValue = buffer[index];
     buffer[index] = newValue;
 
@@ -46,17 +69,17 @@ SortOperation SortRecorder::overwrite(std::span<int> buffer, int index, int newV
 
     return record(SortOperation{
         .type = SortOperation::Type::Overwrite,
-        .indexA = index,
+        .indexA = toIndex(index),
         .valueA = newValue,
         .valueB = oldValue
     });
 }
 
-SortOperation SortRecorder::pivot(int index, int value)
+SortOperation SortRecorder::pivot(std::size_t index, int value)
 {
     return record(SortOperation{
         .type = SortOperation::Type::Pivot,
-        .indexA = index,
+        .indexA = toIndex(index),
         .valueA = value
     });
 }

@@ -11,14 +11,13 @@ namespace Sortly {
 
 DataSet DataSetBuilder::build(const DataSetConfig& config)
 {
-    int count = std::clamp(config.count, config.minCount, config.maxCount);
-    int maxValue = std::max(config.maxValue, 1); // [1, maxValue] range must be valid.
-
-    std::vector<int> values;
+    const int count = config.effectiveCount();
+    const int maxValue = config.effectiveMaxValue();
 
     if (count <= 0)
-        return DataSet(std::move(values));
+        return DataSet{};
 
+    std::vector<int> values;
     values.reserve(static_cast<size_t>(count));
 
     if (count == 1)
@@ -31,7 +30,7 @@ DataSet DataSetBuilder::build(const DataSetConfig& config)
     // Distribute values evenly across the range [1, maxValue].
     for (int i = 0; i < count; ++i)
     {
-        int value = 1 + static_cast<int>((static_cast<long long>(i) * (maxValue - 1)) / (count - 1));
+        const int value = 1 + static_cast<int>((static_cast<long long>(i) * (maxValue - 1)) / (count - 1));
         values.push_back(value);
     }
 
@@ -49,7 +48,8 @@ DataSet DataSetBuilder::buildShuffled(const DataSetConfig& config, std::mt19937&
 
 void DataSetBuilder::shuffle(DataSet& dataSet, std::mt19937& rng)
 {
-    std::shuffle(dataSet.mutableValues().begin(), dataSet.mutableValues().end(), rng);
+    auto& values = dataSet.mutableValues();
+    std::shuffle(values.begin(), values.end(), rng);
 
     VIGIL_LOG_TRACE("DataSetBuilder: Shuffled {} values", dataSet.size());
 }

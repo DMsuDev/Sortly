@@ -1,8 +1,7 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Sorting/Algorithms/BubbleSort.hpp"
-#include <algorithm>
+#include "BubbleSort.hpp"
 
 namespace Sortly {
 
@@ -20,28 +19,20 @@ std::optional<SortOperation> BubbleSort::step(SortRecorder& recorder)
     if (m_Finished)
         return std::nullopt;
 
-    if ((m_I >= m_Data.size() - 1) || m_Data.empty() || m_Data.size() == 1)
+    // Fewer than two elements, or every pass done: nothing left to compare.
+    // (size() < 2 is checked first so size() - 1 can never underflow.)
+    if (m_Data.size() < 2 || m_I >= m_Data.size() - 1)
     {
         m_Finished = true;
         return recorder.sorted();
     }
 
-    int indexA = static_cast<int>(m_J);
-    int indexB = static_cast<int>(m_J + 1);
-    int valueA = m_Data[m_J];
-    int valueB = m_Data[m_J + 1];
+    const std::size_t a = m_J;
+    const std::size_t b = m_J + 1;
 
-    SortOperation op;
-
-    if (valueA > valueB)
-    {
-        std::swap(m_Data[m_J], m_Data[m_J + 1]);
-        op = recorder.swap(indexA, indexB, valueA, valueB);
-    }
-    else
-    {
-        op = recorder.compare(indexA, indexB, valueA, valueB);
-    }
+    // The recorder reads (and swaps) the buffer itself, so the recorded values can't go stale.
+    const auto op = (m_Data[a] > m_Data[b]) ? recorder.swap(m_Data, a, b)
+                                            : recorder.compare(m_Data, a, b);
 
     ++m_J;
 

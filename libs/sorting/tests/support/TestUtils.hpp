@@ -4,7 +4,12 @@
 #pragma once
 
 #include <Sortly/Sorting/Algorithms/SortAlgorithm.hpp>
+#include <Sortly/Sorting/Operations/SortRecorder.hpp>
+#include <Sortly/Sorting/Operations/SortStatistics.hpp>
 
+#include <gtest/gtest.h>
+
+#include <cstddef>
 #include <span>
 #include <vector>
 
@@ -23,8 +28,21 @@ inline Recording record(SortAlgorithm& algorithm, std::span<const int> data)
     SortRecorder recorder(result.statistics);
 
     algorithm.load(data);
+
+    // A correct O(n^2) algorithm never needs more than this; the cap turns a runaway
+    // algorithm into a test failure instead of a hang.
+    const std::size_t maxSteps = 4 * data.size() * data.size() + 16;
+
     while (auto op = algorithm.step(recorder))
+    {
         result.operations.push_back(*op);
+
+        if (result.operations.size() > maxSteps)
+        {
+            ADD_FAILURE() << "Algorithm exceeded " << maxSteps << " steps without finishing";
+            break;
+        }
+    }
 
     return result;
 }

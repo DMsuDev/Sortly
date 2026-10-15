@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 
 namespace Sortly {
@@ -27,6 +28,22 @@ struct DataSetConfig
 
     DataSetConfig(int cnt, int minCnt, int maxCnt, int maxVal)
         : count(cnt), minCount(minCnt), maxCount(maxCnt), maxValue(maxVal) {}
+
+    [[nodiscard]] constexpr bool operator==(const DataSetConfig&) const noexcept = default;
+
+    /// @brief Element count after clamping to [minCount, maxCount].
+    /// Safe for an inverted range (maxCount < minCount): minCount wins, instead of the
+    /// undefined behavior std::clamp has when lo > hi.
+    [[nodiscard]] constexpr int effectiveCount() const noexcept
+    {
+        return std::clamp(count, minCount, std::max(minCount, maxCount));
+    }
+
+    /// @brief Largest generated value; at least 1 so the range [1, maxValue] is always valid.
+    [[nodiscard]] constexpr int effectiveMaxValue() const noexcept
+    {
+        return std::max(maxValue, 1);
+    }
 };
 
 } // namespace Sortly

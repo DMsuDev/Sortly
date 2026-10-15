@@ -4,13 +4,14 @@
 #include "support/TestUtils.hpp"
 
 #include <Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp>
-#include <Sortly/Sorting/Playback/SortPlayback.hpp>
+#include <Sortly/Sorting/Operations/SortPlayback.hpp>
 
 #include <gtest/gtest.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 using namespace Sortly;
 
@@ -50,25 +51,57 @@ TEST_P(AlgorithmTest, OperationsReplayForwardAndBackward)
 {
     for (const auto& input : test::standardInputs())
     {
-        if (input.empty())
-            continue; // No operations to load.
-
         SCOPED_TRACE(::testing::PrintToString(input));
 
         auto algorithm = SortAlgorithmFactory::create(GetParam());
         const auto recording = test::record(*algorithm, input);
 
-        std::vector<int> buffer = input;
         SortPlayback playback;
-        playback.bind(buffer);
-        ASSERT_TRUE(playback.loadOperations(recording.operations));
+        ASSERT_TRUE(playback.load(input, recording.operations));
 
         while (playback.stepForward()) {}
-        EXPECT_EQ(buffer, algorithm->getData());
+        EXPECT_TRUE(std::ranges::equal(playback.getVisualData(), algorithm->getData()));
 
         while (playback.stepBackward()) {}
-        EXPECT_EQ(buffer, input);
+        EXPECT_EQ(playback.getVisualData(), input);
+        EXPECT_TRUE(playback.isStopped());
     }
+}
+
+// Contract of SortAlgorithm::step(): exactly one terminal Sorted operation, for any input
+// (including empty and single-element ones), and nothing afterwards.
+TEST_P(AlgorithmTest, EmitsExactlyOneTerminalSortedOperation)
+{
+    for (const auto& input : test::standardInputs())
+    {
+        SCOPED_TRACE(::testing::PrintToString(input));
+
+        auto algorithm = SortAlgorithmFactory::create(GetParam());
+        const auto recording = test::record(*algorithm, input);
+
+        ASSERT_FALSE(recording.operations.empty());
+        EXPECT_EQ(recording.operations.back().type, SortOperation::Type::Sorted);
+
+        const auto sortedCount = std::ranges::count_if(recording.operations,
+            [](const SortOperation& op) { return op.type == SortOperation::Type::Sorted; });
+        EXPECT_EQ(sortedCount, 1);
+
+        SortStatistics unused;
+        SortRecorder recorder(unused);
+        EXPECT_FALSE(algorithm->step(recorder).has_value());
+    }
+}
+
+TEST_P(AlgorithmTest, LoadResetsTheAlgorithmForReuse)
+{
+    auto algorithm = SortAlgorithmFactory::create(GetParam());
+
+    const std::vector<int> input{ 4, 2, 5, 1, 3 };
+    const auto first  = test::record(*algorithm, input);
+    const auto second = test::record(*algorithm, input);
+
+    EXPECT_EQ(first.operations.size(), second.operations.size());
+    EXPECT_TRUE(std::ranges::is_sorted(algorithm->getData()));
 }
 
 TEST_P(AlgorithmTest, StatisticsMatchRecordedOperations)

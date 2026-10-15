@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string_view>
+
 namespace Sortly {
 
 struct SortOperation
@@ -13,12 +15,12 @@ struct SortOperation
         Swap,      // Represents a swap of two elements.
         Overwrite, // Represents overwriting an element with a new value.
         Pivot,     // A pivot element is selected (like QuickSort)
-        Sorted     // An element is marked as sorted or in its final position.
+        Sorted     // The run is finished (indexA == -1), or one element reached its final position (indexA >= 0, reserved).
     };
 
     Type type = Type::Compare;
 
-    int indexA = -1; // Primary index (always applicable).
+    int indexA = -1; // Primary index (-1 for Sorted when it marks the end of the whole run).
     int indexB = -1; // Secondary index (-1 if not applicable: Overwrite, Pivot, Sorted).
 
     // The meaning of valueA/valueB depends on `type` - there is no single rule for both:
@@ -34,5 +36,19 @@ struct SortOperation
     int valueA = 0;
     int valueB = 0;
 };
+
+/// @brief Human-readable name of an operation type (for logs and UI labels).
+[[nodiscard]] constexpr std::string_view toString(SortOperation::Type type) noexcept
+{
+    switch (type)
+    {
+        case SortOperation::Type::Compare:   return "Compare";
+        case SortOperation::Type::Swap:      return "Swap";
+        case SortOperation::Type::Overwrite: return "Overwrite";
+        case SortOperation::Type::Pivot:     return "Pivot";
+        case SortOperation::Type::Sorted:    return "Sorted";
+    }
+    return "Unknown";
+}
 
 } // namespace Sortly

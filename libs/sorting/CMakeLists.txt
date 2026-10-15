@@ -9,13 +9,14 @@
 # ==============================================================================
 
 add_library(SortlySorting STATIC
-  src/Sorting/Algorithms/BubbleSort.cpp
-  src/Sorting/Algorithms/CocktailSort.cpp
-  src/Sorting/Data/DataSetBuilder.cpp
-  src/Sorting/Data/detail/SeedProvider.cpp
-  src/Sorting/Operations/detail/SortRecorder.cpp
-  src/Sorting/Playback/SortPlayback.cpp
-  src/Sorting/Session/SortSession.cpp
+  src/SortSession.cpp
+  src/Algorithms/BubbleSort.cpp
+  src/Algorithms/CocktailSort.cpp
+  src/Algorithms/SortAlgorithmFactory.cpp
+  src/Data/DataSetBuilder.cpp
+  src/Data/SeedProvider.cpp
+  src/Operations/SortPlayback.cpp
+  src/Operations/SortRecorder.cpp
 )
 
 add_library(Sortly::Sorting ALIAS SortlySorting)
@@ -27,10 +28,7 @@ target_include_directories(SortlySorting
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_link_libraries(SortlySorting
-  PUBLIC
-    Sortly::Vigil
-)
+target_link_libraries(SortlySorting PRIVATE Sortly::Vigil)
 
 sortly_configure_compiler(SortlySorting)
 sortly_configure_warnings(SortlySorting)

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Sorting/Data/detail/SeedProvider.hpp"
+#include "Sortly/Sorting/Data/SeedProvider.hpp"
 
 namespace Sortly {
 
