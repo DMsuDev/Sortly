@@ -4,93 +4,199 @@
 #include "VisualizationPanel.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
-#include "Sortly/Gui/Widgets/ArrayPlot.hpp"
-#include "Sortly/Gui/Widgets/MetricsTable.hpp"
-#include "Sortly/Gui/Widgets/PlaybackBar.hpp"
+#include "Sortly/Gui/Widgets/RunCard.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 
 #include <imgui.h>
 
 #include <algorithm>
-#include <cstdio>
+#include <array>
+#include <cmath>
+#include <cstddef>
 #include <string>
+#include <vector>
 
 namespace Sortly {
 
 namespace {
 
-std::string describeOperation(const SortOperation& op)
+void drawHeader(const RunController& run)
 {
-    char buffer[64];
-    if (op.indexB >= 0)
-        std::snprintf(buffer, sizeof(buffer), "%s  %d \xC2\xB7 %d", toString(op.type).data(), op.indexA, op.indexB);
-    else if (op.indexA >= 0)
-        std::snprintf(buffer, sizeof(buffer), "%s  %d", toString(op.type).data(), op.indexA);
-    else
-        std::snprintf(buffer, sizeof(buffer), "%s", toString(op.type).data());
-    return buffer;
-}
+    const auto runs = run.runs();
+    const bool compare = runs.size() > 1;
 
-void drawHeader(const SortSession* session)
-{
     ImGui::PushFont(ui::fonts::Heading);
-    ImGui::TextUnformatted(ICON_CHART "  Sorting visualization");
+    const std::string title = compare
+        ? std::string(ICON_COMPARE "  Comparing ") + std::to_string(runs.size()) + " algorithms"
+        : std::string(ICON_CHART "  Sorting visualization");
+    ImGui::TextUnformatted(title.c_str());
     ImGui::PopFont();
 
-    const char* tag = session ? session->getAlgorithmName().data() : "NO ACTIVE RUN";
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - ui::pillWidth(tag));
-    ui::pill(tag, session ? ui::colors::Accent : ui::colors::Muted);
+    std::size_t values = 0;
+    for (const Run& r : runs)
+    {
+        if (r.session)
+        {
+            values = r.session->getVisualData().size();
+            break;
+        }
+    }
 
     ImGui::PushFont(ui::fonts::Label);
-    ImGui::TextDisabled("Watch how values move as the algorithm processes the dataset.");
+    if (compare && values > 0)
+        ImGui::TextDisabled("Every algorithm sorts the same %zu values.", values);
+    else
+        ImGui::TextDisabled("Watch how values move as the algorithm processes the dataset.");
     ImGui::PopFont();
 }
 
+void drawLegend()
+{
+    struct Item
+    {
+        const char* label;
+        ImVec4      color;
+    };
+    const std::array<Item, 4> items = {{
+        { "Comparing", ui::operationColor(SortOperation::Type::Compare) },
+        { "Swapping",  ui::operationColor(SortOperation::Type::Swap)    },
+        { "Pivot",     ui::operationColor(SortOperation::Type::Pivot)   },
+        { "Sorted",    ui::colors::Success                              },
+    }};
+
+    const float dot     = ui::dp(5.0f);
+    const float gapText = ui::dp(8.0f);
+    const float gapItem = ui::dp(22.0f);
+
+    ImGui::PushFont(ui::fonts::Label);
+    float total = 0.0f;
+    for (const Item& item : items)
+        total += dot * 2.0f + gapText + ImGui::CalcTextSize(item.label).x + gapItem;
+    total -= gapItem;
+
+    const float offset = (ImGui::GetContentRegionAvail().x - total) * 0.5f;
+    if (offset > 0.0f)
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    for (std::size_t i = 0; i < items.size(); ++i)
+    {
+        const Item& item = items[i];
+        if (i > 0)
+            ImGui::SameLine(0.0f, gapItem);
+
+        const ImVec2 pos = ImGui::GetCursorScreenPos();
+        const float  h   = ImGui::GetTextLineHeight();
+        dl->AddCircleFilled(ImVec2(pos.x + dot, pos.y + h * 0.5f), dot, ImGui::ColorConvertFloat4ToU32(item.color));
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + dot * 2.0f + gapText);
+        ImGui::TextColored(ui::colors::Muted, "%s", item.label);
+    }
+    ImGui::PopFont();
+}
+
+// Cards per row. Each count has a few candidate arrangements; the one whose plots come out
+// closest to a landscape rectangle for the available area wins.
+using RowLayout = std::vector<std::size_t>;
+
+const std::vector<RowLayout>& candidateLayouts(std::size_t count)
+{
+    static const std::vector<RowLayout> one   = { { 1 } };
+    static const std::vector<RowLayout> two   = { { 1, 1 }, { 2 } };
+    static const std::vector<RowLayout> three = { { 1, 1, 1 }, { 2, 1 }, { 3 } };
+    static const std::vector<RowLayout> four  = { { 2, 2 }, { 1, 1, 1, 1 } };
+    switch (count)
+    {
+        case 1:  return one;
+        case 2:  return two;
+        case 3:  return three;
+        default: return four;
+    }
+}
+
+// Space a card spends outside its plot: statistics column, padding, header and footer.
+constexpr float kCardExtraW = 150.0f;
+constexpr float kCardExtraH = 112.0f;
+constexpr float kPlotAspect = 1.7f;
+
+float layoutScore(const RowLayout& rows, const ImVec2& area, float gapX, float gapY)
+{
+    const float cardH = (area.y - gapY * static_cast<float>(rows.size() - 1)) / static_cast<float>(rows.size());
+    float worst = 0.0f;
+    for (const std::size_t columns : rows)
+    {
+        const float cardW = (area.x - gapX * static_cast<float>(columns - 1)) / static_cast<float>(columns);
+        const float plotW = cardW - ui::dp(kCardExtraW);
+        const float plotH = cardH - ui::dp(kCardExtraH);
+        if (plotW < ui::dp(100.0f) || plotH < ui::dp(70.0f))
+            return 1e9f;
+        worst = std::max(worst, std::abs(std::log(plotW / plotH / kPlotAspect)));
+    }
+    return worst;
+}
+
+void drawGrid(const RunController& run, const ImVec2& area)
+{
+    const auto runs = run.runs();
+
+    const float gapX = ui::dp(12.0f);
+    const float gapY = ImGui::GetStyle().ItemSpacing.y;
+
+    const RowLayout* best = nullptr;
+    float bestScore = 0.0f;
+    for (const RowLayout& layout : candidateLayouts(runs.size()))
+    {
+        const float score = layoutScore(layout, area, gapX, gapY);
+        if (!best || score < bestScore)
+        {
+            best      = &layout;
+            bestScore = score;
+        }
+    }
+
+    const std::size_t rowCount = best->size();
+    const float cellH = (area.y - gapY * static_cast<float>(rowCount - 1)) / static_cast<float>(rowCount);
+
+    std::size_t slot = 0;
+    for (const std::size_t columns : *best)
+    {
+        const float cardW = (area.x - gapX * static_cast<float>(columns - 1)) / static_cast<float>(columns);
+        // Never taller than a landscape plot needs, even when the area has room to spare.
+        const float cardH = std::min(cellH, (cardW - ui::dp(kCardExtraW)) / 1.35f + ui::dp(kCardExtraH));
+
+        for (std::size_t column = 0; column < columns && slot < runs.size(); ++column, ++slot)
+        {
+            if (column > 0)
+                ImGui::SameLine(0.0f, gapX);
+            ui::drawRunCard(slot, runs[slot], ImVec2(cardW, cardH));
+        }
+    }
+}
 } // namespace
 
 void VisualizationPanel::draw(UiContext& ctx)
 {
-    SortSession* session = ctx.run.session();
-
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(22.0f, 18.0f));
-    ImGui::BeginChild("Visualization", ImVec2(0.0f, 0.0f),
-                      ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::BeginChild("Visualization", ImVec2(ctx.width, 0.0f),
+                      ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
 
-    drawHeader(session);
+    drawHeader(ctx.run);
     ImGui::Spacing();
 
-    ui::drawMetricsTable(session ? &session->getStatistics() : nullptr);
-
-    ImGui::Spacing();
-    ui::sectionLabel(ICON_CHART, "ARRAY");
-
-    const bool hasPlayback = session && !ctx.run.computing() && session->getPlayback().isLoaded();
-
-    ui::ArrayHighlight highlight;
-    if (hasPlayback)
+    if (ctx.run.runs().empty())
     {
-        const auto& playback = session->getPlayback();
-        highlight.sorted    = playback.isFinished();
-        highlight.operation = playback.getCurrentOperation();
+        ui::centeredText(ICON_INFO "  Choose the algorithms to compare in the side panel.", ui::colors::TextDim);
     }
-
-    // Name of the operation about to be applied, right-aligned on the ARRAY caption line.
-    if (highlight.operation && !highlight.sorted)
+    else
     {
-        const std::string text = describeOperation(*highlight.operation);
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - ui::pillWidth(text.c_str()));
-        ui::pill(text.c_str(), ui::operationColor(highlight.operation->type));
+        const float legendH = ui::dp(34.0f);
+        const ImVec2 avail  = ImGui::GetContentRegionAvail();
+        drawGrid(ctx.run, ImVec2(avail.x, std::max(ui::dp(120.0f), avail.y - legendH)));
+
+        ImGui::Spacing();
+        drawLegend();
     }
-
-    const float plotHeight = std::max(ui::dp(120.0f), ImGui::GetContentRegionAvail().y - ui::dp(150.0f));
-    ui::drawArrayPlot(session ? session->getVisualData() : std::span<const int>{}, highlight, plotHeight);
-
-    ImGui::Spacing();
-    if (hasPlayback)
-        ui::drawPlaybackBar(session->getPlayback(), ctx.settings.stepDelayMs);
-    else if (!ctx.run.computing())
-        ui::centeredText(ICON_INFO "  Generate a run to enable playback controls.", ui::colors::TextDim);
 
     ImGui::EndChild();
 }

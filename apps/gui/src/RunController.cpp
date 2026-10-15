@@ -41,21 +41,70 @@ const char* describe(SortSession::ComputeError error)
 
 void RunController::start(const RunSettings& settings)
 {
-    m_Active.reset();
-    m_Computing = false;
+    m_Runs.clear();
+    m_Applied = settings;
 
-    SessionResult result = m_Factory ? m_Factory(settings) : SessionResult{ nullptr, SessionError::NoAlgorithm };
-    if (!result.session)
+    for (const SortAlgorithmType type : settings.algorithms)
     {
-        VIGIL_LOG_ERROR("Could not create a sorting session: {}", describe(result.error));
-        m_Status = describe(result.error);
+        Run run;
+        run.type = type;
+
+        SessionResult result = m_Factory ? m_Factory(type, settings) : SessionResult{ nullptr, SessionError::NoAlgorithm };
+        if (result.session)
+        {
+            run.session = std::move(result.session);
+            run.session->getPlayback().setDelayMs(m_DelayMs);
+            run.computing = true;
+        }
+        else
+        {
+            VIGIL_LOG_ERROR("Could not create a sorting session: {}", describe(result.error));
+            run.error = describe(result.error);
+        }
+        m_Runs.push_back(std::move(run));
+    }
+}
+
+void RunController::updateComputation()
+{
+    std::size_t pending = 0;
+    for (const Run& run : m_Runs)
+        pending += run.computing ? 1 : 0;
+    if (pending == 0)
         return;
+
+    // Every run gets an equal share so none of them starves the others (or the frame).
+    const auto share = kComputeBudget / static_cast<std::chrono::microseconds::rep>(pending);
+
+    for (Run& run : m_Runs)
+    {
+        if (!run.computing)
+            continue;
+
+        const auto result = run.session->computeOperations(share);
+        if (result == SortSession::ComputeStatus::Failed)
+        {
+            const auto error = run.session->getLastComputeError();
+            VIGIL_LOG_ERROR("Computing the operations failed: {}", toString(error));
+            run.computing = false;
+            run.error     = describe(error);
+        }
+        else if (result == SortSession::ComputeStatus::Complete)
+        {
+            run.computing = false;
+            if (!run.session->loadPlayback())
+            {
+                VIGIL_LOG_ERROR("Could not prepare playback for the completed sorting session");
+                run.error = "Could not prepare playback.";
+            }
+        }
     }
 
-    m_Active = std::move(result.session);
-    m_Active->getPlayback().setDelayMs(settings.stepDelayMs);
-    m_Computing = true;
-    m_Status = "Building the operation timeline...";
+    if (!computing() && m_Autoplay)
+    {
+        m_Autoplay = false;
+        playAll();
+    }
 }
 
 void RunController::update(float deltaTime)
@@ -63,40 +112,116 @@ void RunController::update(float deltaTime)
     if (m_Pending)
     {
         const RunSettings settings = *m_Pending;
+        m_Autoplay = m_PendingAutoplay;
         m_Pending.reset();
         start(settings);
     }
 
-    if (!m_Active)
-        return;
+    updateComputation();
 
-    if (m_Computing)
+    for (Run& run : m_Runs)
+        if (run.ready())
+            run.session->getPlayback().update(deltaTime);
+}
+
+void RunController::setDelayMs(float delayMs)
+{
+    m_DelayMs = delayMs;
+    for (Run& run : m_Runs)
+        if (run.session)
+            run.session->getPlayback().setDelayMs(delayMs);
+}
+
+void RunController::playAll()
+{
+    if (computing())
     {
-        const auto result = m_Active->computeOperations(kComputeBudget);
-        if (result == SortSession::ComputeStatus::Failed)
-        {
-            const auto error = m_Active->getLastComputeError();
-            VIGIL_LOG_ERROR("Computing the operations failed: {}", toString(error));
-            m_Computing = false;
-            m_Status = describe(error);
-            return;
-        }
-
-        if (result == SortSession::ComputeStatus::Complete)
-        {
-            m_Computing = false;
-            if (!m_Active->loadPlayback())
-            {
-                VIGIL_LOG_ERROR("Could not prepare playback for the completed sorting session");
-                m_Status = "Could not prepare playback.";
-                return;
-            }
-            m_Status = "Run ready. Play it or inspect it one step at a time.";
-        }
+        m_Autoplay = true;
+        return;
     }
 
-    if (!m_Computing)
-        m_Active->getPlayback().update(deltaTime);
+    // Finished runs only restart when the whole group is done; otherwise they wait for the others.
+    const bool restart = allFinished();
+    for (Run& run : m_Runs)
+    {
+        if (!run.ready())
+            continue;
+        SortPlayback& playback = run.session->getPlayback();
+        if (playback.isFinished() && !restart)
+            continue;
+        playback.play();
+    }
+}
+
+void RunController::pauseAll()
+{
+    m_Autoplay = false;
+    for (Run& run : m_Runs)
+        if (run.ready())
+            run.session->getPlayback().pause();
+}
+
+void RunController::stopAll()
+{
+    m_Autoplay = false;
+    for (Run& run : m_Runs)
+        if (run.ready())
+            run.session->getPlayback().stop();
+}
+
+void RunController::stepAll(bool forward)
+{
+    m_Autoplay = false;
+    for (Run& run : m_Runs)
+    {
+        if (!run.ready())
+            continue;
+        SortPlayback& playback = run.session->getPlayback();
+        // Manual steps already leave Stopped by themselves; they only need automatic play halted.
+        playback.pause();
+        if (forward) playback.stepForward();
+        else         playback.stepBackward();
+    }
+}
+
+bool RunController::computing() const
+{
+    for (const Run& run : m_Runs)
+        if (run.computing)
+            return true;
+    return false;
+}
+
+bool RunController::allReady() const
+{
+    if (m_Runs.empty())
+        return false;
+    for (const Run& run : m_Runs)
+        if (!run.ready())
+            return false;
+    return true;
+}
+
+bool RunController::anyPlaying() const
+{
+    for (const Run& run : m_Runs)
+        if (run.ready() && run.session->getPlayback().isPlaying())
+            return true;
+    return false;
+}
+
+bool RunController::allFinished() const
+{
+    bool any = false;
+    for (const Run& run : m_Runs)
+    {
+        if (!run.ready())
+            continue;
+        if (!run.session->getPlayback().isFinished())
+            return false;
+        any = true;
+    }
+    return any;
 }
 
 } // namespace Sortly

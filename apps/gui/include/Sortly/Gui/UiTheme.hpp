@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 
+#include <cstddef>
 namespace Sortly::ui {
 
 namespace colors {
@@ -29,6 +30,24 @@ inline const ImVec4 TextBright{0.94f, 0.97f, 1.00f, 1.0f};
 inline const ImVec4 OnAccent  {0.03f, 0.10f, 0.10f, 1.0f};
 
 inline ImVec4 withAlpha(const ImVec4& c, float a) { return ImVec4(c.x, c.y, c.z, a); }
+
+// One identity color per comparison slot. They avoid the operation colors (amber compare,
+// red swap, green sorted) so the highlighted bars never blend into the base bars.
+inline const ImVec4 Slot0{0.40f, 0.65f, 1.00f, 1.0f};
+inline const ImVec4 Slot1{0.96f, 0.52f, 0.80f, 1.0f};
+inline const ImVec4 Slot2{0.31f, 0.86f, 0.75f, 1.0f};
+inline const ImVec4 Slot3{0.68f, 0.55f, 1.00f, 1.0f};
+
+[[nodiscard]] inline const ImVec4& slot(std::size_t index)
+{
+    switch (index % 4)
+    {
+        case 0:  return Slot0;
+        case 1:  return Slot1;
+        case 2:  return Slot2;
+        default: return Slot3;
+    }
+}
 } // namespace colors
 
 // Fonts are baked once in loadFonts(); every one of them also contains the Lucide icons.

@@ -6,41 +6,86 @@
 #include "Sortly/Gui/RunSettings.hpp"
 #include "Sortly/Gui/SessionManager.hpp"
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace Sortly {
 
-/// @brief UI-independent run logic: creates a session, computes its operations
-/// cooperatively (time-budgeted) and drives playback. It owns the active session.
+/// @brief One algorithm of a run: its session plus the state of building its timeline.
+struct Run
+{
+    SortAlgorithmType            type = SortAlgorithmType::BubbleSort;
+    std::unique_ptr<SortSession> session;
+    bool                         computing = false;
+    std::string                  error; // Non-empty when the run could not be created or computed.
+
+    /// @brief Timeline built and loaded: statistics are final and playback can be used.
+    [[nodiscard]] bool ready() const
+    {
+        return session && !computing && error.empty() && session->getPlayback().isLoaded();
+    }
+};
+
+/// @brief UI-independent run logic: creates one session per selected algorithm (all on the
+/// same data), computes their operations cooperatively (time-budgeted) and drives their
+/// playback together. It owns the sessions.
 class RunController
 {
 public:
-    using SessionFactory = std::function<SessionResult(const RunSettings&)>;
+    using SessionFactory = std::function<SessionResult(SortAlgorithmType, const RunSettings&)>;
 
     explicit RunController(SessionFactory factory) : m_Factory(std::move(factory)) {}
 
     /// @brief Queues a new run. It is applied at the start of the next update(), so the
-    /// session never changes underneath panels that are mid-frame.
-    void requestStart(const RunSettings& settings) { m_Pending = settings; }
+    /// sessions never change underneath panels that are mid-frame.
+    /// @param autoplay Start playing as soon as every timeline is ready.
+    void requestStart(const RunSettings& settings, bool autoplay = false)
+    {
+        m_Pending         = settings;
+        m_PendingAutoplay = autoplay;
+    }
 
     void update(float deltaTime);
 
-    [[nodiscard]] SortSession*       session()   const { return m_Active.get(); }
-    [[nodiscard]] bool               computing() const { return m_Computing; }
-    [[nodiscard]] const std::string& status()    const { return m_Status; }
+    /// @brief Applies to the current runs and to the ones created later.
+    void setDelayMs(float delayMs);
+
+    // Global playback controls: they act on every ready run at once.
+    void playAll();
+    void pauseAll();
+    void stopAll();
+    void stepAll(bool forward);
+
+    [[nodiscard]] std::span<const Run> runs() const { return m_Runs; }
+
+    /// @brief True if the current runs were built from settings equivalent to @p settings.
+    [[nodiscard]] bool matches(const RunSettings& settings) const
+    {
+        return m_Applied && m_Applied->sameRunAs(settings);
+    }
+
+    [[nodiscard]] bool computing()   const;
+    [[nodiscard]] bool allReady()    const;
+    [[nodiscard]] bool anyPlaying()  const;
+    [[nodiscard]] bool allFinished() const;
 
 private:
     void start(const RunSettings& settings);
+    void updateComputation();
 
-    SessionFactory                m_Factory;
-    std::unique_ptr<SortSession>  m_Active;
-    std::optional<RunSettings>    m_Pending;
-    bool                          m_Computing = false;
-    std::string                   m_Status    = "Create a run to inspect the algorithm.";
+    SessionFactory             m_Factory;
+    std::vector<Run>           m_Runs;
+    std::optional<RunSettings> m_Applied;
+    std::optional<RunSettings> m_Pending;
+    bool                       m_PendingAutoplay = false;
+    bool                       m_Autoplay        = false; // Applies once the timelines finish building.
+    float                      m_DelayMs         = 32.0f;
 };
 
 } // namespace Sortly

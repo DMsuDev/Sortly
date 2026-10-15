@@ -42,7 +42,7 @@ void sectionLabel(const char* icon, const char* label)
     ImGui::PopFont();
 }
 
-bool iconButton(const char* label, const ImVec2& size, ButtonKind kind)
+bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* font)
 {
     if (kind == ButtonKind::Primary)
     {
@@ -52,7 +52,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind)
         ImGui::PushStyleColor(ImGuiCol_Text,          colors::OnAccent);
     }
 
-    ImGui::PushFont(fonts::Heading);
+    ImGui::PushFont(font ? font : fonts::Heading);
     const bool pressed = ImGui::Button(label, size);
     ImGui::PopFont();
 
@@ -132,7 +132,7 @@ void statCard(const char* icon, const char* label, const std::string& value,
     ImGui::Dummy(size);
 }
 
-void progressBar(float fraction, float height)
+void progressBar(float fraction, float height, const ImVec4* color)
 {
     const float width = ImGui::GetContentRegionAvail().x;
     const ImVec2 pos  = ImGui::GetCursorScreenPos();
@@ -143,7 +143,7 @@ void progressBar(float fraction, float height)
     dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), toU32(colors::Track), rounding);
     if (fraction > 0.0f)
         dl->AddRectFilled(pos, ImVec2(pos.x + std::max(height, width * fraction), pos.y + height),
-                          toU32(colors::Accent), rounding);
+                          toU32(color ? *color : colors::Accent), rounding);
 
     ImGui::Dummy(ImVec2(width, height));
 }

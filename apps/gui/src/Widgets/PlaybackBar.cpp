@@ -6,90 +6,57 @@
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 
-#include <cstdio>
+#include <imgui.h>
 
 namespace Sortly::ui {
 
 namespace {
 
-bool toolButton(const char* icon, const char* tooltip, float width, ButtonKind kind)
+bool toolButton(const char* label, const char* tooltip, float width, bool enabled,
+                ButtonKind kind = ButtonKind::Secondary)
 {
-    const bool pressed = iconButton(icon, ImVec2(width, dp(44.0f)), kind);
-    if (ImGui::IsItemHovered())
+    const float toolHeight = dp(32.0f);
+    ImGui::BeginDisabled(!enabled);
+    const bool pressed = iconButton(label, ImVec2(width, toolHeight), kind, fonts::Body);
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("%s", tooltip);
     return pressed;
 }
 
-const char* stateName(const SortPlayback& playback)
-{
-    if (playback.isPlaying())  return "PLAYING";
-    if (playback.isPaused())   return "PAUSED";
-    if (playback.isFinished()) return "FINISHED";
-    return "READY";
-}
-
-ImVec4 stateColor(const SortPlayback& playback)
-{
-    if (playback.isPlaying())  return colors::Accent;
-    if (playback.isPaused())   return colors::Warning;
-    if (playback.isFinished()) return colors::Success;
-    return colors::Muted;
-}
-
 } // namespace
 
-void drawPlaybackBar(SortPlayback& playback, float& delayMs)
+void drawPlaybackControls(RunController& run, const RunSettings& settings)
 {
-    const float sliderWidth = dp(220.0f);
+    const float gap   = ImGui::GetStyle().ItemSpacing.x;
+    const float avail = ImGui::GetContentRegionAvail().x;
+    const float third = (avail - gap * 2.0f) / 3.0f;
+    const float half  = (avail - gap) / 2.0f;
 
-    // Manual steps already leave Stopped by themselves; they only need automatic play halted.
-    if (toolButton(ICON_SKIP_BACK, "Step back", dp(52.0f), ButtonKind::Secondary))
-    {
-        playback.pause();
-        playback.stepBackward();
-    }
+    const bool hasRuns = !run.runs().empty() && settings.complete() && run.matches(settings);
 
-    ImGui::SameLine();
-    const bool playing = playback.isPlaying();
-    if (toolButton(playing ? ICON_PAUSE " Pause" : ICON_PLAY " Play",
-                   playing ? "Pause playback" : "Start / resume playback", dp(128.0f), ButtonKind::Primary))
-    {
-        if (playing) playback.pause();
-        else         playback.play();
-    }
+    if (toolButton(ICON_PLAY " Start", "Play every algorithm (restarts if they all finished)", third, hasRuns,
+                   ButtonKind::Primary))
+        run.playAll();
 
     ImGui::SameLine();
-    if (toolButton(ICON_SKIP_FORWARD, "Step forward", dp(52.0f), ButtonKind::Secondary))
-    {
-        playback.pause();
-        playback.stepForward();
-    }
+    if (toolButton(ICON_PAUSE " Pause", "Pause every algorithm", third, run.anyPlaying()))
+        run.pauseAll();
 
     ImGui::SameLine();
-    if (toolButton(ICON_RESET, "Reset to the initial state", dp(52.0f), ButtonKind::Secondary))
-        playback.stop();
+    if (toolButton(ICON_STOP " Stop", "Stop and go back to the unsorted data", third, hasRuns))
+        run.stopAll();
 
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - sliderWidth);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (dp(44.0f) - ImGui::GetFrameHeight()) * 0.5f);
-    ImGui::SetNextItemWidth(sliderWidth);
-    if (ImGui::SliderFloat("##Delay", &delayMs, 1.0f, 120.0f, ICON_GAUGE "  %.0f ms / step"))
-        playback.setDelayMs(delayMs);
+    if (toolButton(ICON_SKIP_BACK " Back", "Undo one operation in every algorithm", half, hasRuns))
+        run.stepAll(false);
 
-    ImGui::Spacing();
-    progressBar(playback.getProgress(), dp(6.0f));
+    ImGui::SameLine();
+    if (toolButton("Next " ICON_SKIP_FORWARD, "Apply one operation in every algorithm", half, hasRuns))
+        run.stepAll(true);
 
-    char steps[64];
-    std::snprintf(steps, sizeof(steps), "Step %s / %s",
-                  formatCount(playback.getCurrentOperationIndex()).c_str(),
-                  formatCount(playback.getTotalOperations()).c_str());
-
-    ImGui::PushFont(fonts::Label);
-    ImGui::TextColored(colors::Muted, "%s", steps);
-    ImGui::PopFont();
-
-    const char* state = stateName(playback);
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - pillWidth(state));
-    pill(state, stateColor(playback));
+    if (toolButton(ICON_RESET "  Reset all", "Rebuild every algorithm from the current settings", avail,
+                   settings.complete()))
+        run.requestStart(settings);
 }
 
 } // namespace Sortly::ui

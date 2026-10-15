@@ -8,37 +8,28 @@
 #include <implot.h>
 
 #include <algorithm>
-#include <vector>
+#include <array>
+#include <cstddef>
 
 namespace Sortly::ui {
 
-namespace {
-
-// Copy of the data keeping only the given indices (zero elsewhere), plotted over the base bars.
-std::vector<int> isolate(std::span<const int> data, int a, int b)
-{
-    std::vector<int> out(data.size(), 0);
-    for (const int index : { a, b })
-        if (index >= 0 && static_cast<std::size_t>(index) < data.size())
-            out[static_cast<std::size_t>(index)] = data[static_cast<std::size_t>(index)];
-    return out;
-}
-
-} // namespace
-
-void drawArrayPlot(std::span<const int> data, const ArrayHighlight& highlight, float height)
+void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlight& highlight,
+                   const ArrayPlotStyle& style, const ImVec2& size)
 {
     ImPlot::PushStyleColor(ImPlotCol_FrameBg,    ImVec4(0, 0, 0, 0));
     ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.55f));
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, colors::Border);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.06f));
     ImPlot::PushStyleColor(ImPlotCol_AxisText,   colors::Muted);
-    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, dp(14.0f, 12.0f));
+    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, style.axes ? dp(14.0f, 12.0f) : dp(6.0f, 6.0f));
 
-    if (ImPlot::BeginPlot("##ArrayPlot", ImVec2(-1.0f, height),
-                          ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText))
+    const ImPlotFlags plotFlags = ImPlotFlags_CanvasOnly | ImPlotFlags_NoInputs;
+    if (ImPlot::BeginPlot(id, size, plotFlags))
     {
-        ImPlot::SetupAxes("Index", "Value", ImPlotAxisFlags_NoGridLines, ImPlotAxisFlags_AutoFit);
+        const ImPlotAxisFlags xFlags = style.axes ? ImPlotAxisFlags_NoGridLines : ImPlotAxisFlags_NoDecorations;
+        const ImPlotAxisFlags yFlags = (style.axes ? ImPlotAxisFlags_None : ImPlotAxisFlags_NoDecorations) |
+                                       ImPlotAxisFlags_AutoFit;
+        ImPlot::SetupAxes(style.axes ? "Index" : nullptr, style.axes ? "Value" : nullptr, xFlags, yFlags);
 
         if (!data.empty())
         {
@@ -46,15 +37,32 @@ void drawArrayPlot(std::span<const int> data, const ArrayHighlight& highlight, f
             ImPlot::SetupAxesLimits(-0.5, static_cast<double>(data.size()) - 0.5,
                                     0.0, static_cast<double>(maxValue) * 1.1, ImPlotCond_Always);
 
-            const ImVec4 base = highlight.sorted ? colors::withAlpha(colors::Success, 0.88f) : colors::Bar;
+            const ImVec4 base = highlight.sorted ? colors::withAlpha(colors::Success, 0.88f)
+                                                 : colors::withAlpha(style.color, 0.88f);
             ImPlot::PlotBars("Values", data.data(), static_cast<int>(data.size()),
                              0.78, 0.0, ImPlotSpec{ ImPlotProp_FillColor, base });
 
             if (const SortOperation* op = highlight.operation; op && !highlight.sorted)
             {
-                const auto marked = isolate(data, op->indexA, op->indexB);
-                ImPlot::PlotBars("Active", marked.data(), static_cast<int>(marked.size()),
-                                 0.78, 0.0, ImPlotSpec{ ImPlotProp_FillColor, operationColor(op->type) });
+                // Only the touched bars are repainted, with a light edge so they stand out on any base color.
+                std::array<int, 2> xs{};
+                std::array<int, 2> ys{};
+                std::size_t count = 0;
+                for (const int index : { op->indexA, op->indexB })
+                {
+                    if (index < 0 || static_cast<std::size_t>(index) >= data.size())
+                        continue;
+                    xs[count] = index;
+                    ys[count] = data[static_cast<std::size_t>(index)];
+                    ++count;
+                }
+
+                if (count > 0)
+                {
+                    ImPlot::PlotBars("Active", xs.data(), ys.data(), static_cast<int>(count), 0.78,
+                                     ImPlotSpec{ ImPlotProp_FillColor, operationColor(op->type),
+                                                 ImPlotProp_LineColor, colors::withAlpha(colors::TextBright, 0.9f) });
+                }
             }
         }
 

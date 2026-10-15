@@ -3,12 +3,14 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Operations/SortPlayback.hpp"
+#include "Sortly/Gui/RunController.hpp"
+#include "Sortly/Gui/RunSettings.hpp"
 
 namespace Sortly::ui {
 
-/// @brief Step/Play/Reset buttons, delay slider and progress bar.
-/// @param delayMs Edited in place; applied to @p playback when changed.
-void drawPlaybackBar(SortPlayback& playback, float& delayMs);
+/// @brief Start / Pause / Stop, step buttons and "Reset all". Every button acts on all the
+/// runs at once.
+/// @param settings Used to rebuild the runs on "Reset all" and to know whether Start is allowed.
+void drawPlaybackControls(RunController& run, const RunSettings& settings);
 
 } // namespace Sortly::ui

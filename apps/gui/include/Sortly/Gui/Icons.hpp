@@ -29,13 +29,19 @@
 #define ICON_ZAP           "\xEE\x86\xB4"  // U+E1B4
 #define ICON_CHECK         "\xEE\x81\xAC"  // U+E06C
 #define ICON_LOADER        "\xEE\x84\x89"  // U+E109
+#define ICON_STOP          "\xEE\x85\xA7"  // U+E167 (square)
+#define ICON_TROPHY        "\xEE\x8D\xB3"  // U+E373
+#define ICON_GRID          "\xEE\x83\xBF"  // U+E0FF (layout-grid)
+#define ICON_COLUMNS_2     "\xEE\x82\x98"  // U+E098
+#define ICON_COLUMNS_3     "\xEE\x82\x99"  // U+E099
+#define ICON_SINGLE        "\xEE\x8D\xB6"  // U+E376 (rectangle-horizontal)
 
 namespace Sortly::ui {
 
 inline constexpr unsigned short kIconCodepoints[] = {
     0xE13C, 0xE12E, 0xE15F, 0xE160, 0xE148, 0xE412, 0xE24A, 0xE359, 0xE038, 0xE1E0,
     0xE1D1, 0xE2A3, 0xE29A, 0xE15E, 0xE1BF, 0xE0A9, 0xE0F9, 0xE0EF, 0xE1B4, 0xE06C,
-    0xE109,
+    0xE109, 0xE167, 0xE373, 0xE0FF, 0xE098, 0xE099, 0xE376,
 };
 
 } // namespace Sortly::ui
