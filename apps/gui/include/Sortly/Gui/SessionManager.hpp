@@ -10,32 +10,37 @@
 
 #include <cstddef>
 #include <memory>
-#include <span>
-#include <vector>
 
 namespace Sortly {
 
-/// @brief Owns every SortSession and decides where their randomness comes from.
-/// Sessions are heap-allocated so references handed to a frontend stay valid
-/// while other sessions are added.
+/// @brief Why a session could not be created.
+enum class SessionError
+{
+    None,
+    NoAlgorithm, // The factory has no algorithm for the requested type.
+    NoData       // The dataset came out empty.
+};
+
+struct SessionResult
+{
+    std::unique_ptr<SortSession> session;
+    SessionError                 error = SessionError::None;
+};
+
+/// @brief Builds sessions and decides where their randomness comes from.
+/// Ownership of each session goes to the caller, so nothing here can leave a
+/// frontend holding a dangling pointer.
 class SessionManager
 {
 public:
     void setSeedProvider(SeedProvider provider) { m_Seeds = provider; }
 
     /// @brief Creates a session with a freshly built, shuffled dataset.
-    /// @return The new session, or nullptr if the algorithm or dataset failed.
-    [[nodiscard]] SortSession* createSession(SortAlgorithmType type, const DataSetConfig& config);
-
-    [[nodiscard]] std::span<const std::unique_ptr<SortSession>> sessions() const { return m_Sessions; }
-
-    void clear() { m_Sessions.clear(); }
+    [[nodiscard]] SessionResult createSession(SortAlgorithmType type, const DataSetConfig& config);
 
 private:
-    SeedProvider m_Seeds = SeedProvider::random();
-    std::size_t  m_NextIndex = 0; // Monotonic: stays unique even after clear().
-
-    std::vector<std::unique_ptr<SortSession>> m_Sessions;
+    SeedProvider m_Seeds     = SeedProvider::random();
+    std::size_t  m_NextIndex = 0; // Monotonic: keeps per-session/random seeds unique.
 };
 
 } // namespace Sortly

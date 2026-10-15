@@ -5,7 +5,7 @@
 
 #include "Sortly/Sorting/Operations/SortOperation.hpp"
 
-#include <vector>
+#include <span>
 
 namespace Sortly::ui {
 
@@ -16,6 +16,6 @@ struct ArrayHighlight
     bool                 sorted    = false;   // Whole run finished: every bar is painted as done.
 };
 
-void drawArrayPlot(const std::vector<int>& data, const ArrayHighlight& highlight, float height);
+void drawArrayPlot(std::span<const int> data, const ArrayHighlight& highlight, float height);
 
 } // namespace Sortly::ui

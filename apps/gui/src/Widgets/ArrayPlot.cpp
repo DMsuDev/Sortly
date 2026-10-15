@@ -8,26 +8,14 @@
 #include <implot.h>
 
 #include <algorithm>
+#include <vector>
 
 namespace Sortly::ui {
 
 namespace {
 
-ImVec4 operationColor(SortOperation::Type type)
-{
-    switch (type)
-    {
-        case SortOperation::Type::Compare:   return colors::Warning;
-        case SortOperation::Type::Swap:
-        case SortOperation::Type::Overwrite: return colors::Danger;
-        case SortOperation::Type::Pivot:     return colors::Violet;
-        case SortOperation::Type::Sorted:    return colors::Success;
-    }
-    return colors::Accent;
-}
-
 // Copy of the data keeping only the given indices (zero elsewhere), plotted over the base bars.
-std::vector<int> isolate(const std::vector<int>& data, int a, int b)
+std::vector<int> isolate(std::span<const int> data, int a, int b)
 {
     std::vector<int> out(data.size(), 0);
     for (const int index : { a, b })
@@ -38,14 +26,14 @@ std::vector<int> isolate(const std::vector<int>& data, int a, int b)
 
 } // namespace
 
-void drawArrayPlot(const std::vector<int>& data, const ArrayHighlight& highlight, float height)
+void drawArrayPlot(std::span<const int> data, const ArrayHighlight& highlight, float height)
 {
-    ImPlot::PushStyleColor(ImPlotCol_FrameBg,   ImVec4(0, 0, 0, 0));
-    ImPlot::PushStyleColor(ImPlotCol_PlotBg,    colors::withAlpha(colors::Clear, 0.55f));
-    ImPlot::PushStyleColor(ImPlotCol_PlotBorder, ImVec4(0.17f, 0.20f, 0.25f, 0.8f));
-    ImPlot::PushStyleColor(ImPlotCol_AxisGrid,  ImVec4(1, 1, 1, 0.06f));
-    ImPlot::PushStyleColor(ImPlotCol_AxisText,  colors::Muted);
-    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(14.0f, 12.0f));
+    ImPlot::PushStyleColor(ImPlotCol_FrameBg,    ImVec4(0, 0, 0, 0));
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.55f));
+    ImPlot::PushStyleColor(ImPlotCol_PlotBorder, colors::Border);
+    ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.06f));
+    ImPlot::PushStyleColor(ImPlotCol_AxisText,   colors::Muted);
+    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, dp(14.0f, 12.0f));
 
     if (ImPlot::BeginPlot("##ArrayPlot", ImVec2(-1.0f, height),
                           ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText))

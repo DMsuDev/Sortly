@@ -20,6 +20,8 @@ int Application::Run()
 {
     vigil::LogSystem::Init({
         .Name         = m_Config.name.c_str(),
+        .LogDir       = m_Config.logDir,
+        .LogFile      = m_Config.logFile,
         .ConsoleLevel = m_Config.verboseLogging ? vigil::LogLevel::Trace
                                                 : vigil::LogLevel::Info
     });

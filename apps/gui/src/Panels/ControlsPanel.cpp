@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Gui/Panels/ControlsPanel.hpp"
+#include "ControlsPanel.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
@@ -9,6 +9,8 @@
 #include <Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp>
 
 #include <imgui.h>
+
+#include <string>
 
 namespace Sortly {
 
@@ -42,12 +44,12 @@ void drawStatusCard(const RunController& run)
 
     const float width = ImGui::GetContentRegionAvail().x;
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ui::colors::SurfaceHi);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(14.0f, 12.0f));
     ImGui::BeginChild("StatusCard", ImVec2(width, 0.0f),
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
     ImGui::PopStyleVar();
 
-    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    ImGui::Dummy(ImVec2(0.0f, ui::dp(2.0f)));
     ui::centeredText(icon, color, ui::fonts::Title);
 
     ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
@@ -56,11 +58,10 @@ void drawStatusCard(const RunController& run)
 
     if (ready)
     {
-        const auto ops = run.session()->getStatistics().operationCount;
-        const std::string text = ui::formatCount(ops) + " recorded operations";
-        ui::centeredText(text.c_str(), ImVec4(0.48f, 0.54f, 0.62f, 1.0f));
+        const std::string text = ui::formatCount(run.session()->getStatistics().operationCount) + " recorded operations";
+        ui::centeredText(text.c_str(), ui::colors::TextDim);
     }
-    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    ImGui::Dummy(ImVec2(0.0f, ui::dp(2.0f)));
 
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -70,8 +71,8 @@ void drawStatusCard(const RunController& run)
 
 void ControlsPanel::draw(UiContext& ctx)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 18.0f));
-    ImGui::BeginChild("Controls", ImVec2(300.0f, 0.0f),
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(20.0f, 18.0f));
+    ImGui::BeginChild("Controls", ImVec2(ui::dp(300.0f), 0.0f),
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
     ImGui::PopStyleVar();
 
@@ -94,8 +95,14 @@ void ControlsPanel::draw(UiContext& ctx)
     ImGui::PopFont();
 
     ImGui::Spacing();
-    if (ui::iconButton(ICON_SPARKLES "  Generate visualization", ImVec2(-1.0f, 46.0f), ui::ButtonKind::Primary))
-        ctx.run.start(ctx.settings);
+    if (ui::iconButton(ICON_SHUFFLE "  New random data", ImVec2(-1.0f, ui::dp(36.0f))))
+        ctx.settings.reshuffle();
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Runs reuse the same data until you ask for new data,\nso algorithms can be compared on equal input.");
+
+    ImGui::Spacing();
+    if (ui::iconButton(ICON_SPARKLES "  Generate visualization", ImVec2(-1.0f, ui::dp(46.0f)), ui::ButtonKind::Primary))
+        ctx.run.requestStart(ctx.settings);
 
     ImGui::Spacing();
     ImGui::Separator();

@@ -6,13 +6,14 @@
 
 #include <vigil/vigil.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 
 #if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <Windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
 #endif
 
 #ifndef SORTLY_ASSETS_DIR
@@ -27,22 +28,33 @@ namespace fs = std::filesystem;
 
 fs::path executableDir()
 {
+    std::error_code ec;
 #if defined(_WIN32)
     wchar_t buffer[MAX_PATH] = {};
     const DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
     if (len > 0 && len < MAX_PATH)
         return fs::path(buffer).parent_path();
+#elif defined(__APPLE__)
+    char buffer[4096] = {};
+    std::uint32_t size = sizeof(buffer);
+    if (_NSGetExecutablePath(buffer, &size) == 0)
+        return fs::weakly_canonical(fs::path(buffer), ec).parent_path();
+#else
+    const fs::path exe = fs::read_symlink("/proc/self/exe", ec);
+    if (!ec)
+        return exe.parent_path();
 #endif
     return {};
 }
 
-// Looks for the Lucide font next to the executable (post-build copy) and then in the source tree.
+// Looks for the Lucide font next to the executable (post-build copy), in the working
+// directory and finally in the source tree.
 std::string findIconFont()
 {
     const fs::path candidates[] = {
         executableDir() / "assets" / "fonts" / "lucide.ttf",
         fs::path("assets") / "fonts" / "lucide.ttf",
-        fs::path(SORTLY_ASSETS_DIR) / "fonts" / "lucide.ttf",
+        fs::path(SORTLY_ASSETS_DIR) / "lucide.ttf",
     };
 
     std::error_code ec;
@@ -52,16 +64,48 @@ std::string findIconFont()
     return {};
 }
 
-std::string findSystemFont(const char* fileName)
+struct FontPair
 {
+    const char* regular;
+    const char* semibold;
+};
+
+// First pair whose regular face exists wins; the semibold face falls back to the regular one.
+constexpr FontPair kSystemFonts[] = {
 #if defined(_WIN32)
-    const fs::path path = fs::path("C:/Windows/Fonts") / fileName;
-    std::error_code ec;
-    if (fs::exists(path, ec))
-        return path.string();
+    { "C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/seguisb.ttf" },
+#elif defined(__APPLE__)
+    { "/System/Library/Fonts/Helvetica.ttc", "/System/Library/Fonts/Helvetica.ttc" },
+    { "/Library/Fonts/Arial.ttf",            "/Library/Fonts/Arial Bold.ttf"       },
 #else
-    (void)fileName;
+    { "/usr/share/fonts/noto/NotoSans-Regular.ttf",                 "/usr/share/fonts/noto/NotoSans-SemiBold.ttf" },
+    { "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",        "/usr/share/fonts/truetype/noto/NotoSans-SemiBold.ttf" },
+    { "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",              "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf" },
+    { "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" },
+    { "/usr/share/fonts/TTF/DejaVuSans.ttf",                        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf" },
+    { "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" },
 #endif
+};
+
+struct TextFonts
+{
+    std::string regular;
+    std::string semibold;
+};
+
+TextFonts findTextFonts()
+{
+    std::error_code ec;
+    for (const auto& pair : kSystemFonts)
+    {
+        if (!fs::exists(pair.regular, ec))
+            continue;
+
+        TextFonts fonts{ pair.regular, pair.regular };
+        if (fs::exists(pair.semibold, ec))
+            fonts.semibold = pair.semibold;
+        return fonts;
+    }
     return {};
 }
 
@@ -106,25 +150,39 @@ ImFont* addFont(const std::string& textFont, const std::string& iconFont, float 
 
 } // namespace
 
-void loadFonts(float dpiScale)
+ImVec4 operationColor(SortOperation::Type type)
 {
+    switch (type)
+    {
+        case SortOperation::Type::Compare:   return colors::Warning;
+        case SortOperation::Type::Swap:
+        case SortOperation::Type::Overwrite: return colors::Danger;
+        case SortOperation::Type::Pivot:     return colors::Violet;
+        case SortOperation::Type::Sorted:    return colors::Success;
+    }
+    return colors::Accent;
+}
+
+void loadFonts(float scale)
+{
+    g_Scale = scale > 0.0f ? scale : 1.0f;
+
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
 
-    const std::string regular  = findSystemFont("segoeui.ttf");
-    const std::string semibold = findSystemFont("seguisb.ttf");
-    const std::string& heading = semibold.empty() ? regular : semibold;
-    const std::string icons    = findIconFont();
+    const TextFonts text  = findTextFonts();
+    const std::string icons = findIconFont();
 
+    if (text.regular.empty())
+        VIGIL_LOG_WARN("No system UI font found: falling back to the built-in bitmap font");
     if (icons.empty())
         VIGIL_LOG_WARN("lucide.ttf not found: icons will be missing");
 
-    const float s = dpiScale;
-    fonts::Body    = addFont(regular, icons, 17.0f * s, 1.00f);
-    fonts::Label   = addFont(heading, icons, 12.5f * s, 1.00f);
-    fonts::Heading = addFont(heading, icons, 18.0f * s, 1.00f);
-    fonts::Title   = addFont(heading, icons, 24.0f * s, 0.95f);
-    fonts::Value   = addFont(heading, icons, 30.0f * s, 0.90f);
+    fonts::Body    = addFont(text.regular,  icons, dp(17.0f), 1.00f);
+    fonts::Label   = addFont(text.semibold, icons, dp(12.5f), 1.00f);
+    fonts::Heading = addFont(text.semibold, icons, dp(18.0f), 1.00f);
+    fonts::Title   = addFont(text.semibold, icons, dp(24.0f), 0.95f);
+    fonts::Value   = addFont(text.semibold, icons, dp(22.0f), 0.90f);
 
     io.FontDefault = fonts::Body;
 }
@@ -147,15 +205,15 @@ void applyTheme()
     style.ChildBorderSize     = 1.0f;
     style.FrameBorderSize     = 0.0f;
     style.PopupBorderSize     = 1.0f;
-    style.SeparatorTextBorderSize = 1.0f;
+    style.ScaleAllSizes(g_Scale);
 
     auto* c = style.Colors;
     c[ImGuiCol_WindowBg]         = colors::Clear;
     c[ImGuiCol_ChildBg]          = colors::Surface;
     c[ImGuiCol_PopupBg]          = ImVec4(0.085f, 0.102f, 0.133f, 0.98f);
-    c[ImGuiCol_Border]           = ImVec4(0.17f, 0.20f, 0.25f, 0.80f);
+    c[ImGuiCol_Border]           = colors::Border;
     c[ImGuiCol_Text]             = ImVec4(0.91f, 0.94f, 0.97f, 1.00f);
-    c[ImGuiCol_TextDisabled]     = ImVec4(0.48f, 0.54f, 0.62f, 1.00f);
+    c[ImGuiCol_TextDisabled]     = colors::TextDim;
     c[ImGuiCol_FrameBg]          = ImVec4(0.11f, 0.13f, 0.17f, 1.00f);
     c[ImGuiCol_FrameBgHovered]   = ImVec4(0.15f, 0.19f, 0.23f, 1.00f);
     c[ImGuiCol_FrameBgActive]    = ImVec4(0.18f, 0.23f, 0.27f, 1.00f);
@@ -167,8 +225,7 @@ void applyTheme()
     c[ImGuiCol_HeaderActive]     = ImVec4(0.10f, 0.51f, 0.46f, 1.00f);
     c[ImGuiCol_SliderGrab]       = colors::Accent;
     c[ImGuiCol_SliderGrabActive] = ImVec4(0.46f, 0.95f, 0.83f, 1.00f);
-    c[ImGuiCol_PlotHistogram]    = colors::Accent;
-    c[ImGuiCol_Separator]        = ImVec4(0.17f, 0.20f, 0.25f, 0.80f);
+    c[ImGuiCol_Separator]        = colors::Border;
 }
 
 } // namespace Sortly::ui

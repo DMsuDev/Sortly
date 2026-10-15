@@ -12,6 +12,8 @@
 
 #include <vigil/vigil.h>
 
+#include <algorithm>
+
 namespace Sortly {
 
 bool GlfwWindow::create(int width, int height, const char* title, int minWidth, int minHeight)
@@ -25,6 +27,22 @@ bool GlfwWindow::create(int width, int height, const char* title, int minWidth, 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if defined(__APPLE__)
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
+
+    // Keep the first window inside the usable desktop area, whatever the display scale.
+    int areaW = 0, areaH = 0;
+    if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
+    {
+        int areaX = 0, areaY = 0;
+        glfwGetMonitorWorkarea(monitor, &areaX, &areaY, &areaW, &areaH);
+        if (areaW > 0 && areaH > 0)
+        {
+            width  = std::min(width,  areaW * 9 / 10);
+            height = std::min(height, areaH * 9 / 10);
+        }
+    }
 
     m_Handle = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!m_Handle)
@@ -34,14 +52,23 @@ bool GlfwWindow::create(int width, int height, const char* title, int minWidth, 
         return false;
     }
 
-    glfwSetWindowSizeLimits(m_Handle, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    float scale = 1.0f, scaleY = 1.0f;
+#if !defined(__APPLE__)
+    // On macOS the backend already handles the framebuffer scale; elsewhere we scale the UI.
+    glfwGetWindowContentScale(m_Handle, &scale, &scaleY);
+#endif
+
+    glfwSetWindowSizeLimits(m_Handle, static_cast<int>(static_cast<float>(minWidth) * scale),
+                            static_cast<int>(static_cast<float>(minHeight) * scale),
+                            GLFW_DONT_CARE, GLFW_DONT_CARE);
     glfwMakeContextCurrent(m_Handle);
     glfwSwapInterval(1);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImPlot::CreateContext();
-    ui::loadFonts();
+
+    ui::loadFonts(scale);
     ImGui_ImplGlfw_InitForOpenGL(m_Handle, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     ui::applyTheme();

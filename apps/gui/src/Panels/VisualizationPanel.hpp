@@ -7,9 +7,10 @@
 
 namespace Sortly {
 
-class ControlsPanel final : public IPanel
+class VisualizationPanel final : public IPanel
 {
 public:
+    [[nodiscard]] PanelDock dock() const override { return PanelDock::Fill; }
     void draw(UiContext& ctx) override;
 };
 

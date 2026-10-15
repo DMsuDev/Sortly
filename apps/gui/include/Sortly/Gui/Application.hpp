@@ -13,6 +13,9 @@ struct ApplicationConfig
 {
     std::string name           = "Sortly";
     bool        verboseLogging = false;
+    // The GUI build has no console, so a log file is the only place diagnostics can go.
+    std::string logDir         = "logs";
+    std::string logFile        = "sortly.log";
 };
 
 /// @brief Base class for the desktop application. Run() performs the shared

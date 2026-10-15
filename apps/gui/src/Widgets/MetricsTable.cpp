@@ -34,7 +34,7 @@ void drawMetricsTable(const SortStatistics* stats)
     }
 
     const Metric metrics[] = {
-        { ICON_COMPARE,  "COMPARISONS", count(&SortStatistics::comparisons),    nullptr, colors::Info    },
+        { ICON_COMPARE,  "COMPARES", count(&SortStatistics::comparisons),    nullptr, colors::Info    },
         { ICON_SWAP,     "SWAPS",       count(&SortStatistics::swaps),          nullptr, colors::Danger  },
         { ICON_LIST,     "OPERATIONS",  count(&SortStatistics::operationCount), nullptr, colors::Accent  },
         { ICON_ACTIVITY, "READS",       count(&SortStatistics::reads),          nullptr, colors::Violet  },
@@ -42,18 +42,19 @@ void drawMetricsTable(const SortStatistics* stats)
         { ICON_TIMER,    "COMPUTE",     compute, stats ? "ms" : nullptr,                 colors::Success },
     };
 
-    constexpr int   kMetricCount = static_cast<int>(sizeof(metrics) / sizeof(metrics[0]));
-    constexpr float kCardHeight  = 92.0f;
-    constexpr float kMinCardWidth = 170.0f;
+    constexpr int kMetricCount = static_cast<int>(sizeof(metrics) / sizeof(metrics[0]));
+    const float cardHeight   = dp(62.0f);
+    const float minCardWidth = dp(116.0f);
 
-    const float gap   = ImGui::GetStyle().ItemSpacing.x;
+    const float gap   = dp(8.0f);
     const float avail = ImGui::GetContentRegionAvail().x;
+
     // Only divisors of the metric count, so the last row is never left with an orphan card.
     int columns = 1;
     for (const int candidate : { 6, 3, 2 })
     {
         if (kMetricCount % candidate == 0 &&
-            avail >= candidate * kMinCardWidth + gap * static_cast<float>(candidate - 1))
+            avail >= static_cast<float>(candidate) * minCardWidth + gap * static_cast<float>(candidate - 1))
         {
             columns = candidate;
             break;
@@ -64,10 +65,10 @@ void drawMetricsTable(const SortStatistics* stats)
     for (int i = 0; i < kMetricCount; ++i)
     {
         if (i % columns != 0)
-            ImGui::SameLine();
+            ImGui::SameLine(0.0f, gap);
         ImGui::PushID(i);
         statCard(metrics[i].icon, metrics[i].label, metrics[i].value, metrics[i].unit,
-                 metrics[i].color, ImVec2(cardWidth, kCardHeight));
+                 metrics[i].color, ImVec2(cardWidth, cardHeight));
         ImGui::PopID();
     }
 }

@@ -28,7 +28,6 @@ target_link_libraries(SortlyGuiLib
     Sortly::ImPlot
     Sortly::Vigil
     glfw::glfw
-    nlohmann_json
 )
 
 # Lucide icon font: found next to the executable (copied below) or in the source tree.
@@ -36,7 +35,12 @@ target_compile_definitions(SortlyGuiLib PRIVATE
   SORTLY_ASSETS_DIR="${SORTLY_THIRD_PARTY_DIR}/imgui"
 )
 
-set_target_properties(SortlyGuiLib PROPERTIES FOLDER "apps/gui")
+# The lib holds all the real code, so the compiler policy must apply to it as well.
+sortly_configure_compiler(SortlyGuiLib)
+sortly_configure_warnings(SortlyGuiLib)
+sortly_strip_dead_code(SortlyGuiLib)
+
+set_target_properties(SortlyGuiLib PROPERTIES FOLDER "Sortly/Apps")
 
 # ---------------------------------------------------------------------------
 #  Executable
@@ -56,6 +60,6 @@ sortly_configure_warnings(SortlyGui)
 sortly_strip_dead_code(SortlyGui)
 
 set_target_properties(SortlyGui PROPERTIES
-  FOLDER      "apps/gui"
-  OUTPUT_NAME "Sortly"
+  FOLDER      "Sortly/Apps"
+  OUTPUT_NAME sortly
 )

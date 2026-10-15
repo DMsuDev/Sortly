@@ -10,9 +10,6 @@ namespace Sortly::ui {
 
 namespace {
 
-constexpr float kPillPadX = 12.0f;
-constexpr float kPillPadY = 4.0f;
-
 ImU32 toU32(const ImVec4& c) { return ImGui::ColorConvertFloat4ToU32(c); }
 
 } // namespace
@@ -40,7 +37,7 @@ void sectionLabel(const char* icon, const char* label)
 {
     ImGui::PushFont(fonts::Label);
     ImGui::TextColored(colors::Accent, "%s", icon);
-    ImGui::SameLine(0.0f, 8.0f);
+    ImGui::SameLine(0.0f, dp(8.0f));
     ImGui::TextColored(colors::Muted, "%s", label);
     ImGui::PopFont();
 }
@@ -52,7 +49,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind)
         ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f, 0.74f, 0.65f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.84f, 0.74f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.14f, 0.62f, 0.55f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.03f, 0.10f, 0.10f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text,          colors::OnAccent);
     }
 
     ImGui::PushFont(fonts::Heading);
@@ -67,16 +64,19 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind)
 float pillWidth(const char* text)
 {
     ImGui::PushFont(fonts::Label);
-    const float width = ImGui::CalcTextSize(text).x + kPillPadX * 2.0f;
+    const float width = ImGui::CalcTextSize(text).x + dp(12.0f) * 2.0f;
     ImGui::PopFont();
     return width;
 }
 
 void pill(const char* text, const ImVec4& color)
 {
+    const float padX = dp(12.0f);
+    const float padY = dp(4.0f);
+
     ImGui::PushFont(fonts::Label);
     const ImVec2 textSize = ImGui::CalcTextSize(text);
-    const ImVec2 size(textSize.x + kPillPadX * 2.0f, textSize.y + kPillPadY * 2.0f);
+    const ImVec2 size(textSize.x + padX * 2.0f, textSize.y + padY * 2.0f);
     const ImVec2 pos = ImGui::GetCursorScreenPos();
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -84,7 +84,7 @@ void pill(const char* text, const ImVec4& color)
                       toU32(colors::withAlpha(color, 0.16f)), size.y * 0.5f);
     dl->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y),
                 toU32(colors::withAlpha(color, 0.45f)), size.y * 0.5f);
-    dl->AddText(ImVec2(pos.x + kPillPadX, pos.y + kPillPadY), toU32(color), text);
+    dl->AddText(ImVec2(pos.x + padX, pos.y + padY), toU32(color), text);
     ImGui::PopFont();
 
     ImGui::Dummy(size);
@@ -97,43 +97,35 @@ void statCard(const char* icon, const char* label, const std::string& value,
     const ImVec2 end(pos.x + size.x, pos.y + size.y);
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
-    dl->AddRectFilled(pos, end, toU32(colors::SurfaceHi), 12.0f);
-    dl->AddRect(pos, end, toU32(ImVec4(0.20f, 0.24f, 0.30f, 0.7f)), 12.0f);
+    const float rounding = dp(10.0f);
+    dl->AddRectFilled(pos, end, toU32(colors::SurfaceHi), rounding);
+    dl->AddRect(pos, end, toU32(colors::CardBorder), rounding);
     // Thin accent strip on the left edge ties the card to its metric color.
-    dl->AddRectFilled(ImVec2(pos.x + 1.0f, pos.y + 14.0f), ImVec2(pos.x + 4.0f, end.y - 14.0f),
-                      toU32(color), 2.0f);
+    dl->AddRectFilled(ImVec2(pos.x + 1.0f, pos.y + dp(10.0f)), ImVec2(pos.x + dp(4.0f), end.y - dp(10.0f)),
+                      toU32(color), dp(2.0f));
 
-    constexpr float pad   = 16.0f;
-    constexpr float badge = 30.0f;
-    const ImVec2 badgeMin(pos.x + pad, pos.y + pad);
-    const ImVec2 badgeMax(badgeMin.x + badge, badgeMin.y + badge);
-    dl->AddRectFilled(badgeMin, badgeMax, toU32(colors::withAlpha(color, 0.18f)), 9.0f);
+    const float padX = dp(14.0f);
+    const float padY = dp(9.0f);
 
-    ImGui::PushFont(fonts::Heading);
-    const ImVec2 iconSize = ImGui::CalcTextSize(icon);
-    dl->AddText(ImVec2(badgeMin.x + (badge - iconSize.x) * 0.5f,
-                       badgeMin.y + (badge - iconSize.y) * 0.5f),
-                toU32(color), icon);
-    ImGui::PopFont();
-
+    // Caption row: tinted icon followed by the label.
     ImGui::PushFont(fonts::Label);
-    const ImVec2 labelSize = ImGui::CalcTextSize(label);
-    dl->AddText(ImVec2(badgeMax.x + 10.0f, badgeMin.y + (badge - labelSize.y) * 0.5f),
-                toU32(colors::Muted), label);
+    const ImVec2 iconSize = ImGui::CalcTextSize(icon);
+    dl->AddText(ImVec2(pos.x + padX, pos.y + padY), toU32(color), icon);
+    dl->AddText(ImVec2(pos.x + padX + iconSize.x + dp(6.0f), pos.y + padY), toU32(colors::Muted), label);
     ImGui::PopFont();
 
     ImGui::PushFont(fonts::Value);
     const ImVec2 valueSize = ImGui::CalcTextSize(value.c_str());
-    const ImVec2 valuePos(pos.x + pad, end.y - pad - valueSize.y);
-    dl->AddText(valuePos, toU32(ImVec4(0.94f, 0.97f, 1.0f, 1.0f)), value.c_str());
+    const ImVec2 valuePos(pos.x + padX, end.y - padY - valueSize.y);
+    dl->AddText(valuePos, toU32(colors::TextBright), value.c_str());
     ImGui::PopFont();
 
     if (unit && *unit)
     {
         ImGui::PushFont(fonts::Body);
         const ImVec2 unitSize = ImGui::CalcTextSize(unit);
-        dl->AddText(ImVec2(valuePos.x + valueSize.x + 6.0f, end.y - pad - unitSize.y - 3.0f),
-                    toU32(ImVec4(0.48f, 0.54f, 0.62f, 1.0f)), unit);
+        dl->AddText(ImVec2(valuePos.x + valueSize.x + dp(6.0f), end.y - padY - unitSize.y - dp(2.0f)),
+                    toU32(colors::TextDim), unit);
         ImGui::PopFont();
     }
 
@@ -148,8 +140,7 @@ void progressBar(float fraction, float height)
     fraction = std::clamp(fraction, 0.0f, 1.0f);
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height),
-                      toU32(ImVec4(0.13f, 0.16f, 0.21f, 1.0f)), rounding);
+    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), toU32(colors::Track), rounding);
     if (fraction > 0.0f)
         dl->AddRectFilled(pos, ImVec2(pos.x + std::max(height, width * fraction), pos.y + height),
                           toU32(colors::Accent), rounding);

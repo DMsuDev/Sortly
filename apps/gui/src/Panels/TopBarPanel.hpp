@@ -10,6 +10,7 @@ namespace Sortly {
 class TopBarPanel final : public IPanel
 {
 public:
+    [[nodiscard]] PanelDock dock() const override { return PanelDock::Top; }
     void draw(UiContext& ctx) override;
 };
 

@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/SessionManager.hpp"
-#include "Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp"
+
+#include <utility>
 
 namespace Sortly {
 
-SortSession* SessionManager::createSession(SortAlgorithmType type, const DataSetConfig& config)
+SessionResult SessionManager::createSession(SortAlgorithmType type, const DataSetConfig& config)
 {
     auto algorithm = SortAlgorithmFactory::create(type);
     if (!algorithm)
-        return nullptr;
+        return { nullptr, SessionError::NoAlgorithm };
 
     auto session = std::make_unique<SortSession>();
     session->setDataSetConfig(config);
@@ -18,10 +19,9 @@ SortSession* SessionManager::createSession(SortAlgorithmType type, const DataSet
 
     auto rng = m_Seeds.createEngine(m_NextIndex++);
     if (!session->buildDataSet(rng))
-        return nullptr;
+        return { nullptr, SessionError::NoData };
 
-    m_Sessions.push_back(std::move(session));
-    return m_Sessions.back().get();
+    return { std::move(session), SessionError::None };
 }
 
 } // namespace Sortly
