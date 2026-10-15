@@ -19,7 +19,9 @@ enum class SortAlgorithmType
     SelectionSort,
     InsertionSort,
     QuickSort,
-    MergeSort
+    MergeSort,
+    HeapSort,
+    ShellSort
 };
 
 struct AlgorithmInfo

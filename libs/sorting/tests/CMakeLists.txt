@@ -11,4 +11,5 @@
 sortly_add_tests(sortly_sorting_tests
   LIBS
     Sortly::Sorting
+    Sortly::Vigil
 )

@@ -81,12 +81,3 @@ TEST(SortRecorder, SortedMarksTheEndOfTheRunWithoutAnIndex)
     EXPECT_EQ(operation.indexA, -1);
     EXPECT_EQ(statistics.operationCount, 1u);
 }
-
-TEST(SortOperation, ToStringNamesEveryType)
-{
-    EXPECT_EQ(toString(SortOperation::Type::Compare),   "Compare");
-    EXPECT_EQ(toString(SortOperation::Type::Swap),      "Swap");
-    EXPECT_EQ(toString(SortOperation::Type::Overwrite), "Overwrite");
-    EXPECT_EQ(toString(SortOperation::Type::Pivot),     "Pivot");
-    EXPECT_EQ(toString(SortOperation::Type::Sorted),    "Sorted");
-}

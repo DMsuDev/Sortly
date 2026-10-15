@@ -10,10 +10,21 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <ostream>
 #include <string>
 #include <vector>
 
 using namespace Sortly;
+
+// Lets gtest (and the test names CTest shows) print the algorithm instead of "4-byte object".
+namespace Sortly {
+void PrintTo(SortAlgorithmType type, std::ostream* os)
+{
+    std::string name{ SortAlgorithmFactory::toString(type) };
+    std::erase(name, ' ');
+    *os << name;
+}
+} // namespace Sortly
 
 namespace {
 

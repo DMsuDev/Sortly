@@ -12,6 +12,13 @@ add_library(SortlySorting STATIC
   src/SortSession.cpp
   src/Algorithms/BubbleSort.cpp
   src/Algorithms/CocktailSort.cpp
+  src/Algorithms/GeneratorSort.cpp
+  src/Algorithms/HeapSort.cpp
+  src/Algorithms/InsertionSort.cpp
+  src/Algorithms/MergeSort.cpp
+  src/Algorithms/QuickSort.cpp
+  src/Algorithms/SelectionSort.cpp
+  src/Algorithms/ShellSort.cpp
   src/Algorithms/SortAlgorithmFactory.cpp
   src/Data/DataSetBuilder.cpp
   src/Data/SeedProvider.cpp

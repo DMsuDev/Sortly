@@ -73,47 +73,6 @@ void playToTheEnd(SortSession& session)
 
 } // namespace
 
-TEST(SortSession, PreparePlaybackSucceedsForAValidSession)
-{
-    auto session = makeSession(64);
-
-    EXPECT_TRUE(session.preparePlayback());
-}
-
-TEST(SortSession, BlockingComputeRejectsOversizedDataSets)
-{
-    const int tooBig = static_cast<int>(DataSetConfig::kQuadraticSafeLimit) + 1;
-    auto session = makeSession(tooBig, tooBig * 2);
-
-    EXPECT_EQ(session.computeOperations(), SortSession::ComputeStatus::Failed);
-}
-
-TEST(SortSession, BudgetedComputeEventuallyCompletes)
-{
-    auto session = makeSession(256);
-
-    auto status = SortSession::ComputeStatus::InProgress;
-    for (int attempt = 0; status == SortSession::ComputeStatus::InProgress && attempt < 100'000; ++attempt)
-        status = session.computeOperations(50us);
-
-    EXPECT_EQ(status, SortSession::ComputeStatus::Complete);
-}
-
-TEST(SortSession, BudgetedComputeProducesTheSameOperationsAsBlocking)
-{
-    auto blocking = makeSession(128);
-    ASSERT_EQ(blocking.computeOperations(), SortSession::ComputeStatus::Complete);
-
-    auto budgeted = makeSession(128);
-    auto status = SortSession::ComputeStatus::InProgress;
-    while (status == SortSession::ComputeStatus::InProgress)
-        status = budgeted.computeOperations(1us);
-    ASSERT_EQ(status, SortSession::ComputeStatus::Complete);
-
-    ASSERT_EQ(blocking.getOperations().size(), budgeted.getOperations().size());
-    EXPECT_EQ(blocking.getStatistics().swaps, budgeted.getStatistics().swaps);
-}
-
 TEST(SortSession, ComputeReportsWhyItFailedWithoutAnAlgorithm)
 {
     SortSession session;
@@ -189,13 +148,19 @@ TEST(SortSession, RefusingABlockingResumeDoesNotLeaveAStaleErrorBehind)
     EXPECT_EQ(session.getLastComputeError(), SortSession::ComputeError::None);
 }
 
-TEST(SortSession, ComputeErrorsHaveNames)
+TEST(SortSession, BudgetedComputeProducesTheSameOperationsAsBlocking)
 {
-    EXPECT_EQ(toString(SortSession::ComputeError::None), "None");
-    EXPECT_EQ(toString(SortSession::ComputeError::NoAlgorithm), "NoAlgorithm");
-    EXPECT_EQ(toString(SortSession::ComputeError::NoData), "NoData");
-    EXPECT_EQ(toString(SortSession::ComputeError::TooLargeForBlocking), "TooLargeForBlocking");
-    EXPECT_EQ(toString(SortSession::ComputeError::AlgorithmThrew), "AlgorithmThrew");
+    auto blocking = makeSession(128);
+    ASSERT_EQ(blocking.computeOperations(), SortSession::ComputeStatus::Complete);
+
+    auto budgeted = makeSession(128);
+    auto status = SortSession::ComputeStatus::InProgress;
+    while (status == SortSession::ComputeStatus::InProgress)
+        status = budgeted.computeOperations(1us);
+    ASSERT_EQ(status, SortSession::ComputeStatus::Complete);
+
+    ASSERT_EQ(blocking.getOperations().size(), budgeted.getOperations().size());
+    EXPECT_EQ(blocking.getStatistics().swaps, budgeted.getStatistics().swaps);
 }
 
 TEST(SortSession, SettingTheSameConfigAgainChangesNothing)

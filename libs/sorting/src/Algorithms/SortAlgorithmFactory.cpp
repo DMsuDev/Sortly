@@ -5,6 +5,12 @@
 
 #include "BubbleSort.hpp"
 #include "CocktailSort.hpp"
+#include "HeapSort.hpp"
+#include "InsertionSort.hpp"
+#include "MergeSort.hpp"
+#include "QuickSort.hpp"
+#include "SelectionSort.hpp"
+#include "ShellSort.hpp"
 
 #include <vigil/vigil.h>
 
@@ -23,6 +29,12 @@ std::span<const AlgorithmInfo> SortAlgorithmFactory::all()
     static const AlgorithmInfo table[] = {
         { SortAlgorithmType::BubbleSort,   BubbleSort::kName,   &make<BubbleSort>   },
         { SortAlgorithmType::CocktailSort, CocktailSort::kName, &make<CocktailSort> },
+        { SortAlgorithmType::SelectionSort, SelectionSort::kName, &make<SelectionSort> },
+        { SortAlgorithmType::InsertionSort, InsertionSort::kName, &make<InsertionSort> },
+        { SortAlgorithmType::QuickSort,     QuickSort::kName,     &make<QuickSort>     },
+        { SortAlgorithmType::MergeSort,     MergeSort::kName,     &make<MergeSort>     },
+        { SortAlgorithmType::HeapSort,      HeapSort::kName,      &make<HeapSort>      },
+        { SortAlgorithmType::ShellSort,     ShellSort::kName,     &make<ShellSort>     },
     };
     return table;
 }
