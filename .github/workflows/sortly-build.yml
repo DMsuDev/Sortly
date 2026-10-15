@@ -4,6 +4,9 @@ on:
   push:
     branches: [master]
     paths:
+      - "apps/**"
+      - "libs/**"
+      - "third_party/**"
       - "src/**"
       - "include/**"
       - "cmake/**"
@@ -14,6 +17,9 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - "apps/**"
+      - "libs/**"
+      - "third_party/**"
       - "src/**"
       - "include/**"
       - "cmake/**"
