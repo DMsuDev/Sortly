@@ -38,7 +38,7 @@ uint32_t SeedProvider::seedFor(std::size_t sessionIndex) const
         }
 
         case Mode::Random:
-            return static_cast<uint32_t>(std::random_device{}());
+            return std::random_device{}();
     }
 
     return m_BaseSeed;
