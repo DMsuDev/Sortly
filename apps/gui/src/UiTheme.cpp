@@ -4,21 +4,11 @@
 #include "Sortly/Gui/UiTheme.hpp"
 #include "Sortly/Gui/Icons.hpp"
 
+#include <foundry/platform/paths.h>
 #include <vigil/vigil.h>
 
-#include <cstdint>
 #include <filesystem>
 #include <string>
-
-#if defined(_WIN32)
-#include <Windows.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#endif
-
-#ifndef SORTLY_ASSETS_DIR
-#define SORTLY_ASSETS_DIR ""
-#endif
 
 namespace Sortly::ui {
 
@@ -26,85 +16,37 @@ namespace {
 
 namespace fs = std::filesystem;
 
-fs::path executableDir()
+// Bundled in assets/fonts and copied next to the executable by apps/gui/CMakeLists.txt.
+// Static TTF files only: variable fonts are not supported.
+constexpr const char* kRegularFont  = "Inter-Regular.ttf";
+constexpr const char* kSemiboldFont = "Inter-SemiBold.ttf";
+constexpr const char* kIconFont     = "lucide.ttf";
+
+// ImGui expects UTF-8 paths. On Windows path::string() uses the ANSI code page,
+// which breaks as soon as the install path has an accented character.
+std::string toUtf8(const fs::path& path)
 {
-    std::error_code ec;
-#if defined(_WIN32)
-    wchar_t buffer[MAX_PATH] = {};
-    const DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
-    if (len > 0 && len < MAX_PATH)
-        return fs::path(buffer).parent_path();
-#elif defined(__APPLE__)
-    char buffer[4096] = {};
-    std::uint32_t size = sizeof(buffer);
-    if (_NSGetExecutablePath(buffer, &size) == 0)
-        return fs::weakly_canonical(fs::path(buffer), ec).parent_path();
-#else
-    const fs::path exe = fs::read_symlink("/proc/self/exe", ec);
-    if (!ec)
-        return exe.parent_path();
-#endif
-    return {};
+    const auto u8 = path.u8string();
+    return std::string(reinterpret_cast<const char*>(u8.data()), u8.size());
 }
 
-// Looks for the Lucide font next to the executable (post-build copy), in the working
-// directory and finally in the source tree.
-std::string findIconFont()
+// Looks for a bundled font next to the executable, then in the working directory.
+// Returns an empty string when it is in neither place.
+std::string findFontFile(const char* name)
 {
-    const fs::path candidates[] = {
-        executableDir() / "assets" / "fonts" / "lucide.ttf",
-        fs::path("assets") / "fonts" / "lucide.ttf",
-        fs::path(SORTLY_ASSETS_DIR) / "lucide.ttf",
+    std::error_code ec;
+    const fs::path fontsDir = fs::path("assets") / "fonts";
+
+    const fs::path dirs[] = {
+        foundry::platform::executable_directory(ec) / fontsDir,
+        fontsDir,
     };
 
-    std::error_code ec;
-    for (const auto& path : candidates)
-        if (!path.empty() && fs::exists(path, ec))
-            return path.string();
-    return {};
-}
-
-struct FontPair
-{
-    const char* regular;
-    const char* semibold;
-};
-
-// First pair whose regular face exists wins; the semibold face falls back to the regular one.
-constexpr FontPair kSystemFonts[] = {
-#if defined(_WIN32)
-    { "C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/seguisb.ttf" },
-#elif defined(__APPLE__)
-    { "/System/Library/Fonts/Helvetica.ttc", "/System/Library/Fonts/Helvetica.ttc" },
-    { "/Library/Fonts/Arial.ttf",            "/Library/Fonts/Arial Bold.ttf"       },
-#else
-    { "/usr/share/fonts/noto/NotoSans-Regular.ttf",                 "/usr/share/fonts/noto/NotoSans-SemiBold.ttf" },
-    { "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",        "/usr/share/fonts/truetype/noto/NotoSans-SemiBold.ttf" },
-    { "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",              "/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf" },
-    { "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" },
-    { "/usr/share/fonts/TTF/DejaVuSans.ttf",                        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf" },
-    { "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" },
-#endif
-};
-
-struct TextFonts
-{
-    std::string regular;
-    std::string semibold;
-};
-
-TextFonts findTextFonts()
-{
-    std::error_code ec;
-    for (const auto& pair : kSystemFonts)
+    for (const auto& dir : dirs)
     {
-        if (!fs::exists(pair.regular, ec))
-            continue;
-
-        TextFonts fonts{ pair.regular, pair.regular };
-        if (fs::exists(pair.semibold, ec))
-            fonts.semibold = pair.semibold;
-        return fonts;
+        const fs::path candidate = dir / name;
+        if (fs::exists(candidate, ec))
+            return toUtf8(candidate);
     }
     return {};
 }
@@ -113,12 +55,8 @@ ImFont* addFont(const std::string& textFont, const std::string& iconFont, float 
 {
     ImGuiIO& io = ImGui::GetIO();
 
-    ImFont* font = nullptr;
-    if (!textFont.empty())
-    {
-        font = io.Fonts->AddFontFromFileTTF(textFont.c_str(), size);
-    }
-    else
+    ImFont* font = textFont.empty() ? nullptr : io.Fonts->AddFontFromFileTTF(textFont.c_str(), size);
+    if (!font)
     {
         ImFontConfig fallback;
         fallback.SizePixels = size;
@@ -127,6 +65,7 @@ ImFont* addFont(const std::string& textFont, const std::string& iconFont, float 
 
     if (!iconFont.empty())
     {
+        // The ranges must stay alive until the atlas is built.
         static ImVector<ImWchar> ranges;
         if (ranges.empty())
         {
@@ -170,19 +109,28 @@ void loadFonts(float scale)
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
 
-    const TextFonts text  = findTextFonts();
-    const std::string icons = findIconFont();
+    const std::string regular  = findFontFile(kRegularFont);
+    std::string       semibold = findFontFile(kSemiboldFont);
+    const std::string icons    = findFontFile(kIconFont);
 
-    if (text.regular.empty())
-        VIGIL_LOG_WARN("No system UI font found: falling back to the built-in bitmap font");
+    if (regular.empty())
+    {
+        VIGIL_LOG_WARN("{} not found in assets/fonts: falling back to the built-in bitmap font",
+                       kRegularFont);
+    }
+    else if (semibold.empty())
+    {
+        VIGIL_LOG_WARN("{} not found in assets/fonts: using the regular face instead", kSemiboldFont);
+        semibold = regular;
+    }
+
     if (icons.empty())
-        VIGIL_LOG_WARN("lucide.ttf not found: icons will be missing");
-
-    fonts::Body    = addFont(text.regular,  icons, dp(17.0f), 1.00f);
-    fonts::Label   = addFont(text.semibold, icons, dp(12.5f), 1.00f);
-    fonts::Heading = addFont(text.semibold, icons, dp(18.0f), 1.00f);
-    fonts::Title   = addFont(text.semibold, icons, dp(24.0f), 0.95f);
-    fonts::Value   = addFont(text.semibold, icons, dp(22.0f), 0.90f);
+        VIGIL_LOG_WARN("{} not found in assets/fonts: icons will be missing", kIconFont);
+    fonts::Body    = addFont(regular,  icons, dp(17.0f), 1.00f);
+    fonts::Label   = addFont(semibold, icons, dp(12.5f), 1.00f);
+    fonts::Heading = addFont(semibold, icons, dp(18.0f), 1.00f);
+    fonts::Title   = addFont(semibold, icons, dp(24.0f), 0.95f);
+    fonts::Value   = addFont(semibold, icons, dp(22.0f), 0.90f);
 
     io.FontDefault = fonts::Body;
 }
