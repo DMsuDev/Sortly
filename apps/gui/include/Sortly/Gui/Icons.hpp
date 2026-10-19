@@ -3,7 +3,7 @@
 
 #pragma once
 
-// Lucide icon font (third_party/imgui/lucide.ttf). Codepoints are in the Private Use Area;
+// Lucide icon font (assets/fonts/lucide.ttf). Codepoints are in the Private Use Area;
 // each constant is the UTF-8 encoding of one glyph so it can be concatenated into labels:
 //     ImGui::Button(ICON_PLAY " Play");
 // Add a glyph here AND to kIconCodepoints so the font atlas bakes it.
