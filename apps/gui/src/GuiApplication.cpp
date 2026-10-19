@@ -3,12 +3,16 @@
 
 #include "Sortly/Gui/GuiApplication.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
+
 #include "Panels/ControlsPanel.hpp"
 #include "Panels/SummaryPanel.hpp"
 #include "Panels/TopBarPanel.hpp"
 #include "Panels/VisualizationPanel.hpp"
 
 #include <imgui.h>
+
+#include <foundry/memory/scope_guard.h>
+#include <vigil/logging/log_system.h>
 
 #include <algorithm>
 #include <chrono>
@@ -17,16 +21,45 @@ namespace Sortly {
 
 namespace {
 
-// Dragging or resizing the window blocks the loop on some platforms; without a cap the
+constexpr int         kWindowWidth   = 1440;
+constexpr int         kWindowHeight  = 900;
+constexpr int         kMinWidth      = 1180;
+constexpr int         kMinHeight     = 720;
+constexpr const char* kWindowTitle   = "Sortly - Sorting Lab";
+constexpr const char* kWorkspaceName = "Sortly Workspace";
+
+// Dragging or resizing the window blocks the loop on some platforms. Without a cap,
 // playback would apply thousands of steps at once when it resumes.
 constexpr float kMaxFrameSeconds = 0.1f;
+
+// Gap between panels, in device-independent pixels.
+constexpr float kPanelGap = 14.0f;
+
+/// @brief Seconds elapsed between consecutive calls to tick(), capped at kMaxFrameSeconds.
+class FrameClock
+{
+public:
+    [[nodiscard]] float tick()
+    {
+        const auto  now     = std::chrono::steady_clock::now();
+        const float elapsed = std::chrono::duration<float>(now - m_Previous).count();
+        m_Previous = now;
+        return std::min(elapsed, kMaxFrameSeconds);
+    }
+
+    /// @brief Forgets the time spent paused, so the next tick() starts from zero.
+    void reset() { m_Previous = std::chrono::steady_clock::now(); }
+
+private:
+    std::chrono::steady_clock::time_point m_Previous = std::chrono::steady_clock::now();
+};
 
 } // namespace
 
 GuiApplication::GuiApplication()
     : Application({ .name = "Sortly", .verboseLogging = true })
     , m_Run([this](SortAlgorithmType type, const RunSettings& settings) {
-          // Every algorithm of a run gets the same seed, hence the same data to sort.
+          // Every algorithm in a run gets the same seed, so they all sort the same data.
           sessions().setSeedProvider(SeedProvider::globalSeed(settings.seed));
 
           DataSetConfig config;
@@ -37,38 +70,56 @@ GuiApplication::GuiApplication()
 
 bool GuiApplication::onInit()
 {
-    if (!m_Window.create(1440, 900, "Sortly - Sorting Lab", 1180, 720))
+    // Any failure below (return false or exception) releases what was built.
+    FOUNDRY_SCOPE_EXIT_NAMED(rollback) { teardown(); };
+
+    try
+    {
+        // The UI layer needs the window's GL context current, so the order is fixed.
+        if (!m_Window.create(kWindowWidth, kWindowHeight, kWindowTitle, kMinWidth, kMinHeight) ||
+            !m_Gui.init(m_Window.handle(), m_Window.uiScale()))
+            return false;
+
+        // Adding a screen section = one new IPanel (with its dock) + one line here.
+        m_Panels.push_back(std::make_unique<TopBarPanel>());
+        m_Panels.push_back(std::make_unique<ControlsPanel>());
+        m_Panels.push_back(std::make_unique<VisualizationPanel>());
+        m_Panels.push_back(std::make_unique<SummaryPanel>());
+
+        // Build the default selection up front so the workspace is never empty.
+        m_Run.requestStart(m_Settings);
+
+        rollback.dismiss();
+        return true;
+    }
+    catch (...)
+    {
+        VIGIL_LOG_ERROR("Initialization of the GUI application failed");
         return false;
-
-    // Adding a screen section = one new IPanel (with its dock) + one line here.
-    m_Panels.push_back(std::make_unique<TopBarPanel>());
-    m_Panels.push_back(std::make_unique<ControlsPanel>());
-    m_Panels.push_back(std::make_unique<VisualizationPanel>());
-    m_Panels.push_back(std::make_unique<SummaryPanel>());
-
-    // Start with the default selection already built so the workspace is never empty.
-    m_Run.requestStart(m_Settings);
-    return true;
+    }
 }
 
 int GuiApplication::onRun()
 {
-    auto previous = std::chrono::steady_clock::now();
+    FrameClock clock;
 
     while (!m_Window.shouldClose())
     {
         m_Window.pollEvents();
 
-        const auto now = std::chrono::steady_clock::now();
-        const float deltaTime = std::min(std::chrono::duration<float>(now - previous).count(), kMaxFrameSeconds);
-        previous = now;
+        // A minimized window has a 0x0 framebuffer and may stop waiting for vsync.
+        // Sleep until something happens instead of spinning, and pause playback.
+        if (m_Window.isMinimized())
+        {
+            m_Window.waitEvents();
+            clock.reset();
+            continue;
+        }
 
         m_Run.setDelayMs(m_Settings.stepDelayMs());
-        m_Run.update(deltaTime);
+        m_Run.update(clock.tick());
 
-        m_Window.beginFrame();
-        drawUi();
-        m_Window.endFrame();
+        renderFrame();
     }
 
     return 0;
@@ -76,8 +127,28 @@ int GuiApplication::onRun()
 
 void GuiApplication::onShutdown()
 {
+    teardown();
+}
+
+void GuiApplication::teardown() noexcept
+{
+    // Newest first. Every step is safe to repeat, so this can run from
+    // a failed onInit() and again from onShutdown().
     m_Panels.clear();
+    m_Gui.shutdown();
     m_Window.destroy();
+}
+
+void GuiApplication::renderFrame()
+{
+    const ImVec4& clear = ui::colors::Clear;
+    m_Window.clear(clear.x, clear.y, clear.z, clear.w);
+
+    m_Gui.beginFrame();
+    drawUi();
+    m_Gui.endFrame();
+
+    m_Window.swapBuffers();
 }
 
 void GuiApplication::drawUi()
@@ -87,21 +158,30 @@ void GuiApplication::drawUi()
     ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::Begin("Sortly Workspace", nullptr,
+    ImGui::Begin(kWorkspaceName, nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    // Layout lives here: Top panels get a full-width row, every other panel is placed
-    // next to the previous one on the row below. Fill panels take what the fixed-width
-    // Left/Right panels leave over.
-    const float gap = ui::dp(14.0f);
-    float reserved  = 0.0f;
+    UiContext ctx{ m_Settings, m_Run };
+    layoutPanels(ctx);
+
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
+void GuiApplication::layoutPanels(UiContext& ctx)
+{
+    // Top panels take a full-width row. Other panels sit side by side on the
+    // row below. Fill panels take whatever the fixed-width Right panels leave over.
+    const float gap = ui::dp(kPanelGap);
+
+    float reservedRight = 0.0f;
     for (const auto& panel : m_Panels)
         if (panel->dock() == PanelDock::Right)
-            reserved += gap + panel->width();
+            reservedRight += gap + panel->width();
 
-    UiContext ctx{ m_Settings, m_Run };
     bool rowStarted = false;
+
     for (auto& panel : m_Panels)
     {
         if (panel->dock() == PanelDock::Top)
@@ -112,16 +192,14 @@ void GuiApplication::drawUi()
             continue;
         }
 
-        ctx.width = panel->dock() == PanelDock::Fill ? -reserved : panel->width();
+        ctx.width = panel->dock() == PanelDock::Fill ? -reservedRight : panel->width();
 
         if (rowStarted)
             ImGui::SameLine(0.0f, gap);
+
         panel->draw(ctx);
         rowStarted = true;
     }
-
-    ImGui::End();
-    ImGui::PopStyleVar(2);
 }
 
 } // namespace Sortly

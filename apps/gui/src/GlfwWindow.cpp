@@ -2,22 +2,59 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/GlfwWindow.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
 
 #include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <implot.h>
 
 #include <vigil/vigil.h>
+#include <foundry/memory/scope_guard.h>
 
 #include <algorithm>
+#include <string_view>
 
 namespace Sortly {
 
+namespace {
+
+constexpr int kAreaPercent = 90; // The first window uses at most 90% of the work area.
+
+// On macOS the backend already handles the framebuffer scale and window
+// coordinates are in points; elsewhere the UI and size limits must be scaled.
+float queryUiScale([[maybe_unused]] GLFWwindow* window)
+{
+#if defined(__APPLE__)
+    return 1.0f;
+#else
+    float scaleX = 1.0f, scaleY = 1.0f;
+    glfwGetWindowContentScale(window, &scaleX, &scaleY);
+    return scaleX;
+#endif
+}
+
+int scaled(int value, float scale)
+{
+    return static_cast<int>(static_cast<float>(value) * scale);
+}
+
+} // namespace
+
+void GlfwWindow::Deleter::operator()(GLFWwindow* window) const noexcept
+{
+    glfwDestroyWindow(window);
+}
+
 bool GlfwWindow::create(int width, int height, const char* title, int minWidth, int minHeight)
 {
+    destroy(); // Makes a repeated create() safe.
+    FOUNDRY_SCOPE_EXIT_NAMED(destroyGuard) { destroy(); };
+
+    glfwSetErrorCallback([](int error, const char* desc) {
+        // Ignore Wayland error spam that occurs when querying or moving windows.
+        if (error == GLFW_PLATFORM_ERROR && std::strstr(desc, "Wayland"))
+            return;
+
+        VIGIL_LOG_WARN("GLFW error 0x{:05X}: {}", error, desc);
+    });
+
     if (!glfwInit())
     {
         VIGIL_LOG_ERROR("GLFW initialization failed");
@@ -31,96 +68,82 @@ bool GlfwWindow::create(int width, int height, const char* title, int minWidth, 
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
 
-    // Keep the first window inside the usable desktop area, whatever the display scale.
-    int areaW = 0, areaH = 0;
-    if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
+    // Keeps the first window inside the usable desktop area, whatever the display scale.
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (monitor != nullptr)
     {
-        int areaX = 0, areaY = 0;
-        glfwGetMonitorWorkarea(monitor, &areaX, &areaY, &areaW, &areaH);
+        int x = 0, y = 0, areaW = 0, areaH = 0;
+        glfwGetMonitorWorkarea(monitor, &x, &y, &areaW, &areaH);
         if (areaW > 0 && areaH > 0)
         {
-            width  = std::min(width,  areaW * 9 / 10);
-            height = std::min(height, areaH * 9 / 10);
+            width  = std::min(width,  areaW * kAreaPercent / 100);
+            height = std::min(height, areaH * kAreaPercent / 100);
         }
     }
 
-    m_Handle = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    m_Handle.reset(glfwCreateWindow(width, height, title, nullptr, nullptr));
     if (!m_Handle)
     {
         VIGIL_LOG_ERROR("Window creation failed");
-        glfwTerminate();
         return false;
     }
 
-    float scale = 1.0f, scaleY = 1.0f;
-#if !defined(__APPLE__)
-    // On macOS the backend already handles the framebuffer scale; elsewhere we scale the UI.
-    glfwGetWindowContentScale(m_Handle, &scale, &scaleY);
-#endif
+    // Force window to be fully opaque by default
+    glfwSetWindowOpacity(m_Handle.get(), 1.0f);
 
-    glfwSetWindowSizeLimits(m_Handle, static_cast<int>(static_cast<float>(minWidth) * scale),
-                            static_cast<int>(static_cast<float>(minHeight) * scale),
+    m_UiScale = queryUiScale(m_Handle.get());
+
+    glfwSetWindowSizeLimits(m_Handle.get(),
+                            scaled(minWidth, m_UiScale), scaled(minHeight, m_UiScale),
                             GLFW_DONT_CARE, GLFW_DONT_CARE);
-    glfwMakeContextCurrent(m_Handle);
+    glfwMakeContextCurrent(m_Handle.get());
+
+    // Enable VSync.
     glfwSwapInterval(1);
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImPlot::CreateContext();
-
-    ui::loadFonts(scale);
-    ImGui_ImplGlfw_InitForOpenGL(m_Handle, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
-    ui::applyTheme();
-
-    m_Initialized = true;
+    destroyGuard.dismiss();
     return true;
 }
 
-void GlfwWindow::destroy()
+void GlfwWindow::destroy() noexcept
 {
-    if (m_Initialized)
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImPlot::DestroyContext();
-        ImGui::DestroyContext();
-        m_Initialized = false;
-    }
-
-    if (m_Handle)
-    {
-        glfwDestroyWindow(m_Handle);
-        glfwTerminate();
-        m_Handle = nullptr;
-    }
+    m_Handle.reset();
+    // No-op when the window was not created.
+    glfwTerminate();
 }
 
-bool GlfwWindow::shouldClose() const { return !m_Handle || glfwWindowShouldClose(m_Handle); }
-
-void GlfwWindow::pollEvents() { glfwPollEvents(); }
-
-void GlfwWindow::beginFrame()
+bool GlfwWindow::shouldClose() const noexcept
 {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    return !m_Handle || glfwWindowShouldClose(m_Handle.get());
 }
 
-void GlfwWindow::endFrame()
+void GlfwWindow::pollEvents() noexcept
 {
-    ImGui::Render();
+    glfwPollEvents();
+}
 
+void GlfwWindow::waitEvents() noexcept
+{
+    glfwWaitEvents();
+}
+
+bool GlfwWindow::isMinimized() const noexcept
+{
+    return m_Handle && glfwGetWindowAttrib(m_Handle.get(), GLFW_ICONIFIED) == GLFW_TRUE;
+}
+
+void GlfwWindow::clear(float r, float g, float b, float a) const
+{
     int width = 0, height = 0;
-    glfwGetFramebufferSize(m_Handle, &width, &height);
+    glfwGetFramebufferSize(m_Handle.get(), &width, &height);
     glViewport(0, 0, width, height);
-
-    const ImVec4& c = ui::colors::Clear;
-    glClearColor(c.x, c.y, c.z, c.w);
+    glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT);
+}
 
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glfwSwapBuffers(m_Handle);
+void GlfwWindow::swapBuffers() const noexcept
+{
+    glfwSwapBuffers(m_Handle.get());
 }
 
 } // namespace Sortly
