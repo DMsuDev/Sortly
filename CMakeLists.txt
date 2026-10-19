@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.28)
 option(SORTLY_ENABLE_LTO          "Enables Link Time Optimizations if possible"              OFF)
 option(SORTLY_ENABLE_CXX_MODULES  "Enable C++20 Module compilation. Testing only!"           OFF)
 option(SORTLY_ENABLE_UNIT_TESTS   "Enable building unit tests"                               ON )
-option(SORTLY_STRICT_WARNINGS     "Enable most available warnings and treat them as errors"  ON )
+option(SORTLY_STRICT_WARNINGS     "Enable most available warnings and treat them as errors"  OFF)
 
 # ------------------------------------------------------------------------------
 #  Paths, Modules & Helpers

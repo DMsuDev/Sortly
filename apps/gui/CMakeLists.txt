@@ -30,11 +30,6 @@ target_link_libraries(SortlyGuiLib
     glfw::glfw
 )
 
-# Lucide icon font: found next to the executable (copied below) or in the source tree.
-target_compile_definitions(SortlyGuiLib PRIVATE
-  SORTLY_ASSETS_DIR="${SORTLY_THIRD_PARTY_DIR}/imgui"
-)
-
 # The lib holds all the real code, so the compiler policy must apply to it as well.
 sortly_configure_compiler(SortlyGuiLib)
 sortly_configure_warnings(SortlyGuiLib)
@@ -48,11 +43,11 @@ set_target_properties(SortlyGuiLib PROPERTIES FOLDER "Sortly/Apps")
 add_executable(SortlyGui WIN32 src/main.cpp)
 target_link_libraries(SortlyGui PRIVATE Sortly::GuiLib)
 
+# Copy the whole assets folder (fonts + licenses) next to the executable.
 add_custom_command(TARGET SortlyGui POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:SortlyGui>/assets/fonts"
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          "${SORTLY_THIRD_PARTY_DIR}/imgui/lucide.ttf"
-          "$<TARGET_FILE_DIR:SortlyGui>/assets/fonts/lucide.ttf"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${SORTLY_BASE_FOLDER}/assets"
+          "$<TARGET_FILE_DIR:SortlyGui>/assets"
 )
 
 sortly_configure_compiler(SortlyGui)
