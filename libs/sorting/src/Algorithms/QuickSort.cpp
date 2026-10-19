@@ -21,6 +21,28 @@ StepGenerator QuickSort::run()
         const auto [low, high] = ranges.back();
         ranges.pop_back();
 
+        // Median of three: order low/mid/high, then move the median to `high`
+        // so it can be used as the pivot. Avoids the O(n^2) case on sorted input.
+        if (high - low >= 2)
+        {
+            const std::size_t mid = low + (high - low) / 2;
+
+            co_yield Step::compare(low, mid);
+            if (m_Data[mid] < m_Data[low])
+                co_yield Step::swap(low, mid);
+
+            co_yield Step::compare(low, high);
+            if (m_Data[high] < m_Data[low])
+                co_yield Step::swap(low, high);
+
+            co_yield Step::compare(mid, high);
+            if (m_Data[high] < m_Data[mid])
+                co_yield Step::swap(mid, high);
+
+            // Now data[low] <= data[mid] <= data[high]; the median sits at mid.
+            co_yield Step::swap(mid, high);
+        }
+
         co_yield Step::pivot(high);
         const int pivot = m_Data[high]; // Stays in place until the final swap below.
 
@@ -39,11 +61,12 @@ StepGenerator QuickSort::run()
         if (boundary != high)
             co_yield Step::swap(boundary, high);
 
+        // Right first, so the left range is popped first and the sort sweeps left to right.
         // Only ranges with at least two elements are worth another pass.
-        if (boundary > low + 1)
-            ranges.emplace_back(low, boundary - 1);
         if (boundary + 1 < high)
             ranges.emplace_back(boundary + 1, high);
+        if (boundary > low + 1)
+            ranges.emplace_back(low, boundary - 1);
     }
 }
 
