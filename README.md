@@ -44,3 +44,13 @@ Built with **GLFW**, **OpenGL**, **Dear ImGui** and **ImPlot**, it focuses on cl
 
 This project is licensed under the **MIT License**.<br>
 See the [LICENSE](LICENSE) file for more information.
+
+## Notices
+
+Sortly bundles the following fonts in [`assets/fonts/`](assets/fonts). The license text of each one is shipped next to the fonts, in [`assets/fonts/licenses/`](assets/fonts/licenses).
+
+| Component        | Files                                     | License                          | License file                                                                   |
+| ---------------- | ----------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
+| Inter            | `Inter-Regular.ttf`, `Inter-SemiBold.ttf` | SIL Open Font License 1.1        | [`Inter-license.txt`](assets/fonts/licenses/Inter-license.txt)                 |
+| JetBrains Mono   | `JetBrainsMono-Medium.ttf`                | SIL Open Font License 1.1        | [`JetBrainsMono-OFL.txt.txt`](assets/fonts/licenses/JetBrainsMono-OFL.txt.txt) |
+| Lucide icon font | `lucide.ttf`                              | ISC (portions MIT, from Feather) | [`Lucide-LICENSE.txt`](assets/fonts/licenses/Lucide-LICENSE.txt)               |
