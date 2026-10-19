@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Conventional Commits](https://www.conventionalcommits.org/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### 🚀 Features
+
+- **fonts**: Add new font files and update icon font path ([1bf8446](https://github.com/DMsuDev/Sortly/commit/1bf8446d0a88a56cde2c062211cfeb522cb8f4ef))
+
+### 🐛 Bug Fixes
+
+- **seedProvider**: Correct return type for random seed generation ([44f9d01](https://github.com/DMsuDev/Sortly/commit/44f9d015863c523c5fc8c950115dd9706cdea50e))
+
+### 🚜 Refactor
+
+- **release**: Disable unit tests in build ([c5ddb7c](https://github.com/DMsuDev/Sortly/commit/c5ddb7c66a0b350ca7502d13499ffdaa1a8b5eec))
+
+- **gui**: Use foundry paths and bundled Inter fonts ([6c493a3](https://github.com/DMsuDev/Sortly/commit/6c493a31557fd9241f11101659ae480650d97d0a))
+
+- **gui**: Split ImGui setup out of GlfwWindow into ImGuiLayer ([b21c366](https://github.com/DMsuDev/Sortly/commit/b21c366e4d2634a1a273a14fe9f736916d9696a1))
+
+- **gui**: Rename `GlfwWindow` to `Window` ([f6e8ced](https://github.com/DMsuDev/Sortly/commit/f6e8ced0f6421d8f76bf99d0fc395af380c680b9))
+
+- **gui**: Tidy Application interface and entry points ([c0d7f60](https://github.com/DMsuDev/Sortly/commit/c0d7f60e333a9b7dcbe3aa5a9145f36be0d775be))
+
+- **cmake**: Disable strict warnings and update asset copying for SortlyGui ([babe963](https://github.com/DMsuDev/Sortly/commit/babe963ce7eaa25bfe7012e7eaea0add424ecf2a))
+
+- **algorithms**: Improve median-of-three pivot selection in QuickSort ([bd45a91](https://github.com/DMsuDev/Sortly/commit/bd45a91ccbba78b0c306ebdb3a32029826a710a3))
+
 ## [0.1.0] - 2026-10-16
 
 ### 💥 Breaking Changes
