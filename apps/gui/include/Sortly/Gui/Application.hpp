@@ -18,9 +18,12 @@ struct ApplicationConfig
     std::string logFile        = "sortly.log";
 };
 
-/// @brief Base class for the desktop application. Run() performs the shared
-/// logging and crash-handler bootstrap, then drives the lifecycle:
-/// onInit() -> onRun() -> onShutdown().
+/// @brief Base class for the desktop application.
+///
+/// Run() performs the shared logging and crash-handler bootstrap, then drives
+/// the lifecycle: onInit() -> onRun() -> onShutdown()
+///
+/// @note onShutdown() is only called if onInit() returns true.
 class Application
 {
 public:
@@ -29,22 +32,24 @@ public:
 
     Application(const Application&)            = delete;
     Application& operator=(const Application&) = delete;
+    Application(Application&&)                 = delete;
+    Application& operator=(Application&&)      = delete;
 
     /// @return Process exit code.
     [[nodiscard]] int Run();
 
 protected:
     /// @brief Frontend-specific setup. Returning false aborts before onRun().
-    virtual bool onInit() { return true; }
+    [[nodiscard]] virtual bool onInit() { return true; }
 
     /// @brief Main body of the frontend. Its return value is the exit code.
-    virtual int onRun() = 0;
+    [[nodiscard]] virtual int onRun() = 0;
 
-    /// @brief Cleanup; only called if onInit() succeeded.
+    /// @brief Frontend-specific cleanup. Only called if onInit() succeeded.
     virtual void onShutdown() {}
 
-    [[nodiscard]] SessionManager&          sessions()       { return m_Sessions; }
-    [[nodiscard]] const ApplicationConfig& config()   const { return m_Config; }
+    [[nodiscard]] SessionManager&          sessions()       noexcept { return m_Sessions; }
+    [[nodiscard]] const ApplicationConfig& config()   const noexcept { return m_Config; }
 
 private:
     ApplicationConfig m_Config;

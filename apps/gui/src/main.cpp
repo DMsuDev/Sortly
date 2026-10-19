@@ -3,9 +3,13 @@
 
 #include "Sortly/Gui/GuiApplication.hpp"
 
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 namespace {
 
-int runSortly()
+[[nodiscard]] int runSortly()
 {
     Sortly::GuiApplication app;
     return app.Run();
@@ -19,11 +23,12 @@ int main()
 }
 
 #if defined(_WIN32)
-#include <Windows.h>
 
-// Entry point for the GUI subsystem (add_executable WIN32)
+// Entry point for the GUI subsystem (add_executable WIN32).
+// WinMain (not wWinMain) so it links with both MSVC and MinGW without -municode.
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     return runSortly();
 }
+
 #endif
