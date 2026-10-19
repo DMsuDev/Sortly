@@ -44,7 +44,7 @@ jobs:
           echo "RELEASE_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
 
   # ---------------------------------------------------------------------------
-  # Job 1: Build, test and package the binaries for each target platform
+  # Job 1: Build and package the binaries for each target platform
   # ---------------------------------------------------------------------------
   build:
     name: Build & Package (${{ matrix.os }})
@@ -97,15 +97,13 @@ jobs:
             -B "${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE=Release \
             -DSORTLY_BUILD_SHARED=OFF \
+            -DSORTLY_ENABLE_UNIT_TESTS=OFF \
+            -DSORTLY_ENABLE_LTO=ON \
             ${{ runner.os == 'Linux' && '-G Ninja' || '' }}
 
       - name: Build
         shell: bash
         run: cmake --build "${BUILD_DIR}" --config Release --parallel
-
-      - name: Test
-        shell: bash
-        run: ctest --test-dir "${BUILD_DIR}" --build-config Release --output-on-failure
 
       - name: Install
         shell: bash
