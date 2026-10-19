@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Sortly/Gui/Application.hpp"
-#include "Sortly/Gui/GlfwWindow.hpp"
+#include "Sortly/Gui/Window.hpp"
 #include "Sortly/Gui/ImGuiLayer.hpp"
 #include "Sortly/Gui/Panels/IPanel.hpp"
 #include "Sortly/Gui/RunController.hpp"
@@ -32,7 +32,7 @@ private:
     void layoutPanels(UiContext& ctx);
 
     // Members are destroyed in reverse order: panels, then the UI layer, then the window.
-    GlfwWindow    m_Window;
+    Window        m_Window;
     ImGuiLayer    m_Gui;
     RunSettings   m_Settings;
     RunController m_Run;

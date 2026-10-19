@@ -11,14 +11,14 @@ namespace Sortly {
 
 /// @brief Owns the GLFW library, one window and its OpenGL context.
 /// Knows nothing about ImGui.
-class GlfwWindow
+class Window
 {
 public:
-    GlfwWindow() = default;
-    ~GlfwWindow() { destroy(); }
+    Window() = default;
+    ~Window() { destroy(); }
 
-    GlfwWindow(const GlfwWindow&)            = delete;
-    GlfwWindow& operator=(const GlfwWindow&) = delete;
+    Window(const Window&)            = delete;
+    Window& operator=(const Window&) = delete;
 
     /// @return true when the window is ready and its GL context is current.
     /// On failure nothing stays alive.

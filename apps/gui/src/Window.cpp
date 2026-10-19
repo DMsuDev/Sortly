@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Gui/GlfwWindow.hpp"
+#include "Sortly/Gui/Window.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -37,12 +37,12 @@ int scaled(int value, float scale)
 
 } // namespace
 
-void GlfwWindow::Deleter::operator()(GLFWwindow* window) const noexcept
+void Window::Deleter::operator()(GLFWwindow* window) const noexcept
 {
     glfwDestroyWindow(window);
 }
 
-bool GlfwWindow::create(int width, int height, const char* title, int minWidth, int minHeight)
+bool Window::create(int width, int height, const char* title, int minWidth, int minHeight)
 {
     destroy(); // Makes a repeated create() safe.
     FOUNDRY_SCOPE_EXIT_NAMED(destroyGuard) { destroy(); };
@@ -105,34 +105,34 @@ bool GlfwWindow::create(int width, int height, const char* title, int minWidth, 
     return true;
 }
 
-void GlfwWindow::destroy() noexcept
+void Window::destroy() noexcept
 {
     m_Handle.reset();
     // No-op when the window was not created.
     glfwTerminate();
 }
 
-bool GlfwWindow::shouldClose() const noexcept
+bool Window::shouldClose() const noexcept
 {
     return !m_Handle || glfwWindowShouldClose(m_Handle.get());
 }
 
-void GlfwWindow::pollEvents() noexcept
+void Window::pollEvents() noexcept
 {
     glfwPollEvents();
 }
 
-void GlfwWindow::waitEvents() noexcept
+void Window::waitEvents() noexcept
 {
     glfwWaitEvents();
 }
 
-bool GlfwWindow::isMinimized() const noexcept
+bool Window::isMinimized() const noexcept
 {
     return m_Handle && glfwGetWindowAttrib(m_Handle.get(), GLFW_ICONIFIED) == GLFW_TRUE;
 }
 
-void GlfwWindow::clear(float r, float g, float b, float a) const
+void Window::clear(float r, float g, float b, float a) const
 {
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_Handle.get(), &width, &height);
@@ -141,7 +141,7 @@ void GlfwWindow::clear(float r, float g, float b, float a) const
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void GlfwWindow::swapBuffers() const noexcept
+void Window::swapBuffers() const noexcept
 {
     glfwSwapBuffers(m_Handle.get());
 }
