@@ -16,7 +16,7 @@
 <div align="center">
 
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=flat&logo=cplusplus&logoColor=white)
-[![License MIT](https://img.shields.io/github/license/DMsuDev/Sortly?style=flat&logo=open-source-initiative&label=License&logoColor=white)](https://github.com/DMsuDev/Sortly/blob/master/LICENSE)
+[![License MIT](https://img.shields.io/github/license/DMsuDev/Sortly?style=flat&logo=open-source-initiative&label=License&logoColor=white)](https://github.com/DMsuDev/Sortly/blob/main/LICENSE)
 [![Sortly Version](https://img.shields.io/github/v/release/DMsuDev/Sortly?style=flat&label=Version&color=blue)](https://github.com/DMsuDev/Sortly/releases/latest)
 [![Sortly Build](https://github.com/DMsuDev/Sortly/actions/workflows/sortly-build.yml/badge.svg?event=push)](https://github.com/DMsuDev/Sortly/actions/workflows/sortly-build.yml)
 
@@ -39,6 +39,34 @@ Built with **GLFW**, **OpenGL**, **Dear ImGui** and **ImPlot**, it focuses on cl
 <div align="center">
   <img width="760" alt="Sortly comparing four sorting algorithms" src="docs/images/preview.png">
 </div>
+
+## Algorithms
+
+| Algorithm      | Complexity  | Idea                                                          |
+| -------------- | ----------- | ------------------------------------------------------------- |
+| Bubble Sort    | O(n²)       | Swaps neighbors that are out of order, pass after pass.       |
+| Cocktail Sort  | O(n²)       | Bidirectional variation of Bubble Sort.                       |
+| Selection Sort | O(n²)       | Repeatedly moves the smallest remaining element into place.   |
+| Insertion Sort | O(n²)       | Grows a sorted prefix by sliding each element into its place. |
+| Quick Sort     | O(n log n)  | Partitions around a pivot (Lomuto) and sorts each side.       |
+| Merge Sort     | O(n log n)  | Bottom-up merging of sorted runs through an auxiliary buffer. |
+| Heap Sort      | O(n log n)  | Builds a max-heap, then moves its root to the end.            |
+| Shell Sort     | O(n log² n) | Insertion sort over shrinking gaps.                           |
+
+## How it works
+
+Sortly separates *computing* a sort from *showing* it:
+
+1. An algorithm runs once over a copy of the data and records every step as an operation (compare, swap, overwrite, pivot).
+2. The recorder builds each operation from the real buffer, so recorded values never disagree with what happened.
+3. A playback replays those operations over its own copy of the data, forward or backward, at any speed.
+
+## Contributing
+
+Issues and pull requests are welcome. If you plan a big change, please open an issue first.
+
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `refactor`, ...).
+- Install the [pre-commit](https://pre-commit.com) hooks with `pre-commit install --hook-type pre-commit --hook-type commit-msg`.
 
 ## License
 
