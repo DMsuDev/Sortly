@@ -7,11 +7,11 @@ on:
       - "apps/**"
       - "libs/**"
       - "third_party/**"
-      - "src/**"
-      - "include/**"
       - "cmake/**"
       - "CMakeLists.txt"
       - "CMakePresets.json"
+      - "VERSION"
+      - ".gitmodules"
       - ".github/workflows/sortly-build.yml"
 
   pull_request:
@@ -20,11 +20,11 @@ on:
       - "apps/**"
       - "libs/**"
       - "third_party/**"
-      - "src/**"
-      - "include/**"
       - "cmake/**"
       - "CMakeLists.txt"
       - "CMakePresets.json"
+      - "VERSION"
+      - ".gitmodules"
       - ".github/workflows/sortly-build.yml"
 
   workflow_dispatch:
@@ -34,21 +34,20 @@ permissions:
 
 concurrency:
   group: ci-build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Only PR runs are superseded; every push to main keeps its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BUILD_DIR: build
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Job 1: Build & Test - builds and tests the project for each OS and build type
-  # ---------------------------------------------------------------------------
   build_and_test:
     name: Build (${{ matrix.os }}, ${{ matrix.build_type }})
     timeout-minutes: 45
 
     strategy:
-      fail-fast: true
+      # Let every combination finish, so one failure doesn't hide the others.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Debug, Release]
@@ -80,20 +79,20 @@ jobs:
         run: |
           cmake \
             -S . \
-            -B ${{ env.BUILD_DIR }} \
+            -B "${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             ${{ runner.os == 'Linux' && '-G Ninja' || '' }}
 
       - name: Build
         shell: bash
-        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ matrix.build_type }} --parallel
+        run: cmake --build "${BUILD_DIR}" --config ${{ matrix.build_type }} --parallel
 
       - name: Test
         shell: bash
         run: |
           ctest \
-            --test-dir ${{ env.BUILD_DIR }} \
+            --test-dir "${BUILD_DIR}" \
             --build-config ${{ matrix.build_type }} \
             --output-on-failure \
-            --parallel $(nproc 2>/dev/null || echo 2) \
+            --parallel "$(nproc 2>/dev/null || echo 2)" \
             --timeout 120
