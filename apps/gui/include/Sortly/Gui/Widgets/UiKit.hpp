@@ -12,19 +12,92 @@ namespace Sortly::ui {
 
 enum class ButtonKind { Primary, Secondary };
 
+[[nodiscard]] inline ImU32 toU32(const ImVec4& color) { return ImGui::ColorConvertFloat4ToU32(color); }
+
+/// @brief Pushes a font for its lifetime. A null font pushes nothing.
+class ScopedFont
+{
+public:
+    explicit ScopedFont(ImFont* font) : m_Pushed(font != nullptr)
+    {
+        if (m_Pushed)
+            ImGui::PushFont(font);
+    }
+    ~ScopedFont()
+    {
+        if (m_Pushed)
+            ImGui::PopFont();
+    }
+
+    ScopedFont(const ScopedFont&)            = delete;
+    ScopedFont& operator=(const ScopedFont&) = delete;
+
+private:
+    bool m_Pushed;
+};
+
+/// @brief Pushes a style color for its lifetime; @p enabled = false makes it a no-op,
+/// so conditional colors need no matching `if` around the pop.
+class ScopedColor
+{
+public:
+    ScopedColor(ImGuiCol slot, const ImVec4& color, bool enabled = true) : m_Enabled(enabled)
+    {
+        if (m_Enabled)
+            ImGui::PushStyleColor(slot, color);
+    }
+    ~ScopedColor()
+    {
+        if (m_Enabled)
+            ImGui::PopStyleColor();
+    }
+
+    ScopedColor(const ScopedColor&)            = delete;
+    ScopedColor& operator=(const ScopedColor&) = delete;
+
+private:
+    bool m_Enabled;
+};
+
 /// @brief Thousands-separated integer, e.g. 1234567 -> "1,234,567".
 [[nodiscard]] std::string formatCount(std::uint64_t value);
 
 /// @brief Draws @p text horizontally centered in the remaining width of the current line.
 void centeredText(const char* text, const ImVec4& color, ImFont* font = nullptr);
 
+/// @brief Draws @p text flush with the right edge of the remaining width of the current line.
+void rightAlignedText(const char* text, const ImVec4& color);
+
 /// @brief Small caps caption with an accent icon: [icon] LABEL.
 void sectionLabel(const char* icon, const char* label);
+
+/// @brief Natural size of a button with @p label: text plus the current style's frame padding.
+/// Call it inside the same style scope the button will be drawn in. @p font defaults to the
+/// one iconButton() uses.
+[[nodiscard]] ImVec2 buttonSize(const char* label, ImFont* font = nullptr);
+
+/// @brief Height of a compact toolbar button: one line of the body font plus padding, so it
+/// follows the font instead of a hard-coded pixel count.
+[[nodiscard]] float compactButtonHeight();
 
 /// @brief Filled rounded button. Primary uses the accent color, Secondary a neutral surface.
 /// @param font Defaults to the heading font; pass a smaller one for compact layouts.
 bool iconButton(const char* label, const ImVec2& size, ButtonKind kind = ButtonKind::Secondary,
                 ImFont* font = nullptr);
+
+/// @brief Draws a glyph inside a square of side 2 * @p half centered on @p center.
+using GlyphDrawFn = void (*)(ImDrawList* drawList, const ImVec2& center, float half, ImU32 color);
+
+/// @brief Width a glyphButton with @p label needs; use it to size and align the button.
+[[nodiscard]] float glyphButtonWidth(const char* label);
+
+/// @brief Tinted pill button: [glyph] label, content centered. Reads as a labeled action,
+/// unlike the flat, icon-only buttons.
+/// @param id Unique within the ID stack, e.g. "##Fullscreen".
+bool glyphButton(const char* id, const char* label, GlyphDrawFn glyph, const ImVec4& tint, const ImVec2& size);
+
+/// @brief Thin vertical separator that occupies @p height on the current line (draws 60% of it).
+void verticalDivider(float height);
 
 /// @brief Width a pill with @p text will occupy (for right alignment).
 [[nodiscard]] float pillWidth(const char* text);

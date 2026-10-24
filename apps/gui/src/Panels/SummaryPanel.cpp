@@ -20,8 +20,6 @@ namespace Sortly {
 
 namespace {
 
-ImU32 toU32(const ImVec4& c) { return ImGui::ColorConvertFloat4ToU32(c); }
-
 std::string fullName(const Run& run) { return std::string(SortAlgorithmFactory::toString(run.type)); }
 
 // "Bubble Sort" -> "Bubble": column headers and chart labels are too narrow for the suffix.
@@ -66,7 +64,7 @@ void drawSummaryTable(std::span<const Run> runs)
     const int columns = static_cast<int>(runs.size()) + 1;
     const bool highlightBest = runs.size() > 1;
 
-    ImGui::PushFont(ui::fonts::Label);
+    const ui::ScopedFont font(ui::fonts::Label);
     if (ImGui::BeginTable("##Summary", columns,
                           ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg))
     {
@@ -118,7 +116,6 @@ void drawSummaryTable(std::span<const Run> runs)
 
         ImGui::EndTable();
     }
-    ImGui::PopFont();
 }
 
 void drawMetricCombo(int& selected)
@@ -145,10 +142,10 @@ void drawBarChart(std::span<const Run> runs, ui::Metric metric, float height)
     const float  width = ImGui::GetContentRegionAvail().x;
     ImDrawList*  dl    = ImGui::GetWindowDrawList();
 
-    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), toU32(ui::colors::withAlpha(ui::colors::Clear, 0.55f)),
+    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ui::toU32(ui::colors::withAlpha(ui::colors::Clear, 0.55f)),
                       ui::dp(8.0f));
 
-    ImGui::PushFont(ui::fonts::Label);
+    const ui::ScopedFont font(ui::fonts::Label);
     const float labelH = ImGui::GetTextLineHeight();
     const float padX   = ui::dp(10.0f);
     const float top    = pos.y + labelH + ui::dp(8.0f);
@@ -158,7 +155,7 @@ void drawBarChart(std::span<const Run> runs, ui::Metric metric, float height)
     for (int line = 0; line <= 3; ++line)
     {
         const float y = bottom - areaH * static_cast<float>(line) / 3.0f;
-        dl->AddLine(ImVec2(pos.x + padX, y), ImVec2(pos.x + width - padX, y), toU32(ImVec4(1, 1, 1, 0.06f)));
+        dl->AddLine(ImVec2(pos.x + padX, y), ImVec2(pos.x + width - padX, y), ui::toU32(ImVec4(1, 1, 1, 0.06f)));
     }
 
     double maxValue = 0.0;
@@ -176,7 +173,7 @@ void drawBarChart(std::span<const Run> runs, ui::Metric metric, float height)
 
         const std::string name = shortName(run);
         const float nameW = ImGui::CalcTextSize(name.c_str()).x;
-        dl->AddText(ImVec2(centerX - nameW * 0.5f, bottom + ui::dp(5.0f)), toU32(ui::colors::Muted), name.c_str());
+        dl->AddText(ImVec2(centerX - nameW * 0.5f, bottom + ui::dp(5.0f)), ui::toU32(ui::colors::Muted), name.c_str());
 
         if (!run.ready())
             continue;
@@ -186,16 +183,14 @@ void drawBarChart(std::span<const Run> runs, ui::Metric metric, float height)
         const float  barH  = maxValue > 0.0 ? std::max(ui::dp(2.0f), areaH * static_cast<float>(value / maxValue)) : ui::dp(2.0f);
         const ImVec2 barMin(centerX - barW * 0.5f, bottom - barH);
 
-        dl->AddRectFilled(barMin, ImVec2(barMin.x + barW, bottom), toU32(ui::colors::slot(i)), ui::dp(4.0f),
+        dl->AddRectFilled(barMin, ImVec2(barMin.x + barW, bottom), ui::toU32(ui::colors::slot(i)), ui::dp(4.0f),
                           ImDrawFlags_RoundCornersTop);
 
         const std::string text = ui::formatMetric(stats, metric, false);
         const float textW = ImGui::CalcTextSize(text.c_str()).x;
-        dl->AddText(ImVec2(centerX - textW * 0.5f, barMin.y - labelH - ui::dp(2.0f)), toU32(ui::colors::TextBright),
+        dl->AddText(ImVec2(centerX - textW * 0.5f, barMin.y - labelH - ui::dp(2.0f)), ui::toU32(ui::colors::TextBright),
                     text.c_str());
     }
-    ImGui::PopFont();
-
     ImGui::Dummy(ImVec2(width, height));
 }
 
@@ -261,30 +256,33 @@ void drawWinner(std::span<const Run> runs)
     {
         const Winner winner = findWinner(runs);
 
-        ImGui::PushFont(ui::fonts::Heading);
-        ImGui::TextColored(ui::colors::Warning, "%s", ICON_TROPHY);
-        ImGui::SameLine(0.0f, ui::dp(8.0f));
-        if (winner.tie)
-            ImGui::TextUnformatted("Tie for first place");
-        else
-            ImGui::TextColored(ui::colors::slot(winner.index), "%s", fullName(runs[winner.index]).c_str());
-        ImGui::PopFont();
+        {
+            const ui::ScopedFont font(ui::fonts::Heading);
+            ImGui::TextColored(ui::colors::Warning, "%s", ICON_TROPHY);
+            ImGui::SameLine(0.0f, ui::dp(8.0f));
+            if (winner.tie)
+                ImGui::TextUnformatted("Tie for first place");
+            else
+                ImGui::TextColored(ui::colors::slot(winner.index), "%s", fullName(runs[winner.index]).c_str());
+        }
 
-        if (!winner.tie)
-            ImGui::TextColored(ui::colors::Muted, "is the most efficient");
-        ImGui::PushFont(ui::fonts::Label);
-        ImGui::TextColored(ui::colors::TextDim, "Best in %zu of %zu metrics", winner.wins.size(), ui::kMetrics.size());
-        ImGui::PopFont();
+        if (!winner.tie) ImGui::TextColored(ui::colors::Muted, "is the most efficient");
+
+        {
+            const ui::ScopedFont font(ui::fonts::Label);
+            ImGui::TextColored(ui::colors::TextDim, "Best in %zu of %zu metrics", winner.wins.size(), ui::kMetrics.size());
+        }
 
         ImGui::Spacing();
-        ImGui::PushFont(ui::fonts::Label);
-        for (const ui::Metric metric : winner.wins)
         {
-            ImGui::TextColored(ui::colors::Success, "%s", ICON_CHECK);
-            ImGui::SameLine(0.0f, ui::dp(8.0f));
-            ImGui::TextColored(ui::colors::Muted, "%s", ui::metricWinLabel(metric));
+            const ui::ScopedFont font(ui::fonts::Label);
+            for (const ui::Metric metric : winner.wins)
+            {
+                ImGui::TextColored(ui::colors::Success, "%s", ICON_CHECK);
+                ImGui::SameLine(0.0f, ui::dp(8.0f));
+                ImGui::TextColored(ui::colors::Muted, "%s", ui::metricWinLabel(metric));
+            }
         }
-        ImGui::PopFont();
     }
     ImGui::PopTextWrapPos();
 

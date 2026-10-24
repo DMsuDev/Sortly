@@ -22,6 +22,11 @@ constexpr const char* kRegularFont  = "Inter-Regular.ttf";
 constexpr const char* kSemiboldFont = "Inter-SemiBold.ttf";
 constexpr const char* kIconFont     = "lucide.ttf";
 
+// Vertical nudge of the merged icons, as a fraction of the text size. It is tuned for the text
+// font: raise it if the icons sit too high next to the text, lower it if they sit too low.
+// (Switching fonts is the usual reason to touch it.)
+constexpr float kIconBaselineShift = 0.10f;
+
 // ImGui expects UTF-8 paths. On Windows path::string() uses the ANSI code page,
 // which breaks as soon as the install path has an accented character.
 std::string toUtf8(const fs::path& path)
@@ -80,7 +85,7 @@ ImFont* addFont(const std::string& textFont, const std::string& iconFont, float 
         cfg.MergeMode        = true;
         cfg.PixelSnapH       = true;
         cfg.GlyphMinAdvanceX = iconSize;
-        cfg.GlyphOffset.y    = (size - iconSize) * 0.5f + size * 0.10f;
+        cfg.GlyphOffset.y    = (size - iconSize) * 0.5f + size * kIconBaselineShift;
         io.Fonts->AddFontFromFileTTF(iconFont.c_str(), iconSize, &cfg, ranges.Data);
     }
 

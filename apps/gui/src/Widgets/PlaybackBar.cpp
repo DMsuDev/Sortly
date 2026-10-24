@@ -15,9 +15,8 @@ namespace {
 bool toolButton(const char* label, const char* tooltip, float width, bool enabled,
                 ButtonKind kind = ButtonKind::Secondary)
 {
-    const float toolHeight = dp(32.0f);
     ImGui::BeginDisabled(!enabled);
-    const bool pressed = iconButton(label, ImVec2(width, toolHeight), kind, fonts::Body);
+    const bool pressed = iconButton(label, ImVec2(width, compactButtonHeight()), kind, fonts::Body);
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("%s", tooltip);
