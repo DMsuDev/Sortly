@@ -137,8 +137,9 @@ void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size)
         if (ready)
         {
             const SortPlayback& playback = run.session->getPlayback();
-            highlight.sorted    = playback.isFinished();
-            highlight.operation = playback.getCurrentOperation();
+            highlight.sorted     = playback.isFinished();
+            highlight.operation  = playback.getCurrentOperation();
+            highlight.pivotIndex = playback.getPivotIndex();
         }
 
         const ArrayPlotStyle style{ color, plotW > dp(520.0f) && plotH > dp(240.0f) };

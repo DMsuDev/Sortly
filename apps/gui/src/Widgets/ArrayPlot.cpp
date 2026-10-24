@@ -42,6 +42,17 @@ void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlig
             ImPlot::PlotBars("Values", data.data(), static_cast<int>(data.size()),
                              0.78, 0.0, ImPlotSpec{ ImPlotProp_FillColor, base });
 
+            // The pivot stays painted for as long as the algorithm keeps it, not just on its own
+            // step. Drawn before the active bars, so a compare/swap on it still wins.
+            if (!highlight.sorted && highlight.pivotIndex >= 0 &&
+                static_cast<std::size_t>(highlight.pivotIndex) < data.size())
+            {
+                const int x = highlight.pivotIndex;
+                const int y = data[static_cast<std::size_t>(x)];
+                ImPlot::PlotBars("Pivot", &x, &y, 1, 0.78,
+                                 ImPlotSpec{ ImPlotProp_FillColor, operationColor(SortOperation::Type::Pivot) });
+            }
+
             if (const SortOperation* op = highlight.operation; op && !highlight.sorted)
             {
                 // Only the touched bars are repainted, with a light edge so they stand out on any base color.

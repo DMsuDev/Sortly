@@ -14,8 +14,9 @@ namespace Sortly::ui {
 /// @brief What the plot should emphasize on top of the plain bars.
 struct ArrayHighlight
 {
-    const SortOperation* operation = nullptr; // Next operation to be applied; its indices are tinted.
-    bool                 sorted    = false;   // Whole run finished: every bar is painted as done.
+    const SortOperation* operation  = nullptr; // Next operation to be applied; its indices are tinted.
+    int                  pivotIndex = -1;      // Bar kept marked as the pivot while its partition runs (-1: none).
+    bool                 sorted     = false;   // Whole run finished: every bar is painted as done.
 };
 
 struct ArrayPlotStyle
