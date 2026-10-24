@@ -19,7 +19,7 @@ namespace Sortly {
 /// class performs it through the SortRecorder, which keeps data, operations and statistics in sync.
 struct Step
 {
-    enum class Kind { Compare, Swap, Overwrite, Pivot };
+    enum class Kind { Compare, Swap, Overwrite, Pivot, ClearPivot };
 
     Kind        kind  = Kind::Compare;
     std::size_t a     = 0;
@@ -31,7 +31,12 @@ struct Step
     static Step compareAux(std::size_t i, std::size_t j) { return { Kind::Compare, i, j, 0, true }; }
     static Step swap(std::size_t i, std::size_t j)       { return { Kind::Swap, i, j, 0, false }; }
     static Step overwrite(std::size_t i, int newValue)   { return { Kind::Overwrite, i, 0, newValue, false }; }
+
+    /// Marks m_Data[i] as the pivot until the next pivot()/clearPivot() (or the end of the run).
     static Step pivot(std::size_t i)                     { return { Kind::Pivot, i, 0, 0, false }; }
+
+    /// Ends the current pivot mark. Yield it as soon as the pivot is done with.
+    static Step clearPivot()                             { return { Kind::ClearPivot, 0, 0, 0, false }; }
 };
 
 /// @brief Minimal move-only generator of Steps (std::generator is not available everywhere).

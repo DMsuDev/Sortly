@@ -32,7 +32,13 @@ public:
     /// @brief Overwrites buffer[index] with @p newValue, recording both the new and the previous value.
     [[nodiscard]] SortOperation overwrite(std::span<int> buffer, std::size_t index, int newValue);
 
-    [[nodiscard]] SortOperation pivot(std::size_t index, int value);
+    /// @brief Marks buffer[index] as the pivot, recording the value it holds. Does not modify the
+    /// buffer. The mark lasts until the next pivot()/clearPivot() or the end of the run.
+    [[nodiscard]] SortOperation pivot(std::span<const int> buffer, std::size_t index);
+
+    /// @brief Clears the pivot mark. Call it as soon as the pivot is done with (e.g. when its
+    /// partition ends), so the mark never points at an element that is no longer the pivot.
+    [[nodiscard]] SortOperation clearPivot();
 
     /// @brief Marks the end of the run. Every algorithm emits exactly one, as its last operation.
     [[nodiscard]] SortOperation sorted();

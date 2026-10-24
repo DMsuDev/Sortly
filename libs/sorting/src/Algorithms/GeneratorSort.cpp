@@ -27,10 +27,11 @@ std::optional<SortOperation> GeneratorSort::step(SortRecorder& recorder)
     const Step& s = m_Generator.value();
     switch (s.kind)
     {
-        case Step::Kind::Compare:   return recorder.compare(s.aux ? std::span<const int>(m_Aux) : std::span<const int>(m_Data), s.a, s.b);
-        case Step::Kind::Swap:      return recorder.swap(m_Data, s.a, s.b);
-        case Step::Kind::Overwrite: return recorder.overwrite(m_Data, s.a, s.value);
-        case Step::Kind::Pivot:     return recorder.pivot(s.a, m_Data[s.a]);
+        case Step::Kind::Compare:    return recorder.compare(s.aux ? std::span<const int>(m_Aux) : std::span<const int>(m_Data), s.a, s.b);
+        case Step::Kind::Swap:       return recorder.swap(m_Data, s.a, s.b);
+        case Step::Kind::Overwrite:  return recorder.overwrite(m_Data, s.a, s.value);
+        case Step::Kind::Pivot:      return recorder.pivot(m_Data, s.a);
+        case Step::Kind::ClearPivot: return recorder.clearPivot();
     }
     return std::nullopt;
 }
