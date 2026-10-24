@@ -35,6 +35,32 @@ protected:
     SortPlayback m_Playback;
 };
 
+// Five operations over {3, 1, 2}:  pivot(2), compare(0,2), swap(0,1), clearPivot, sorted.
+// The pivot mark must be set after the first one and gone after the fourth.
+class PivotPlaybackTest : public ::testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        std::vector<int> work = m_Initial;
+        SortStatistics statistics;
+        SortRecorder recorder(statistics);
+        m_Operations = {
+            recorder.pivot(work, 2),
+            recorder.compare(work, 0, 2),
+            recorder.swap(work, 0, 1),
+            recorder.clearPivot(),
+            recorder.sorted()
+        };
+
+        ASSERT_TRUE(m_Playback.load(m_Initial, m_Operations));
+    }
+
+    const std::vector<int> m_Initial{ 3, 1, 2 };
+    std::vector<SortOperation> m_Operations;
+    SortPlayback m_Playback;
+};
+
 } // namespace
 
 TEST_F(PlaybackTest, LoadLeavesThePlaybackStoppedOverTheInitialData)
@@ -188,7 +214,7 @@ TEST(SortPlayback, ARejectedLoadKeepsThePreviousOne)
 
 TEST(SortPlayback, LoadAcceptsOperationsThatNeverTouchTheData)
 {
-    // Compare/Pivot/Sorted carry indices for display only; they are not validated against the data.
+    // Compare/Sorted carry indices for display only; they are not validated against the data.
     const std::vector<SortOperation> operations{
         SortOperation{ .type = SortOperation::Type::Sorted }
     };
@@ -221,4 +247,124 @@ TEST(SortPlaybackUndo, OverwriteRestoresPreviousValue)
 
     ASSERT_TRUE(playback.stepBackward());
     EXPECT_EQ(playback.getVisualData(), (std::vector<int>{ 4, 5, 6 }));
+}
+
+// ------------------------------------------------------------------
+// Pivot mark
+// ------------------------------------------------------------------
+
+TEST_F(PivotPlaybackTest, NoPivotIsMarkedBeforeAnythingIsApplied)
+{
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+}
+
+TEST_F(PivotPlaybackTest, TheMarkStartsWhenItsOperationIsApplied)
+{
+    // The Pivot operation is the next one, but it has not run yet.
+    ASSERT_NE(m_Playback.getCurrentOperation(), nullptr);
+    ASSERT_EQ(m_Playback.getCurrentOperation()->type, SortOperation::Type::Pivot);
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+
+    ASSERT_TRUE(m_Playback.stepForward());
+
+    EXPECT_EQ(m_Playback.getPivotIndex(), 2);
+}
+
+// The point of the fix: the mark outlives the single step that created it.
+TEST_F(PivotPlaybackTest, TheMarkLastsUntilItIsCleared)
+{
+    ASSERT_TRUE(m_Playback.stepForward()); // pivot(2)
+    ASSERT_TRUE(m_Playback.stepForward()); // compare
+    EXPECT_EQ(m_Playback.getPivotIndex(), 2);
+
+    ASSERT_TRUE(m_Playback.stepForward()); // swap
+    EXPECT_EQ(m_Playback.getPivotIndex(), 2);
+
+    ASSERT_TRUE(m_Playback.stepForward()); // clearPivot
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+}
+
+TEST_F(PivotPlaybackTest, SteppingBackwardRestoresTheEarlierMarks)
+{
+    while (m_Playback.stepForward()) {}
+    ASSERT_EQ(m_Playback.getPivotIndex(), -1);
+
+    ASSERT_TRUE(m_Playback.stepBackward()); // undo sorted
+    ASSERT_TRUE(m_Playback.stepBackward()); // undo clearPivot
+    EXPECT_EQ(m_Playback.getPivotIndex(), 2);
+
+    ASSERT_TRUE(m_Playback.stepBackward()); // undo swap
+    ASSERT_TRUE(m_Playback.stepBackward()); // undo compare
+    EXPECT_EQ(m_Playback.getPivotIndex(), 2);
+
+    ASSERT_TRUE(m_Playback.stepBackward()); // undo pivot
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+}
+
+TEST_F(PivotPlaybackTest, StopAndClearDropTheMark)
+{
+    ASSERT_TRUE(m_Playback.stepForward());
+    ASSERT_EQ(m_Playback.getPivotIndex(), 2);
+
+    m_Playback.stop();
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+
+    ASSERT_TRUE(m_Playback.stepForward());
+    m_Playback.clear();
+    EXPECT_EQ(m_Playback.getPivotIndex(), -1);
+}
+
+TEST(SortPlayback, TheEndOfTheRunDropsAMarkNobodyCleared)
+{
+    const std::vector<int> initial{ 3, 1, 2 };
+    SortStatistics statistics;
+    SortRecorder recorder(statistics);
+    std::vector<int> work = initial;
+    const std::vector<SortOperation> operations{ recorder.pivot(work, 1), recorder.sorted() };
+
+    SortPlayback playback;
+    ASSERT_TRUE(playback.load(initial, operations));
+
+    ASSERT_TRUE(playback.stepForward());
+    EXPECT_EQ(playback.getPivotIndex(), 1);
+
+    ASSERT_TRUE(playback.stepForward());
+    EXPECT_TRUE(playback.isFinished());
+    EXPECT_EQ(playback.getPivotIndex(), -1);
+}
+
+TEST(SortPlayback, ANewPivotReplacesTheMarkWithoutClearingFirst)
+{
+    const std::vector<int> initial{ 3, 1, 2 };
+    SortStatistics statistics;
+    SortRecorder recorder(statistics);
+    std::vector<int> work = initial;
+    const std::vector<SortOperation> operations{ recorder.pivot(work, 0), recorder.pivot(work, 2), recorder.sorted() };
+
+    SortPlayback playback;
+    ASSERT_TRUE(playback.load(initial, operations));
+
+    ASSERT_TRUE(playback.stepForward());
+    EXPECT_EQ(playback.getPivotIndex(), 0);
+    ASSERT_TRUE(playback.stepForward());
+    EXPECT_EQ(playback.getPivotIndex(), 2);
+    ASSERT_TRUE(playback.stepBackward());
+    EXPECT_EQ(playback.getPivotIndex(), 0);
+}
+
+TEST(SortPlayback, LoadRejectsAPivotOutsideTheData)
+{
+    const std::vector<int> initial{ 1, 2, 3 };
+    std::vector<SortOperation> operations{
+        SortOperation{ .type = SortOperation::Type::Pivot, .indexA = 3, .valueA = 9 },
+        SortOperation{ .type = SortOperation::Type::Sorted }
+    };
+
+    SortPlayback playback;
+    EXPECT_FALSE(playback.load(initial, operations));
+    EXPECT_FALSE(playback.isLoaded());
+
+    // -1 is the "clear" form, and is always valid.
+    operations.front() = SortOperation{ .type = SortOperation::Type::Pivot };
+    EXPECT_TRUE(playback.load(initial, operations));
 }

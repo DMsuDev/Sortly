@@ -14,13 +14,13 @@ struct SortOperation
         Compare,   // Represents a comparison between two elements.
         Swap,      // Represents a swap of two elements.
         Overwrite, // Represents overwriting an element with a new value.
-        Pivot,     // A pivot element is selected (like QuickSort)
+        Pivot,     // Marks an element as the pivot (like QuickSort), or clears the mark (indexA == -1).
         Sorted     // The run is finished (indexA == -1), or one element reached its final position (indexA >= 0, reserved).
     };
 
     Type type = Type::Compare;
 
-    int indexA = -1; // Primary index (-1 for Sorted when it marks the end of the whole run).
+    int indexA = -1; // Primary index (-1 for Sorted when it marks the end of the whole run, and for Pivot when it clears the mark).
     int indexB = -1; // Secondary index (-1 if not applicable: Overwrite, Pivot, Sorted).
 
     // The meaning of valueA/valueB depends on `type` - there is no single rule for both:
@@ -31,7 +31,10 @@ struct SortOperation
     //                    valueB = the OLD value it replaced, captured by SortRecorder::overwrite()
     //                    itself (never by the algorithm). This is what lets SortPlayback undo an
     //                    Overwrite in O(1) - assign valueB back - instead of re-simulating the algorithm.
-    //   Pivot          : valueA = the pivot's value. valueB is unused.
+    //   Pivot          : valueA = the pivot's value, read from the buffer by SortRecorder::pivot().
+    //                    valueB is unused. The mark starts when the operation is applied and lasts
+    //                    until the next Pivot operation (indexA == -1 clears it) or the end of the
+    //                    run; SortPlayback::getPivotIndex() reports it in both play directions.
     //   Sorted         : both are unused.
     int valueA = 0;
     int valueB = 0;
