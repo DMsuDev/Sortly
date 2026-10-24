@@ -130,7 +130,92 @@ TEST_P(AlgorithmTest, StatisticsMatchRecordedOperations)
     EXPECT_EQ(recording.statistics.comparisons,    countOf(SortOperation::Type::Compare));
 }
 
+// A pivot mark never nests: each one is cleared before the next is set, it always points at
+// a real element, and the run does not finish with one still set.
+TEST_P(AlgorithmTest, PivotMarksNeverOverlap)
+{
+    for (const auto& input : test::standardInputs())
+    {
+        SCOPED_TRACE(::testing::PrintToString(input));
+
+        auto algorithm = SortAlgorithmFactory::create(GetParam());
+        const auto recording = test::record(*algorithm, input);
+
+        bool marked = false;
+        for (const SortOperation& op : recording.operations)
+        {
+            if (op.type != SortOperation::Type::Pivot)
+                continue;
+
+            if (op.indexA >= 0)
+            {
+                EXPECT_FALSE(marked) << "a pivot was set while another one was still marked";
+                EXPECT_LT(static_cast<std::size_t>(op.indexA), input.size());
+                marked = true;
+            }
+            else
+            {
+                EXPECT_TRUE(marked) << "clearPivot without a pivot";
+                marked = false;
+            }
+        }
+        EXPECT_FALSE(marked) << "the run ended with a pivot still marked";
+    }
+}
+
+// While the playback reports a pivot, that element must really hold the pivot's value:
+// the mark never drifts onto another element when the algorithm moves data around.
+TEST_P(AlgorithmTest, ThePivotMarkAlwaysPointsAtThePivotValue)
+{
+    for (const auto& input : test::standardInputs())
+    {
+        SCOPED_TRACE(::testing::PrintToString(input));
+
+        auto algorithm = SortAlgorithmFactory::create(GetParam());
+        const auto recording = test::record(*algorithm, input);
+
+        SortPlayback playback;
+        ASSERT_TRUE(playback.load(input, recording.operations));
+
+        int pivotValue = 0;
+        while (playback.stepForward())
+        {
+            const SortOperation& applied = recording.operations[playback.getCurrentOperationIndex() - 1];
+            if (applied.type == SortOperation::Type::Pivot && applied.indexA >= 0)
+                pivotValue = applied.valueA;
+
+            const int pivot = playback.getPivotIndex();
+            if (pivot >= 0)
+            {
+                EXPECT_EQ(playback.getVisualData()[static_cast<std::size_t>(pivot)], pivotValue);
+            }
+        }
+        EXPECT_EQ(playback.getPivotIndex(), -1);
+    }
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AllAlgorithms, AlgorithmTest,
     ::testing::ValuesIn(SortAlgorithmFactory::getAvailableAlgorithms()),
     paramName);
+
+TEST(QuickSort, MarksOnePivotPerPartitionAndReadsItFromTheData)
+{
+    auto algorithm = SortAlgorithmFactory::create(SortAlgorithmType::QuickSort);
+    ASSERT_NE(algorithm, nullptr);
+
+    const std::vector<int> input{ 9, 2, 7, 4, 5, 6, 3, 8, 1, 10, 0, -4 };
+    const auto recording = test::record(*algorithm, input);
+
+    const auto marks = std::ranges::count_if(recording.operations,
+        [](const SortOperation& op) { return op.type == SortOperation::Type::Pivot && op.indexA >= 0; });
+    const auto clears = std::ranges::count_if(recording.operations,
+        [](const SortOperation& op) { return op.type == SortOperation::Type::Pivot && op.indexA < 0; });
+
+    EXPECT_GT(marks, 0);
+    EXPECT_EQ(marks, clears);
+
+    // Every pivot read is counted on top of the comparisons' own reads.
+    EXPECT_EQ(recording.statistics.reads,
+              2 * recording.statistics.comparisons + 2 * recording.statistics.swaps + static_cast<std::uint64_t>(marks));
+}

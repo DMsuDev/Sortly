@@ -43,8 +43,10 @@ StepGenerator QuickSort::run()
             co_yield Step::swap(mid, high);
         }
 
+        // The mark stays on `high` for the whole partition: the pivot does not move until the
+        // final swap below.
         co_yield Step::pivot(high);
-        const int pivot = m_Data[high]; // Stays in place until the final swap below.
+        const int pivot = m_Data[high];
 
         std::size_t boundary = low; // Everything before it is smaller than the pivot.
         for (std::size_t j = low; j < high; ++j)
@@ -58,6 +60,8 @@ StepGenerator QuickSort::run()
             }
         }
 
+        // Drop the mark before the pivot moves, so it never points at another element.
+        co_yield Step::clearPivot();
         if (boundary != high)
             co_yield Step::swap(boundary, high);
 
