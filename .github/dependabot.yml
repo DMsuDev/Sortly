@@ -22,8 +22,9 @@ updates:
     pull-request-branch-name:
       separator: "/"
 
+    # "chore(deps)" commits are skipped by cliff.toml, so they stay out of the changelog.
     commit-message:
-      prefix: "ci"
+      prefix: "chore"
       include: "scope"
 
     groups:
@@ -36,3 +37,35 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  # =========================================================================
+  # Git submodules: Keep third_party (glfw, foundry, vigil) up-to-date
+  # =========================================================================
+  # Submodules are pinned to a commit, so they never update on their own.
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+
+    schedule:
+      interval: "monthly"
+
+    # Allow up to 3 opened pull requests for submodule versions.
+    open-pull-requests-limit: 3
+
+    # Custom branch name for pull requests to avoid conflicts with other Dependabot PRs.
+    pull-request-branch-name:
+      separator: "/"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    groups:
+      # Single PR for all submodules (less noise)
+      submodules:
+        patterns:
+          - "*"
+
+    # Specify labels for Dependabot pull requests that update submodules.
+    labels:
+      - "dependencies"
+      - "submodules"
