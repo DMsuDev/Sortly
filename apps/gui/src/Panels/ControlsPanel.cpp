@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <iterator>
 #include <string>
 
 namespace Sortly {
@@ -99,7 +98,7 @@ bool drawArraySettings(RunSettings& settings)
         changed = true;
 
     ImGui::Spacing();
-    if (ui::iconButton(ICON_SHUFFLE "  New array", ImVec2(-1.0f, ui::dp(32.0f)), ui::ButtonKind::Secondary, ui::fonts::Body))
+    if (ui::iconButton(ICON_SHUFFLE "  New array", ImVec2(-1.0f, ui::compactButtonHeight()), ui::ButtonKind::Secondary, ui::fonts::Body))
     {
         settings.reshuffle();
         changed = true;
@@ -126,62 +125,24 @@ void drawSpeed(RunSettings& settings)
     ImGui::PopFont();
 }
 
-/// @return True if the view changed.
-bool drawViewSelector(RunSettings& settings)
-{
-    ui::sectionLabel(ICON_GRID, "VIEW");
-    ImGui::Spacing();
-
-    struct Option
-    {
-        const char* label;
-        const char* tooltip;
-        ViewMode    mode;
-    };
-    static constexpr Option options[] = {
-        { ICON_SINGLE    "  Single",    "One algorithm, full size",     ViewMode::Single   },
-        { ICON_COLUMNS_2 "  Compare 2", "Two algorithms side by side",  ViewMode::Compare2 },
-        { ICON_COLUMNS_3 "  Compare 3", "Three algorithms at once",     ViewMode::Compare3 },
-        { ICON_GRID      "  Compare 4", "Four algorithms in a grid",    ViewMode::Compare4 },
-    };
-
-    const float gap   = ImGui::GetStyle().ItemSpacing.x;
-    const float width = (ImGui::GetContentRegionAvail().x - gap) * 0.5f;
-
-    bool changed = false;
-    for (std::size_t i = 0; i < std::size(options); ++i)
-    {
-        if (i % 2 != 0)
-            ImGui::SameLine();
-
-        const Option& option = options[i];
-        const bool active    = settings.view == option.mode;
-        const bool available = RunSettings::isViewAvailable(option.mode);
-
-        ImGui::BeginDisabled(!available);
-        if (ui::iconButton(option.label, ImVec2(width, ui::dp(32.0f)),
-                           active ? ui::ButtonKind::Primary : ui::ButtonKind::Secondary, ui::fonts::Body) && !active)
-        {
-            settings.setView(option.mode);
-            changed = true;
-        }
-        ImGui::EndDisabled();
-
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        {
-            if (available)
-                ImGui::SetTooltip("%s", option.tooltip);
-            else
-                ImGui::SetTooltip("Needs %zu algorithms; only %zu are implemented so far.",
-                                  slotCount(option.mode), SortAlgorithmFactory::all().size());
-        }
-    }
-    return changed;
-}
-
 } // namespace
 
-float ControlsPanel::width() const { return ui::dp(252.0f); }
+float ControlsPanel::width() const
+{
+    // The three playback buttons of one row must fit their labels (keep in sync with PlaybackBar).
+    const char* labels[] = { ICON_PLAY " Start", ICON_PAUSE " Pause", ICON_STOP " Stop" };
+
+    float widest = 0.0f;
+    {
+        const ui::ScopedFont font(ui::fonts::Body); // The font the playback buttons draw with.
+        for (const char* label : labels)
+            widest = std::max(widest, ImGui::CalcTextSize(label).x);
+    }
+
+    const float buttons = 3.0f * (widest + ui::dp(16.0f)) + 2.0f * ui::dp(8.0f); // frame padding + item spacing
+    const float chrome  = 2.0f * ui::dp(16.0f) + 2.0f;                          // window padding + border
+    return std::max(ui::dp(252.0f), buttons + chrome);
+}
 
 void ControlsPanel::draw(UiContext& ctx)
 {
@@ -202,8 +163,6 @@ void ControlsPanel::draw(UiContext& ctx)
     // The settings scroll; the playback controls stay pinned below them. The footer height is the
     // one measured on the previous frame, so the scrolling area never overlaps it.
     ImGui::BeginChild("##Settings", ImVec2(0.0f, -m_FooterHeight), ImGuiChildFlags_None);
-    changed |= drawViewSelector(settings);
-    sectionSeparator();
     changed |= drawAlgorithmList(settings);
     sectionSeparator();
     changed |= drawArraySettings(settings);

@@ -9,52 +9,90 @@ struct GLFWwindow;
 
 namespace Sortly {
 
-/// @brief Owns the GLFW library, one window and its OpenGL context.
-/// Knows nothing about ImGui.
+/// @brief Owns GLFW, one undecorated window and its OpenGL context. Knows nothing about ImGui.
+/// With no OS frame, it also provides what the frame gave: move, edge resize, minimize/maximize/fullscreen.
 class Window
 {
 public:
+    using Edges = unsigned; // Bit mask of the kEdge* values.
+    static constexpr Edges kEdgeNone   = 0;
+    static constexpr Edges kEdgeLeft   = 1;
+    static constexpr Edges kEdgeRight  = 2;
+    static constexpr Edges kEdgeTop    = 4;
+    static constexpr Edges kEdgeBottom = 8;
+
     Window() = default;
     ~Window() { destroy(); }
 
     Window(const Window&)            = delete;
     Window& operator=(const Window&) = delete;
 
-    /// @return true when the window is ready and its GL context is current.
-    /// On failure nothing stays alive.
+    /// @return true when the window is ready and its GL context is current. On failure nothing stays alive.
     [[nodiscard]] bool create(int width, int height, const char* title, int minWidth, int minHeight);
 
     /// @brief Destroys the window, then terminates GLFW. Safe to call repeatedly.
     void destroy() noexcept;
 
-    /// @return true when there is no window or the user asked to close it.
-    [[nodiscard]] bool shouldClose() const noexcept;
+    /// @brief Processes events and advances an active move/resize.
+    void pollEvents() noexcept;
+    void waitEvents() noexcept; // Use while minimized.
+
+    /// @return true when there is no window or a close was requested.
+    [[nodiscard]] bool isCloseRequested() const noexcept;
+    [[nodiscard]] bool isMinimized() const noexcept;
+    [[nodiscard]] bool isMaximized() const noexcept;
+    [[nodiscard]] bool isFullscreen() const noexcept;
+
+    void requestClose() noexcept;
+    void minimize() noexcept;
+    void toggleMaximize() noexcept;
+    void toggleFullscreen() noexcept;
+
+    /// @brief Starts moving the window with the mouse. Call on the click; ignored if a resize is active.
+    void beginDrag() noexcept;
+
+    /// @brief Border(s) being resized, or under the cursor. Used to pick the cursor shape.
+    [[nodiscard]] Edges activeEdges() const noexcept;
 
     [[nodiscard]] GLFWwindow* handle() const noexcept { return m_Handle.get(); }
     [[nodiscard]] float       uiScale() const noexcept { return m_UiScale; }
 
-    void pollEvents() noexcept;
-
-    /// @brief Sleeps until at least one event arrives. Use while the window is minimized.
-    void waitEvents() noexcept;
-
-    /// @return true while the window is iconified (its framebuffer is 0x0).
-    [[nodiscard]] bool isMinimized() const noexcept;
-
     /// @brief Sets the viewport to the framebuffer size and clears the color buffer.
     void clear(float r, float g, float b, float a) const;
-
     void swapBuffers() const noexcept;
 
 private:
-    /// @brief Tells unique_ptr how to free a GLFWwindow (it cannot be `delete`d).
     struct Deleter
     {
         void operator()(GLFWwindow* window) const noexcept;
     };
 
-    float m_UiScale = 1.0f;
+    struct Rect
+    {
+        int x = 0, y = 0, width = 0, height = 0;
+    };
+
+    enum class Drag { None, Move, Resize };
+
+    [[nodiscard]] Edges edgesUnderCursor() const noexcept;
+    void cursorOnScreen(double& x, double& y) const noexcept;
+    void begin(Drag drag, Edges edges) noexcept;
+    void updateInteraction() noexcept;
+
+    float m_UiScale   = 1.0f;
+    int   m_MinWidth  = 0;
+    int   m_MinHeight = 0;
     std::unique_ptr<GLFWwindow, Deleter> m_Handle;
+
+    Rect m_Windowed;                // Geometry to restore after fullscreen.
+    bool m_WasMaximized = false;
+
+    Drag   m_Drag        = Drag::None;
+    Edges  m_ResizeEdges = kEdgeNone;
+    Rect   m_Start;                 // Geometry when the move/resize began.
+    double m_AnchorX     = 0.0;     // Cursor position (screen) when it began.
+    double m_AnchorY     = 0.0;
+    bool   m_LeftDown    = false;
 };
 
 } // namespace Sortly

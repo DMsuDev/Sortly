@@ -35,6 +35,9 @@ constexpr float kMaxFrameSeconds = 0.1f;
 // Gap between panels, in device-independent pixels.
 constexpr float kPanelGap = 14.0f;
 
+// Inset from the window edge to detect resizing.
+constexpr float kEdgeInset = 8.0f;
+
 /// @brief Seconds elapsed between consecutive calls to tick(), capped at kMaxFrameSeconds.
 class FrameClock
 {
@@ -53,6 +56,22 @@ public:
 private:
     std::chrono::steady_clock::time_point m_Previous = std::chrono::steady_clock::now();
 };
+
+// The window has no OS frame, so the resize cursor has to be set by hand.
+void applyEdgeCursor(Window::Edges edges)
+{
+    if (edges == Window::kEdgeNone)
+        return;
+
+    const bool horizontal = (edges & (Window::kEdgeLeft | Window::kEdgeRight)) != 0;
+    const bool vertical   = (edges & (Window::kEdgeTop | Window::kEdgeBottom)) != 0;
+    // Top-left and bottom-right share a diagonal; the other two corners share the other one.
+    const bool nwse = ((edges & Window::kEdgeLeft) != 0) == ((edges & Window::kEdgeTop) != 0);
+
+    ImGui::SetMouseCursor(horizontal && vertical ? (nwse ? ImGuiMouseCursor_ResizeNWSE : ImGuiMouseCursor_ResizeNESW)
+                          : horizontal           ? ImGuiMouseCursor_ResizeEW
+                                                 : ImGuiMouseCursor_ResizeNS);
+}
 
 } // namespace
 
@@ -81,7 +100,7 @@ bool GuiApplication::onInit()
             return false;
 
         // Adding a screen section = one new IPanel (with its dock) + one line here.
-        m_Panels.push_back(std::make_unique<TopBarPanel>());
+        m_Panels.push_back(std::make_unique<TopBarPanel>(m_Window));
         m_Panels.push_back(std::make_unique<ControlsPanel>());
         m_Panels.push_back(std::make_unique<VisualizationPanel>());
         m_Panels.push_back(std::make_unique<SummaryPanel>());
@@ -103,7 +122,7 @@ int GuiApplication::onRun()
 {
     FrameClock clock;
 
-    while (!m_Window.shouldClose())
+    while (!m_Window.isCloseRequested())
     {
         m_Window.pollEvents();
 
@@ -156,11 +175,15 @@ void GuiApplication::drawUi()
     const auto& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(kEdgeInset, kEdgeInset));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::Begin(kWorkspaceName, nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    applyEdgeCursor(m_Window.activeEdges());
+    if (ImGui::IsKeyPressed(ImGuiKey_F11, false))
+        m_Window.toggleFullscreen();
 
     UiContext ctx{ m_Settings, m_Run };
     layoutPanels(ctx);

@@ -7,11 +7,20 @@
 
 namespace Sortly {
 
+class Window;
+
 class TopBarPanel final : public IPanel
 {
 public:
+    explicit TopBarPanel(Window& window) noexcept
+        : m_Window(window)
+    {}
+
     [[nodiscard]] PanelDock dock() const override { return PanelDock::Top; }
     void draw(UiContext& ctx) override;
+
+private:
+    Window& m_Window;
 };
 
 } // namespace Sortly
