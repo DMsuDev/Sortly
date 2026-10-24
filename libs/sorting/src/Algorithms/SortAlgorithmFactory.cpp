@@ -27,8 +27,8 @@ std::span<const AlgorithmInfo> SortAlgorithmFactory::all()
 {
     // Single source of truth: registering a new algorithm = one line here.
     static const AlgorithmInfo table[] = {
-        { SortAlgorithmType::BubbleSort,   BubbleSort::kName,   &make<BubbleSort>   },
-        { SortAlgorithmType::CocktailSort, CocktailSort::kName, &make<CocktailSort> },
+        { SortAlgorithmType::BubbleSort,    BubbleSort::kName,    &make<BubbleSort>    },
+        { SortAlgorithmType::CocktailSort,  CocktailSort::kName,  &make<CocktailSort>  },
         { SortAlgorithmType::SelectionSort, SelectionSort::kName, &make<SelectionSort> },
         { SortAlgorithmType::InsertionSort, InsertionSort::kName, &make<InsertionSort> },
         { SortAlgorithmType::QuickSort,     QuickSort::kName,     &make<QuickSort>     },
