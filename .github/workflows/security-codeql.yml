@@ -1,20 +1,46 @@
 name: CodeQL
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "libs/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/security-codeql.yml"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "libs/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/security-codeql.yml"
+
+  # Monthly, so new CodeQL queries also run on code that has not changed.
+  schedule:
+    - cron: "0 4 1 * *"
+
   workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Analyze - build the project so CodeQL can trace compiled C++ code
-  # ---------------------------------------------------------------------------
   analyze:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,18 +64,20 @@ jobs:
       - uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: cpp
-          # Manual build mode: we control exactly what gets compiled and
-          # analyzed, instead of relying on autobuild to guess our CMake setup.
+          # Manual build mode: we control exactly what gets compiled and analyzed.
           build-mode: manual
-
-          # Analyze only Sortly's production sources.
+          queries: security-extended
+          # Report only Sortly's own sources (third_party is still compiled, never reported).
           config: |
             paths:
-              - src
-              - include
+              - apps
+              - libs
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DSORTLY_ENABLE_UNIT_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
