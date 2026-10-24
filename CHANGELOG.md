@@ -4,15 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Conventional Commits](https://www.conventionalcommits.org/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-24
+
+### 💥 Breaking Changes
+
+- **sorting**: Read pivot value from the buffer and add clearPivot ([df68ead](https://github.com/DMsuDev/Sortly/commit/df68eada712078de6f67790c6aae131d1c2891ac))
 
 ### 🚀 Features
 
 - **fonts**: Add new font files and update icon font path ([1bf8446](https://github.com/DMsuDev/Sortly/commit/1bf8446d0a88a56cde2c062211cfeb522cb8f4ef))
 
+- **sorting**: Add SortPlayback::getPivotIndex ([35bcecb](https://github.com/DMsuDev/Sortly/commit/35bcecba3614b61f197f3ffc7ba1cd0e85fb4d16))
+
+- **gui**: Keep the pivot bar marked while its partition runs ([bd9642d](https://github.com/DMsuDev/Sortly/commit/bd9642dd12213a85c2b0f00d4f92119a17665d97))
+
+- **gui**: Replace the OS frame with a custom title bar ([f97d688](https://github.com/DMsuDev/Sortly/commit/f97d68876fdd67f360915117191e6b2252448a7f))
+
+  Adds move, edge resize, minimize/maximize/fullscreen (F11). The view selector moves from the side panel to the top bar.
+
 ### 🐛 Bug Fixes
 
 - **seedProvider**: Correct return type for random seed generation ([44f9d01](https://github.com/DMsuDev/Sortly/commit/44f9d015863c523c5fc8c950115dd9706cdea50e))
+
+- **workflow**: Update branch name from `master` to `main` in CI build ([1063efa](https://github.com/DMsuDev/Sortly/commit/1063efadbc21afc215a17ae254c4eb59562484e0))
+
+- **algorithms**: Clear the QuickSort pivot mark after each partition ([d8a5f11](https://github.com/DMsuDev/Sortly/commit/d8a5f11690f8d1591b35f0e2c4524cdcc6845b39))
+
+- **release**: Ship assets with the binary and validate the tag against VERSION ([c530be9](https://github.com/DMsuDev/Sortly/commit/c530be9a27ae041f31022a9197a27d4453fabd81))
+
+  The package copied Sortly instead of sortly and left out assets/, and passed an old SORTLY_BUILD_SHARED flag.
 
 ### 🚜 Refactor
 
@@ -29,6 +49,18 @@ The format is based on [Conventional Commits](https://www.conventionalcommits.or
 - **cmake**: Disable strict warnings and update asset copying for SortlyGui ([babe963](https://github.com/DMsuDev/Sortly/commit/babe963ce7eaa25bfe7012e7eaea0add424ecf2a))
 
 - **algorithms**: Improve median-of-three pivot selection in QuickSort ([bd45a91](https://github.com/DMsuDev/Sortly/commit/bd45a91ccbba78b0c306ebdb3a32029826a710a3))
+
+- **gui**: Add ScopedFont/ScopedColor and shared UiKit widgets ([b2ab064](https://github.com/DMsuDev/Sortly/commit/b2ab0643c2736aed5ae27ec72d33b44004277666))
+
+  Also adds glyphButton, verticalDivider and compactButtonHeight, and fixes formatCount's int-based loop.
+
+### 🔧 Maintenance
+
+- **build**: Fix stale path filters and keep every main run ([0c11a75](https://github.com/DMsuDev/Sortly/commit/0c11a75544944f181688e2268e1be4ff1fc647ed))
+
+- **codeql**: Analyze apps and libs, run on push, PR and monthly ([24713e6](https://github.com/DMsuDev/Sortly/commit/24713e6335a58db05b6dfa75043a2e57da3012e5))
+
+- **dependabot**: Track git submodules and use the chore(deps) prefix ([b4e95f9](https://github.com/DMsuDev/Sortly/commit/b4e95f9539da6631e04c67e70a04efd74c8b230e))
 
 ## [0.1.0] - 2026-10-16
 
