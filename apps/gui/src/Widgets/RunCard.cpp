@@ -180,8 +180,8 @@ void drawBody(const Run& run, const ImVec4& color)
     const float plotW = std::max(dp(kMinPlotWidth),  avail.x - dp(kStatsWidth) - gap);
     const float plotH = std::max(dp(kMinPlotHeight), avail.y - dp(kFooterHeight));
 
-    const ArrayPlotStyle style{ color, plotW > dp(kAxesMinWidth) && plotH > dp(kAxesMinHeight) };
-    drawArrayPlot("##Plot", run.session->getVisualData(), makeHighlight(run), style, ImVec2(plotW, plotH));
+    const ArrayPlotStyle style{ color };
+    drawArrayPlot("##Plot", run.session->getVisualData(), makeHighlight(run), style, layout.plot);
 
     ImGui::SameLine(0.0f, gap);
     drawStatsColumn(run, plotH);

@@ -19,14 +19,14 @@ struct ArrayHighlight
     const SortOperation* operation  = nullptr; // Next operation to be applied; its bars are tinted.
     bool                 sorted     = false;   // Whole run finished: every bar is painted as done.
     int                  pivotIndex = -1;      // Slot of the active pivot, or -1.
+    float                sweep      = 1.0f;    // Only used when `sorted`: fraction of bars (left to right) already painted as sorted.
     std::span<const int> target;               // Sorted values: a bar equal to target[slot] is in place.
     const BarMotion*     motion     = nullptr; // Animated bar positions; null = each bar sits on its slot.
 };
 
 struct ArrayPlotStyle
 {
-    ImVec4 color;        // Bar color of the bars already in place (until the run is finished).
-    bool   axes = false; // Index/value axes; small cards look better without them.
+    ImVec4 color; // Bar color of the bars already in place (until the run is finished).
 };
 
 /// @param id Unique within the current ImGui ID stack (several plots are on screen at once).

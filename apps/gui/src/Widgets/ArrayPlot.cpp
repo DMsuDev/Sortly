@@ -9,9 +9,10 @@
 #include <implot.h>
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <vector>
+#include <array>
+#include <cmath>
 
 namespace Sortly::ui {
 
@@ -20,10 +21,10 @@ namespace {
 constexpr double kBarWidth = 0.78;
 
 // Every bar is in exactly one state. The order is also the draw order.
-enum class BarState : std::size_t { Idle, Placed, Pivot, Active };
+enum class BarState : std::size_t { Idle, Placed, Pivot, Active, Sorted };
 
-constexpr std::size_t kStateCount = 4;
-constexpr std::array<const char*, kStateCount> kStateLabels = { "Idle", "Placed", "Pivot", "Active" };
+constexpr std::size_t kStateCount = 5;
+constexpr std::array<const char*, kStateCount> kStateLabels = { "Idle", "Placed", "Pivot", "Active", "Sorted" };
 
 // Bars of one state, in the column format ImPlot::PlotBars expects.
 struct BarBatch
@@ -54,11 +55,13 @@ BarBatches& cleanBatches()
     return op && (op->indexA == index || op->indexB == index);
 }
 
-// Priority: active > pivot > in place > idle.
-[[nodiscard]] BarState classify(std::size_t slot, std::span<const int> data, const ArrayHighlight& highlight)
+// Priority: sorted sweep > active > pivot > in place > idle.
+// Once the run is finished every bar is in place; the sweep decides which ones already turned green.
+[[nodiscard]] BarState classify(std::size_t slot, std::size_t swept, std::span<const int> data,
+                                const ArrayHighlight& highlight)
 {
     if (highlight.sorted)
-        return BarState::Placed;
+        return slot < swept ? BarState::Sorted : BarState::Placed;
     if (touchesSlot(highlight.operation, slot))
         return BarState::Active;
     if (highlight.pivotIndex == static_cast<int>(slot))
@@ -83,9 +86,10 @@ BarBatches& cleanBatches()
     switch (state)
     {
         case BarState::Idle:   return colors::withAlpha(colors::BarIdle, 0.9f);
-        case BarState::Placed: return colors::withAlpha(highlight.sorted ? colors::Success : style.color, 0.88f);
+        case BarState::Placed: return colors::withAlpha(style.color, 0.88f);
         case BarState::Pivot:  return operationColor(SortOperation::Type::Pivot);
         case BarState::Active: return operationColor(highlight.operation->type); // Only reached with an operation.
+        case BarState::Sorted: return colors::withAlpha(colors::Success, 0.88f);
     }
     return colors::Accent;
 }
@@ -95,9 +99,12 @@ void drawBars(std::span<const int> data, const ArrayHighlight& highlight, const 
     // A motion of another size belongs to a previous dataset: ignore it.
     const BarMotion* motion = (highlight.motion && highlight.motion->size() == data.size()) ? highlight.motion : nullptr;
 
+    const float fraction = std::clamp(highlight.sweep, 0.0f, 1.0f);
+    const auto  swept    = static_cast<std::size_t>(std::ceil(fraction * static_cast<float>(data.size())));
+
     BarBatches& batches = cleanBatches();
     for (std::size_t slot = 0; slot < data.size(); ++slot)
-        batches[static_cast<std::size_t>(classify(slot, data, highlight))].add(barAt(motion, data, slot));
+        batches[static_cast<std::size_t>(classify(slot, swept, data, highlight))].add(barAt(motion, data, slot));
 
     for (std::size_t i = 0; i < kStateCount; ++i)
     {
@@ -118,26 +125,26 @@ void drawBars(std::span<const int> data, const ArrayHighlight& highlight, const 
 void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlight& highlight,
                    const ArrayPlotStyle& style, const ImVec2& size)
 {
-    constexpr int kColorPushes = 5;
+    constexpr int   kColorPushes = 4;
+    constexpr int   kGuideLines  = 5;
     ImPlot::PushStyleColor(ImPlotCol_FrameBg,    ImVec4(0, 0, 0, 0));
-    ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.55f));
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.80f));
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, colors::Border);
-    ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.06f));
-    ImPlot::PushStyleColor(ImPlotCol_AxisText,   colors::Muted);
-    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, style.axes ? dp(14.0f, 12.0f) : dp(6.0f, 6.0f));
+    ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.07f));
+    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, dp(6.0f, 6.0f));
 
     if (ImPlot::BeginPlot(id, size, ImPlotFlags_CanvasOnly | ImPlotFlags_NoInputs))
     {
-        const ImPlotAxisFlags xFlags = style.axes ? ImPlotAxisFlags_NoGridLines : ImPlotAxisFlags_NoDecorations;
-        const ImPlotAxisFlags yFlags = (style.axes ? ImPlotAxisFlags_None : ImPlotAxisFlags_NoDecorations) |
-                                       ImPlotAxisFlags_AutoFit;
-        ImPlot::SetupAxes(style.axes ? "Index" : nullptr, style.axes ? "Value" : nullptr, xFlags, yFlags);
+        // No labels or ticks, but the Y grid stays as faint horizontal guides.
+        constexpr ImPlotAxisFlags kNoText = ImPlotAxisFlags_NoLabel | ImPlotAxisFlags_NoTickMarks |
+                                            ImPlotAxisFlags_NoTickLabels;
+        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, kNoText | ImPlotAxisFlags_AutoFit);
 
         if (!data.empty())
         {
-            const int maxValue = std::max(1, *std::max_element(data.begin(), data.end()));
-            ImPlot::SetupAxesLimits(-0.5, static_cast<double>(data.size()) - 0.5,
-                                    0.0, static_cast<double>(maxValue) * 1.1, ImPlotCond_Always);
+            const double top = std::max(1, *std::max_element(data.begin(), data.end())) * 1.1;
+            ImPlot::SetupAxesLimits(-0.5, static_cast<double>(data.size()) - 0.5, 0.0, top, ImPlotCond_Always);
+            ImPlot::SetupAxisTicks(ImAxis_Y1, 0.0, top, kGuideLines);
             drawBars(data, highlight, style);
         }
 

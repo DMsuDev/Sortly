@@ -143,6 +143,9 @@ void RunController::update(float deltaTime)
         SortPlayback& playback = run.session->getPlayback();
         playback.update(deltaTime);
         run.motion.update(playback, deltaTime, easeSeconds, m_Smooth);
+
+        // Stepping back, Stop or a restart leave Finished, which rewinds the sweep.
+        run.sweepSeconds = playback.isFinished() ? run.sweepSeconds + deltaTime : 0.0f;
     }
 }
 

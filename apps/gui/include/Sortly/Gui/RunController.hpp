@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 namespace Sortly {
 
@@ -27,6 +28,16 @@ struct Run
     std::string                  error;  // Non-empty when the run could not be created or computed.
     BarMotion                    motion; // Fresh per run, so no stale bar identity can survive a restart.
     std::vector<int>             target; // Sorted copy of the dataset (final state).
+
+    // Finish sweep: purely visual, it never touches the statistics.
+    static constexpr float kSweepSeconds = 0.9f; // Total time to paint every bar green, left to right.
+    float sweepSeconds = 0.0f; // Time since the playback finished; 0 while it has not.
+
+    /// @brief 0..1 fraction of the sweep already played.
+    [[nodiscard]] float sweepProgress() const { return std::clamp(sweepSeconds / kSweepSeconds, 0.0f, 1.0f); }
+
+    /// @brief True once the finished playback has also finished its sweep.
+    [[nodiscard]] bool sweepDone() const { return sweepSeconds >= kSweepSeconds; }
 
     /// @brief Timeline built and loaded: statistics are final and playback can be used.
     [[nodiscard]] bool ready() const
