@@ -112,4 +112,12 @@ void statCard(const char* icon, const char* label, const std::string& value,
 /// @brief Slim rounded progress bar; @p color defaults to the accent.
 void progressBar(float fraction, float height = 6.0f, const ImVec4* color = nullptr);
 
+/// @brief Radial glow in the top-left corner of the current window: a quarter disc that fades
+/// to transparent, clipped to the rounded corner. Draw it before the window's content.
+/// @param min       Top-left corner of the card, in screen space.
+/// @param radius    Distance at which the glow has fully faded.
+/// @param rounding  Corner radius of the card.
+/// @param peakAlpha Opacity at the corner itself.
+void cornerGlow(const ImVec2& min, float radius, float rounding, const ImVec4& color, float peakAlpha);
+
 } // namespace Sortly::ui

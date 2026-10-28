@@ -5,6 +5,7 @@
 #include "Sortly/Gui/UiTheme.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 
 namespace Sortly::ui {
@@ -22,6 +23,11 @@ constexpr float kGlyphPadX = 14.0f;
 
 // Padding added to one text line to get a compact button height.
 constexpr float kCompactPadY = 12.0f;
+
+// cornerGlow mesh resolution.
+constexpr int   kGlowRings    = 35; // 12 OPTIMAL VALUES
+constexpr int   kGlowSegments = 16; // 16 OPTIMAL VALUES
+constexpr float kQuarterTurn  = 1.5707964f;
 
 const ImVec4 kPrimary       { 0.18f, 0.74f, 0.65f, 1.0f };
 const ImVec4 kPrimaryHover  { 0.25f, 0.84f, 0.74f, 1.0f };
@@ -221,6 +227,56 @@ void progressBar(float fraction, float height, const ImVec4* color)
                           toU32(color ? *color : colors::Accent), rounding);
 
     ImGui::Dummy(ImVec2(width, height));
+}
+
+void cornerGlow(const ImVec2& min, float radius, float rounding, const ImVec4& color, float peakAlpha)
+{
+    constexpr int stride = kGlowSegments + 1;
+
+    ImDrawList*  dl = ImGui::GetWindowDrawList();
+    const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
+    const ImVec2 arc(min.x + rounding, min.y + rounding); // Center of the rounded corner's arc.
+
+    dl->PrimReserve(kGlowRings * kGlowSegments * 6, (kGlowRings + 1) * stride);
+    const int first = static_cast<int>(dl->_VtxCurrentIdx);
+
+    for (int ring = 0; ring <= kGlowRings; ++ring)
+    {
+        const float t    = static_cast<float>(ring) / static_cast<float>(kGlowRings);
+        const float rho  = radius * t;
+        const float fade = (1.0f - t) * (1.0f - t);
+        const ImU32 col  = toU32(colors::withAlpha(color, peakAlpha * fade));
+
+        for (int seg = 0; seg <= kGlowSegments; ++seg)
+        {
+            const float angle = kQuarterTurn * static_cast<float>(seg) / static_cast<float>(kGlowSegments);
+            ImVec2 p(min.x + rho * std::cos(angle), min.y + rho * std::sin(angle));
+
+            // Anything outside the rounded corner is projected back onto its arc.
+            if (p.x < arc.x && p.y < arc.y)
+            {
+                const float dx  = p.x - arc.x;
+                const float dy  = p.y - arc.y;
+                const float len = std::sqrt(dx * dx + dy * dy);
+                if (len > rounding)
+                    p = ImVec2(arc.x + dx * rounding / len, arc.y + dy * rounding / len);
+            }
+            dl->PrimWriteVtx(p, uv, col);
+        }
+    }
+
+    for (int ring = 0; ring < kGlowRings; ++ring)
+    {
+        for (int seg = 0; seg < kGlowSegments; ++seg)
+        {
+            const int a = first + ring * stride + seg;
+            const int b = a + 1;
+            const int c = a + stride + 1;
+            const int d = a + stride;
+            for (const int index : { a, b, c, a, c, d })
+                dl->PrimWriteIdx(static_cast<ImDrawIdx>(index));
+        }
+    }
 }
 
 } // namespace Sortly::ui
