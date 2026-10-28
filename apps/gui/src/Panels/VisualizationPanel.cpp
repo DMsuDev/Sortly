@@ -102,7 +102,7 @@ const std::vector<RowLayout>& candidateLayouts(std::size_t count)
 {
     static const std::vector<RowLayout> one   = { { 1 } };
     static const std::vector<RowLayout> two   = { { 1, 1 }, { 2 } };
-    static const std::vector<RowLayout> three = { { 1, 1, 1 }, { 2, 1 }, { 3 } };
+    static const std::vector<RowLayout> three = { { 2, 1 }, { 3 } };
     static const std::vector<RowLayout> four  = { { 2, 2 }, { 1, 1, 1, 1 } };
     switch (count)
     {
@@ -113,7 +113,8 @@ const std::vector<RowLayout>& candidateLayouts(std::size_t count)
     }
 }
 
-// Space a card spends outside its plot: statistics column, padding, header and footer.
+// Space a card spends outside its plot when the statistics sit beside it: statistics column,
+// padding, header and footer. Only used to rank the candidate layouts.
 constexpr float kCardExtraW = 150.0f;
 constexpr float kCardExtraH = 112.0f;
 constexpr float kPlotAspect = 1.7f;
@@ -161,7 +162,7 @@ void drawGrid(const RunController& run, const ImVec2& area)
     {
         const float cardW = (area.x - gapX * static_cast<float>(columns - 1)) / static_cast<float>(columns);
         // Never taller than a landscape plot needs, even when the area has room to spare.
-        const float cardH = std::min(cellH, (cardW - ui::dp(kCardExtraW)) / 1.35f + ui::dp(kCardExtraH));
+        const float cardH = std::min(cellH, ui::maxUsefulCardHeight(cardW));
 
         for (std::size_t column = 0; column < columns && slot < runs.size(); ++column, ++slot)
         {
@@ -171,6 +172,7 @@ void drawGrid(const RunController& run, const ImVec2& area)
         }
     }
 }
+
 } // namespace
 
 void VisualizationPanel::draw(UiContext& ctx)
