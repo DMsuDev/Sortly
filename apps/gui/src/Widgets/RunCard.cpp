@@ -11,11 +11,22 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <span>
 #include <string>
+#include <string_view>
 
 namespace Sortly::ui {
 
 namespace {
+
+// Layout, in design pixels (scaled with dp()).
+constexpr float kStatsWidth    = 112.0f;
+constexpr float kPlotGap       = 10.0f;
+constexpr float kFooterHeight  = 56.0f;
+constexpr float kMinPlotWidth  = 80.0f;
+constexpr float kMinPlotHeight = 60.0f;
+constexpr float kAxesMinWidth  = 520.0f; // Axes only when the plot is big enough to read them.
+constexpr float kAxesMinHeight = 240.0f;
 
 struct StateTag
 {
@@ -37,6 +48,12 @@ StateTag stateOf(const Run& run)
     return { "READY", colors::Muted };
 }
 
+// The statistics column is narrow, so the longest label is shortened.
+const char* shortLabel(Metric metric)
+{
+    return metric == Metric::ComputeTime ? "Time" : metricLabel(metric);
+}
+
 // Caption on the left, value pushed to the right edge.
 void drawStatRow(const char* label, const std::string& value)
 {
@@ -48,33 +65,16 @@ void drawStatRow(const char* label, const std::string& value)
     ImGui::TextColored(colors::TextBright, "%s", value.c_str());
 }
 
-struct CardStats
+// Text pushed to the right edge of the current line (no allocation: works on a view).
+void rightAlignedDim(std::string_view text)
 {
-    std::string comparisons = "-";
-    std::string swaps       = "-";
-    std::string reads       = "-";
-    std::string writes      = "-";
-    std::string time        = "-";
-    std::string complexity;
-};
+    const char* begin = text.data();
+    const char* end   = begin + text.size();
 
-CardStats collectStats(const Run& run)
-{
-    CardStats out;
-    if (!run.session)
-        return out;
-
-    out.complexity = std::string(run.session->getAlgorithmComplexity());
-    if (!run.ready())
-        return out;
-
-    const SortStatistics& stats = run.session->getStatistics();
-    out.comparisons = formatMetric(stats, Metric::Comparisons);
-    out.swaps       = formatMetric(stats, Metric::Swaps);
-    out.reads       = formatMetric(stats, Metric::Reads);
-    out.writes      = formatMetric(stats, Metric::Writes);
-    out.time        = formatMetric(stats, Metric::ComputeTime);
-    return out;
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(begin, end).x);
+    ImGui::PushStyleColor(ImGuiCol_Text, colors::TextDim);
+    ImGui::TextUnformatted(begin, end);
+    ImGui::PopStyleColor();
 }
 
 void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
@@ -83,9 +83,9 @@ void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
     const std::string title = std::to_string(slot + 1) + ". " + std::string(SortAlgorithmFactory::toString(run.type));
 
     ImGui::PushFont(fonts::Heading);
-    const float titleHeight = ImGui::GetTextLineHeight();
-    const float dot         = dp(10.0f);
-    const ImVec2 pos        = ImGui::GetCursorScreenPos();
+    const float  titleHeight = ImGui::GetTextLineHeight();
+    const float  dot         = dp(10.0f);
+    const ImVec2 pos         = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddRectFilled(
         ImVec2(pos.x, pos.y + (titleHeight - dot) * 0.5f), ImVec2(pos.x + dot, pos.y + (titleHeight + dot) * 0.5f),
         ImGui::ColorConvertFloat4ToU32(color), dp(2.0f));
@@ -95,6 +95,105 @@ void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
 
     ImGui::SameLine(ImGui::GetContentRegionMax().x - pillWidth(state.text));
     pill(state.text, state.color);
+}
+
+// What the plot emphasizes. Nothing is emphasized until the run has started, so a fresh
+// (Stopped) run shows every bar as idle instead of the first operation or chance matches.
+ArrayHighlight makeHighlight(const Run& run)
+{
+    ArrayHighlight highlight;
+    if (!run.ready())
+        return highlight;
+
+    const SortPlayback& playback = run.session->getPlayback();
+    highlight.motion = &run.motion;
+    highlight.sorted = playback.isFinished();
+
+    if (playback.isStopped())
+        return highlight;
+
+    highlight.operation  = playback.getCurrentOperation();
+    highlight.pivotIndex = playback.getPivotIndex();
+    highlight.target     = run.target;
+    return highlight;
+}
+
+void drawStatsColumn(const Run& run, float height)
+{
+    ImGui::BeginChild("##Stats", ImVec2(dp(kStatsWidth), height), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+    ImGui::PushFont(fonts::Label);
+    ImGui::TextColored(colors::TextDim, "STATISTICS");
+    ImGui::PopFont();
+    ImGui::Dummy(ImVec2(0.0f, dp(2.0f)));
+
+    const bool ready = run.ready();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, dp(6.0f, 5.0f));
+    for (const Metric metric : kMetrics)
+    {
+        // Rows that do not fit are dropped instead of making the card scroll.
+        if (ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() > height)
+            break;
+
+        drawStatRow(shortLabel(metric), ready ? formatMetric(run.session->getStatistics(), metric) : "-");
+    }
+    ImGui::PopStyleVar();
+
+    ImGui::EndChild();
+}
+
+// Progress bar plus "N% · done / total steps" on the left and the complexity on the right.
+void drawFooter(const Run& run, const ImVec4& color)
+{
+    const bool  ready    = run.ready();
+    const float progress = ready ? run.session->getPlayback().getProgress() : 0.0f;
+
+    ImGui::Spacing();
+    progressBar(progress, dp(6.0f), &color);
+
+    char caption[96];
+    if (ready)
+    {
+        const SortPlayback& playback = run.session->getPlayback();
+        std::snprintf(caption, sizeof(caption), "%.0f%%  \xC2\xB7  %s / %s steps", static_cast<double>(progress) * 100.0,
+                      formatCount(playback.getCurrentOperationIndex()).c_str(),
+                      formatCount(playback.getTotalOperations()).c_str());
+    }
+    else
+    {
+        std::snprintf(caption, sizeof(caption), "Building the operation timeline...");
+    }
+
+    ImGui::PushFont(fonts::Label);
+    ImGui::TextColored(colors::Muted, "%s", caption);
+    rightAlignedDim(run.session->getAlgorithmComplexity());
+    ImGui::PopFont();
+}
+
+void drawBody(const Run& run, const ImVec4& color)
+{
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const float  gap   = dp(kPlotGap);
+
+    const float plotW = std::max(dp(kMinPlotWidth),  avail.x - dp(kStatsWidth) - gap);
+    const float plotH = std::max(dp(kMinPlotHeight), avail.y - dp(kFooterHeight));
+
+    const ArrayPlotStyle style{ color, plotW > dp(kAxesMinWidth) && plotH > dp(kAxesMinHeight) };
+    drawArrayPlot("##Plot", run.session->getVisualData(), makeHighlight(run), style, ImVec2(plotW, plotH));
+
+    ImGui::SameLine(0.0f, gap);
+    drawStatsColumn(run, plotH);
+
+    drawFooter(run, color);
+}
+
+void drawError(const std::string& message)
+{
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
+    ImGui::TextColored(colors::Danger, "%s", message.c_str());
+    ImGui::PopTextWrapPos();
 }
 
 } // namespace
@@ -111,89 +210,16 @@ void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size)
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
 
+    // Soft accent glow in the top-left corner, drawn first so everything else sits on top.
+    cornerGlow(ImGui::GetWindowPos(), std::min(size.x, size.y) * 0.9f, ImGui::GetStyle().ChildRounding, color, 0.16f);
+
     drawHeader(slot, run, color);
     ImGui::Spacing();
 
     if (!run.error.empty())
-    {
-        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
-        ImGui::TextColored(colors::Danger, "%s", run.error.c_str());
-        ImGui::PopTextWrapPos();
-    }
+        drawError(run.error);
     else if (run.session)
-    {
-        const bool ready = run.ready();
-        const CardStats stats = collectStats(run);
-
-        const ImVec2 avail   = ImGui::GetContentRegionAvail();
-        const float  statsW  = dp(112.0f);
-        const float  gap     = dp(10.0f);
-        const float  footerH = dp(56.0f);
-
-        const float plotW = std::max(dp(80.0f), avail.x - statsW - gap);
-        const float plotH = std::max(dp(60.0f), avail.y - footerH);
-
-        ArrayHighlight highlight;
-        if (ready)
-        {
-            const SortPlayback& playback = run.session->getPlayback();
-            highlight.sorted     = playback.isFinished();
-            highlight.operation  = playback.getCurrentOperation();
-            highlight.pivotIndex = playback.getPivotIndex();
-        }
-
-        const ArrayPlotStyle style{ color, plotW > dp(520.0f) && plotH > dp(240.0f) };
-        drawArrayPlot("##Plot", run.session->getVisualData(), highlight, style, ImVec2(plotW, plotH));
-
-        ImGui::SameLine(0.0f, gap);
-        ImGui::BeginChild("##Stats", ImVec2(statsW, plotH), ImGuiChildFlags_None,
-                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-        ImGui::PushFont(fonts::Label);
-        ImGui::TextColored(colors::TextDim, "STATISTICS");
-        ImGui::PopFont();
-        ImGui::Dummy(ImVec2(0.0f, dp(2.0f)));
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, dp(6.0f, 5.0f));
-        const struct { const char* label; const std::string* value; } rows[] = {
-            { "Comparisons", &stats.comparisons }, { "Swaps", &stats.swaps }, { "Reads", &stats.reads },
-            { "Writes", &stats.writes }, { "Time", &stats.time },
-        };
-        for (const auto& row : rows)
-        {
-            // Rows that do not fit are dropped instead of making the card scroll.
-            if (ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() > plotH)
-                break;
-            drawStatRow(row.label, *row.value);
-        }
-        ImGui::PopStyleVar();
-        ImGui::EndChild();
-
-        ImGui::Spacing();
-        const float progress = ready ? run.session->getPlayback().getProgress() : 0.0f;
-        progressBar(progress, dp(6.0f), &color);
-
-        char left[96];
-        if (ready)
-        {
-            const SortPlayback& playback = run.session->getPlayback();
-            std::snprintf(left, sizeof(left), "%.0f%%  \xC2\xB7  %s / %s steps", static_cast<double>(progress) * 100.0,
-                          formatCount(playback.getCurrentOperationIndex()).c_str(),
-                          formatCount(playback.getTotalOperations()).c_str());
-        }
-        else
-        {
-            std::snprintf(left, sizeof(left), "Building the operation timeline...");
-        }
-
-        ImGui::PushFont(fonts::Label);
-        ImGui::TextColored(colors::Muted, "%s", left);
-        if (!stats.complexity.empty())
-        {
-            ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(stats.complexity.c_str()).x);
-            ImGui::TextColored(colors::TextDim, "%s", stats.complexity.c_str());
-        }
-        ImGui::PopFont();
-    }
+        drawBody(run, color);
 
     ImGui::EndChild();
     ImGui::PopStyleColor(2);
