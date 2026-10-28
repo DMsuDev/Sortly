@@ -42,12 +42,19 @@ struct RunSettings
     static constexpr float kMinSpeed = 0.25f;
     static constexpr float kMaxSpeed = 64.0f;
 
-    ViewMode view = ViewMode::Single;
+    // Startup defaults. The view falls back to a narrower one if too few algorithms exist.
+    static constexpr ViewMode kDefaultView     = ViewMode::Single;
+    static constexpr int      kDefaultElements = 64;
+
+    static_assert(kDefaultElements >= kMinElements && kDefaultElements <= kMaxElements,
+                  "kDefaultElements must stay within [kMinElements, kMaxElements]");
+
+    ViewMode view = kDefaultView;
 
     // Selection order = slot order (slot 0 is the first card). Holds at most capacity() entries.
     std::vector<SortAlgorithmType> algorithms;
 
-    int   elementCount = 128;
+    int   elementCount = kDefaultElements;
     float speed        = 2.0f; // Step-rate multiplier; 1x is one operation every 64 ms.
     bool  smoothMotion = true; // Bars slide between slots instead of jumping.
 
@@ -55,7 +62,8 @@ struct RunSettings
     // later runs) is compared on identical input. reshuffle() picks a new one.
     std::uint32_t seed = std::random_device{}();
 
-    /// @brief Starts in the widest comparison the registered algorithms allow.
+    /// @brief Starts in kDefaultView, or the widest view below it that the registered
+    /// algorithms allow.
     RunSettings();
 
     void reshuffle() { seed = std::random_device{}(); }

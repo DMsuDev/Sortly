@@ -9,15 +9,15 @@ namespace Sortly {
 
 RunSettings::RunSettings()
 {
-    for (const ViewMode mode : { ViewMode::Compare4, ViewMode::Compare3, ViewMode::Compare2 })
+    // Widest available view that does not exceed the default one.
+    for (const ViewMode mode : { ViewMode::Compare4, ViewMode::Compare3, ViewMode::Compare2, ViewMode::Single })
     {
-        if (isViewAvailable(mode))
-        {
-            setView(mode);
-            return;
-        }
+        if (slotCount(mode) > slotCount(kDefaultView) || !isViewAvailable(mode))
+            continue;
+
+        setView(mode);
+        return;
     }
-    setView(ViewMode::Single);
 }
 
 bool RunSettings::isViewAvailable(ViewMode mode)
