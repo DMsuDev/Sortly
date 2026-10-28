@@ -136,6 +136,7 @@ int GuiApplication::onRun()
         }
 
         m_Run.setDelayMs(m_Settings.stepDelayMs());
+        m_Run.setSmooth(m_Settings.smoothMotion);
         m_Run.update(clock.tick());
 
         renderFrame();

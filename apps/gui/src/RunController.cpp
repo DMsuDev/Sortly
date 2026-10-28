@@ -5,12 +5,16 @@
 
 #include <vigil/vigil.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
+#include <utility>
 
 namespace Sortly {
 
 namespace {
 
+constexpr float kMotionSettle = 0.45f; // Fraction of a step delay the bars take to settle.
 constexpr std::chrono::microseconds kComputeBudget{2500};
 
 const char* describe(SessionError error)
@@ -43,6 +47,8 @@ void RunController::start(const RunSettings& settings)
 {
     m_Runs.clear();
     m_Applied = settings;
+    m_Smooth  = settings.smoothMotion;
+    m_Runs.reserve(settings.algorithms.size());
 
     for (const SortAlgorithmType type : settings.algorithms)
     {
@@ -97,6 +103,13 @@ void RunController::updateComputation()
                 VIGIL_LOG_ERROR("Could not prepare playback for the completed sorting session");
                 run.error = "Could not prepare playback.";
             }
+            else
+            {
+                // The dataset is never touched by playback, so it still holds the shuffled input.
+                const auto values = run.session->getDataSet().values();
+                run.target.assign(values.begin(), values.end());
+                std::ranges::sort(run.target);
+            }
         }
     }
 
@@ -119,13 +132,26 @@ void RunController::update(float deltaTime)
 
     updateComputation();
 
+    // Time constant follows the step delay, so motion stays proportional at any speed.
+    const float easeSeconds = m_DelayMs * 0.001f * kMotionSettle;
+
     for (Run& run : m_Runs)
-        if (run.ready())
-            run.session->getPlayback().update(deltaTime);
+    {
+        if (!run.ready())
+            continue;
+
+        SortPlayback& playback = run.session->getPlayback();
+        playback.update(deltaTime);
+        run.motion.update(playback, deltaTime, easeSeconds, m_Smooth);
+    }
 }
 
 void RunController::setDelayMs(float delayMs)
 {
+    // Called every frame by the application: skip the loop when nothing changed.
+    if (delayMs == m_DelayMs)
+        return;
+
     m_DelayMs = delayMs;
     for (Run& run : m_Runs)
         if (run.session)

@@ -49,6 +49,7 @@ struct RunSettings
 
     int   elementCount = 128;
     float speed        = 2.0f; // Step-rate multiplier; 1x is one operation every 64 ms.
+    bool  smoothMotion = true; // Bars slide between slots instead of jumping.
 
     // Same seed + same element count = same dataset, so every algorithm of a run (and of
     // later runs) is compared on identical input. reshuffle() picks a new one.
@@ -76,7 +77,7 @@ struct RunSettings
     /// with the first algorithms not yet chosen. Unavailable views are ignored.
     void setView(ViewMode mode);
 
-    /// @brief True if @p other would produce the same runs (speed is not part of it).
+    /// @brief True if @p other would produce the same runs (speed and motion are not part of it).
     [[nodiscard]] bool sameRunAs(const RunSettings& other) const
     {
         return algorithms == other.algorithms && elementCount == other.elementCount && seed == other.seed;

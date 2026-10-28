@@ -5,6 +5,7 @@
 
 #include "Sortly/Gui/RunSettings.hpp"
 #include "Sortly/Gui/SessionManager.hpp"
+#include "Sortly/Gui/BarMotion.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -23,7 +24,9 @@ struct Run
     SortAlgorithmType            type = SortAlgorithmType::BubbleSort;
     std::unique_ptr<SortSession> session;
     bool                         computing = false;
-    std::string                  error; // Non-empty when the run could not be created or computed.
+    std::string                  error;  // Non-empty when the run could not be created or computed.
+    BarMotion                    motion; // Fresh per run, so no stale bar identity can survive a restart.
+    std::vector<int>             target; // Sorted copy of the dataset (final state).
 
     /// @brief Timeline built and loaded: statistics are final and playback can be used.
     [[nodiscard]] bool ready() const
@@ -56,6 +59,9 @@ public:
     /// @brief Applies to the current runs and to the ones created later.
     void setDelayMs(float delayMs);
 
+    /// @brief Enables or disables bar sliding for the current and future runs.
+    void setSmooth(bool smooth) { m_Smooth = smooth; }
+
     // Global playback controls: they act on every ready run at once.
     void playAll();
     void pauseAll();
@@ -83,6 +89,7 @@ private:
     std::vector<Run>           m_Runs;
     std::optional<RunSettings> m_Applied;
     std::optional<RunSettings> m_Pending;
+    bool                       m_Smooth = true;
     bool                       m_PendingAutoplay = false;
     bool                       m_Autoplay        = false; // Applies once the timelines finish building.
     float                      m_DelayMs         = 32.0f;
