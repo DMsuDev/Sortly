@@ -19,7 +19,7 @@ bool toolButton(const char* label, const char* tooltip, float width, bool enable
     const bool pressed = iconButton(label, ImVec2(width, compactButtonHeight()), kind, fonts::Body);
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("%s", tooltip);
+        ui::setTooltip("%s", tooltip);
     return pressed;
 }
 

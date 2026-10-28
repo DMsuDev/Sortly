@@ -158,27 +158,33 @@ void applyTheme()
     style.ChildBorderSize     = 1.0f;
     style.FrameBorderSize     = 0.0f;
     style.PopupBorderSize     = 1.0f;
+    style.ScrollbarSize     = 8.0f;
+    style.ScrollbarRounding = 10.0f;
     style.ScaleAllSizes(g_Scale);
 
     auto* c = style.Colors;
-    c[ImGuiCol_WindowBg]         = colors::Clear;
-    c[ImGuiCol_ChildBg]          = colors::Surface;
-    c[ImGuiCol_PopupBg]          = ImVec4(0.085f, 0.102f, 0.133f, 0.98f);
-    c[ImGuiCol_Border]           = colors::Border;
-    c[ImGuiCol_Text]             = ImVec4(0.91f, 0.94f, 0.97f, 1.00f);
-    c[ImGuiCol_TextDisabled]     = colors::TextDim;
-    c[ImGuiCol_FrameBg]          = ImVec4(0.11f, 0.13f, 0.17f, 1.00f);
-    c[ImGuiCol_FrameBgHovered]   = ImVec4(0.15f, 0.19f, 0.23f, 1.00f);
-    c[ImGuiCol_FrameBgActive]    = ImVec4(0.18f, 0.23f, 0.27f, 1.00f);
-    c[ImGuiCol_Button]           = ImVec4(0.14f, 0.17f, 0.22f, 1.00f);
-    c[ImGuiCol_ButtonHovered]    = ImVec4(0.19f, 0.23f, 0.29f, 1.00f);
-    c[ImGuiCol_ButtonActive]     = ImVec4(0.12f, 0.15f, 0.19f, 1.00f);
-    c[ImGuiCol_Header]           = ImVec4(0.10f, 0.43f, 0.39f, 0.55f);
-    c[ImGuiCol_HeaderHovered]    = ImVec4(0.12f, 0.57f, 0.51f, 0.70f);
-    c[ImGuiCol_HeaderActive]     = ImVec4(0.10f, 0.51f, 0.46f, 1.00f);
-    c[ImGuiCol_SliderGrab]       = colors::Accent;
-    c[ImGuiCol_SliderGrabActive] = ImVec4(0.46f, 0.95f, 0.83f, 1.00f);
-    c[ImGuiCol_Separator]        = colors::Border;
+    c[ImGuiCol_ScrollbarBg]          = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    c[ImGuiCol_ScrollbarGrab]        = colors::withAlpha(colors::Muted, 0.22f);
+    c[ImGuiCol_ScrollbarGrabHovered] = colors::withAlpha(colors::Muted, 0.45f);
+    c[ImGuiCol_ScrollbarGrabActive]  = colors::withAlpha(colors::Accent, 0.85f);
+    c[ImGuiCol_WindowBg]             = colors::Clear;
+    c[ImGuiCol_ChildBg]              = colors::Surface;
+    c[ImGuiCol_PopupBg]              = ImVec4(0.085f, 0.102f, 0.133f, 0.98f);
+    c[ImGuiCol_Border]               = colors::Border;
+    c[ImGuiCol_Text]                 = ImVec4(0.91f, 0.94f, 0.97f, 1.00f);
+    c[ImGuiCol_TextDisabled]         = colors::TextDim;
+    c[ImGuiCol_FrameBg]              = ImVec4(0.11f, 0.13f, 0.17f, 1.00f);
+    c[ImGuiCol_FrameBgHovered]       = ImVec4(0.15f, 0.19f, 0.23f, 1.00f);
+    c[ImGuiCol_FrameBgActive]        = ImVec4(0.18f, 0.23f, 0.27f, 1.00f);
+    c[ImGuiCol_Button]               = ImVec4(0.14f, 0.17f, 0.22f, 1.00f);
+    c[ImGuiCol_ButtonHovered]        = ImVec4(0.19f, 0.23f, 0.29f, 1.00f);
+    c[ImGuiCol_ButtonActive]         = ImVec4(0.12f, 0.15f, 0.19f, 1.00f);
+    c[ImGuiCol_Header]               = ImVec4(0.10f, 0.43f, 0.39f, 0.55f);
+    c[ImGuiCol_HeaderHovered]        = ImVec4(0.12f, 0.57f, 0.51f, 0.70f);
+    c[ImGuiCol_HeaderActive]         = ImVec4(0.10f, 0.51f, 0.46f, 1.00f);
+    c[ImGuiCol_SliderGrab]           = colors::Accent;
+    c[ImGuiCol_SliderGrabActive]     = ImVec4(0.46f, 0.95f, 0.83f, 1.00f);
+    c[ImGuiCol_Separator]            = colors::Border;
 }
 
 } // namespace Sortly::ui

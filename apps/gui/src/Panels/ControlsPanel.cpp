@@ -104,7 +104,7 @@ bool drawArraySettings(RunSettings& settings)
         changed = true;
     }
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Every algorithm sorts the same data, and keeps it\nuntil you ask for a new array.");
+        ui::setTooltip("Every algorithm sorts the same data, and keeps it until you ask for a new array.");
 
     return changed;
 }

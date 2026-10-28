@@ -120,4 +120,10 @@ void progressBar(float fraction, float height = 6.0f, const ImVec4* color = null
 /// @param peakAlpha Opacity at the corner itself.
 void cornerGlow(const ImVec2& min, float radius, float rounding, const ImVec4& color, float peakAlpha);
 
+/// @brief Styled replacements for ImGui::BeginTooltip / SetTooltip / BeginPopup: compact padding,
+/// rounded corners and an accent border. End them with ImGui::EndTooltip() / ImGui::EndPopup().
+[[nodiscard]] bool beginTooltip();
+[[nodiscard]] bool beginPopup(const char* id);
+void setTooltip(const char* fmt, ...) IM_FMTARGS(1);
+
 } // namespace Sortly::ui

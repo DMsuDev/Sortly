@@ -158,9 +158,9 @@ void drawViewSelector(UiContext& ctx)
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_ForTooltip))
         {
             if (available)
-                ImGui::SetTooltip("%s", option.tooltip);
+                ui::setTooltip("%s", option.tooltip);
             else
-                ImGui::SetTooltip("Needs %zu algorithms; only %zu are implemented so far.",
+                ui::setTooltip("Needs %zu algorithms; only %zu are implemented so far.",
                                   slotCount(option.mode), SortAlgorithmFactory::all().size());
         }
     }
@@ -232,7 +232,7 @@ bool windowButton(const char* id, const char* tooltip, Glyph glyph, float height
     drawGlyph(glyph, ImVec2((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f), ImGui::GetColorU32(ImGuiCol_Text));
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
-        ImGui::SetTooltip("%s", tooltip);
+        ui::setTooltip("%s", tooltip);
     return pressed;
 }
 
@@ -256,7 +256,7 @@ void drawWindowControls(Window& window)
                         ui::colors::Accent, ImVec2(pillWidth, height)))
         window.toggleFullscreen();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
-        ImGui::SetTooltip("%s (F11)", fullscreen ? "Leave fullscreen" : "Fill the whole screen");
+        ui::setTooltip("%s (F11)", fullscreen ? "Leave fullscreen" : "Fill the whole screen");
 
     ImGui::SameLine(0.0f, divider);
     ui::verticalDivider(height);

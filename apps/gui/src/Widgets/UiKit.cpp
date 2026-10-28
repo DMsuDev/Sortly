@@ -33,6 +33,21 @@ const ImVec4 kPrimary       { 0.18f, 0.74f, 0.65f, 1.0f };
 const ImVec4 kPrimaryHover  { 0.25f, 0.84f, 0.74f, 1.0f };
 const ImVec4 kPrimaryActive { 0.14f, 0.62f, 0.55f, 1.0f };
 
+void pushOverlayStyle()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,    dp(12.0f, 9.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   dp(10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,    dp(10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, dp(1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, colors::withAlpha(colors::Accent, 0.30f));
+}
+
+void popOverlayStyle()
+{
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(4);
+}
+
 } // namespace
 
 std::string formatCount(std::uint64_t value)
@@ -277,6 +292,36 @@ void cornerGlow(const ImVec2& min, float radius, float rounding, const ImVec4& c
                 dl->PrimWriteIdx(static_cast<ImDrawIdx>(index));
         }
     }
+}
+
+bool beginTooltip()
+{
+    pushOverlayStyle();
+    const bool open = ImGui::BeginTooltip();
+    popOverlayStyle();
+    return open;
+}
+
+bool beginPopup(const char* id)
+{
+    pushOverlayStyle();
+    const bool open = ImGui::BeginPopup(id);
+    popOverlayStyle();
+    return open;
+}
+
+void setTooltip(const char* fmt, ...)
+{
+    if (!beginTooltip())
+        return;
+
+    ImGui::PushTextWrapPos(dp(280.0f));
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextV(fmt, args);
+    va_end(args);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
 }
 
 } // namespace Sortly::ui
