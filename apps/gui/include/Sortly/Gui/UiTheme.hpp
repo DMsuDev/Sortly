@@ -11,6 +11,7 @@
 namespace Sortly::ui {
 
 namespace colors {
+inline const ImVec4 BarIdle   {0.36f, 0.41f, 0.48f, 1.0f};
 inline const ImVec4 Accent    {0.31f, 0.86f, 0.75f, 1.0f};
 inline const ImVec4 Warning   {1.00f, 0.72f, 0.31f, 1.0f};
 inline const ImVec4 Danger    {1.00f, 0.42f, 0.46f, 1.0f};

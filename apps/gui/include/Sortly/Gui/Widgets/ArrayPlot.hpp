@@ -9,19 +9,23 @@
 
 #include <span>
 
+namespace Sortly { class BarMotion; } // namespace Sortly
+
 namespace Sortly::ui {
 
 /// @brief What the plot should emphasize on top of the plain bars.
 struct ArrayHighlight
 {
-    const SortOperation* operation  = nullptr; // Next operation to be applied; its indices are tinted.
-    int                  pivotIndex = -1;      // Bar kept marked as the pivot while its partition runs (-1: none).
+    const SortOperation* operation  = nullptr; // Next operation to be applied; its bars are tinted.
     bool                 sorted     = false;   // Whole run finished: every bar is painted as done.
+    int                  pivotIndex = -1;      // Slot of the active pivot, or -1.
+    std::span<const int> target;               // Sorted values: a bar equal to target[slot] is in place.
+    const BarMotion*     motion     = nullptr; // Animated bar positions; null = each bar sits on its slot.
 };
 
 struct ArrayPlotStyle
 {
-    ImVec4 color;        // Bar color while the run is not finished.
+    ImVec4 color;        // Bar color of the bars already in place (until the run is finished).
     bool   axes = false; // Index/value axes; small cards look better without them.
 };
 
