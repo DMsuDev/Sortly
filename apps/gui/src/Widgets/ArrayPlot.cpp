@@ -62,12 +62,17 @@ BarBatches& cleanBatches()
 {
     if (highlight.sorted)
         return slot < swept ? BarState::Sorted : BarState::Placed;
-    if (touchesSlot(highlight.operation, slot))
-        return BarState::Active;
+
+    // Keep the pivot's identity color even when it participates in a comparison.
     if (highlight.pivotIndex == static_cast<int>(slot))
         return BarState::Pivot;
+
+    if (touchesSlot(highlight.operation, slot))
+        return BarState::Active;
+
     if (slot < highlight.target.size() && data[slot] == highlight.target[slot])
         return BarState::Placed;
+
     return BarState::Idle;
 }
 
