@@ -5,13 +5,15 @@
 
 namespace Sortly {
 
+// One loop for both phases:
+//  1. Heapify: `start` walks from the last parent down to the root, sifting each node down.
+//  2. Sort: the root (the maximum) is swapped behind the heap, which then shrinks by one.
+// `heapEnd` is the exclusive end of the heap; everything from it onwards is already sorted.
 StepGenerator HeapSort::run()
 {
-    std::size_t heapEnd = m_Data.size(); // Exclusive end of the heap.
-    std::size_t start   = heapEnd / 2;   // Next node to sift down while the heap is being built.
+    std::size_t heapEnd = m_Data.size();
+    std::size_t start   = heapEnd / 2;
 
-    // One loop for both phases: first `start` walks down to the root (heapify), then each pass
-    // moves the root behind the heap and shrinks it.
     while (heapEnd > 1)
     {
         if (start > 0)
@@ -24,6 +26,7 @@ StepGenerator HeapSort::run()
             co_yield Step::swap(0, heapEnd);
         }
 
+        // Sift `root` down until both children are smaller.
         std::size_t root = start;
         while (2 * root + 1 < heapEnd)
         {

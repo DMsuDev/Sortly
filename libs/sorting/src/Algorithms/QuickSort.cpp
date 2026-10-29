@@ -8,6 +8,11 @@
 
 namespace Sortly {
 
+// Lomuto partition with a median-of-three pivot.
+//
+// Pivot protocol (what the UI shows): Step::pivot(high) marks the pivot once it sits at `high`;
+// it stays there during the whole partition, then the final swap moves it to its final position
+// and Step::releasePivot() clears the mark before the next range starts.
 StepGenerator QuickSort::run()
 {
     if (m_Data.size() < 2)
@@ -21,8 +26,8 @@ StepGenerator QuickSort::run()
         const auto [low, high] = ranges.back();
         ranges.pop_back();
 
-        // Median of three: order low/mid/high, then move the median to `high`
-        // so it can be used as the pivot. Avoids the O(n^2) case on sorted input.
+        // Median of three: order low/mid/high, then move the median to `high` so it can be the
+        // pivot. Avoids the O(n^2) case on sorted input.
         if (high - low >= 2)
         {
             const std::size_t mid = low + (high - low) / 2;
@@ -43,12 +48,10 @@ StepGenerator QuickSort::run()
             co_yield Step::swap(mid, high);
         }
 
-        // The mark stays on `high` for the whole partition: the pivot does not move until the
-        // final swap below.
         co_yield Step::pivot(high);
-        const int pivot = m_Data[high];
+        const int pivot = m_Data[high]; // Stays in place until the final swap below.
 
-        std::size_t boundary = low; // Everything before it is smaller than the pivot.
+        std::size_t boundary = low; // Everything in [low, boundary) is smaller than the pivot.
         for (std::size_t j = low; j < high; ++j)
         {
             co_yield Step::compare(j, high);
@@ -60,10 +63,10 @@ StepGenerator QuickSort::run()
             }
         }
 
-        // Drop the mark before the pivot moves, so it never points at another element.
-        co_yield Step::clearPivot();
+        // The pivot lands in its final position (SortPlayback moves the pivot mark with it).
         if (boundary != high)
             co_yield Step::swap(boundary, high);
+        co_yield Step::releasePivot();
 
         // Right first, so the left range is popped first and the sort sweeps left to right.
         // Only ranges with at least two elements are worth another pass.

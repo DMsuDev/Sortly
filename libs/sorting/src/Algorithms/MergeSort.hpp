@@ -5,23 +5,19 @@
 
 #pragma once
 
-#include "GeneratorSort.hpp"
-
-#include <string_view>
+#include "Algorithms/Core/GeneratorSort.hpp"
 
 namespace Sortly {
 
 // Private to the library: users create it through SortAlgorithmFactory.
-class MergeSort final : public GeneratorSort
+class MergeSort final : public GeneratorSortOf<MergeSort>
 {
 public:
-    static constexpr std::string_view kName        = "Merge Sort";
-    static constexpr std::string_view kComplexity  = "O(n log n)";
-    static constexpr std::string_view kDescription = "Bottom-up merging of sorted runs through an auxiliary buffer.";
-
-    [[nodiscard]] std::string_view getName() const override { return kName; }
-    [[nodiscard]] std::string_view getComplexity() const override { return kComplexity; }
-    [[nodiscard]] std::string_view getDescription() const override { return kDescription; }
+    static constexpr AlgorithmMeta kMeta{
+        "Merge Sort",
+        "O(n log n)",
+        "Bottom-up merging of sorted runs through an auxiliary buffer."
+    };
 
 protected:
     StepGenerator run() override;

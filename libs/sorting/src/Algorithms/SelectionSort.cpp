@@ -5,6 +5,8 @@
 
 namespace Sortly {
 
+// Scans the unsorted range for its smallest element, then swaps it into position `i`.
+// At most one swap per pass.
 StepGenerator SelectionSort::run()
 {
     const std::size_t n = m_Data.size();

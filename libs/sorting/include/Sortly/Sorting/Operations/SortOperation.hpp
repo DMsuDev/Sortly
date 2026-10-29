@@ -7,34 +7,34 @@
 
 namespace Sortly {
 
+/// @brief One recorded event of a run. The full list of operations is enough to replay the
+/// run forward and backward without running the algorithm again.
 struct SortOperation
 {
     enum class Type
     {
-        Compare,   // Represents a comparison between two elements.
-        Swap,      // Represents a swap of two elements.
-        Overwrite, // Represents overwriting an element with a new value.
-        Pivot,     // Marks an element as the pivot (like QuickSort), or clears the mark (indexA == -1).
-        Sorted     // The run is finished (indexA == -1), or one element reached its final position (indexA >= 0, reserved).
+        Compare,   // Two elements were compared. The data does not change.
+        Swap,      // Two elements exchanged places.
+        Overwrite, // One slot received a new value (merge-style writes).
+        Pivot,     // indexA >= 0: that element becomes the pivot. indexA == -1: the pivot is released.
+                   // The data does not change; SortPlayback tracks the pivot (see getPivotIndex()).
+        Sorted     // The run is finished (indexA == -1), or one element reached its final position
+                   // (indexA >= 0, reserved).
     };
 
     Type type = Type::Compare;
 
-    int indexA = -1; // Primary index (-1 for Sorted when it marks the end of the whole run, and for Pivot when it clears the mark).
-    int indexB = -1; // Secondary index (-1 if not applicable: Overwrite, Pivot, Sorted).
+    int indexA = -1; // Primary index (-1 when not applicable).
+    int indexB = -1; // Secondary index (-1 when not applicable).
 
-    // The meaning of valueA/valueB depends on `type` - there is no single rule for both:
+    // The meaning of valueA/valueB depends on `type`:
     //
     //   Compare / Swap : valueA = value that was at indexA, valueB = value that was at indexB
-    //                    (both captured BEFORE the swap happens, so playback/undo can rely on them).
+    //                    (captured BEFORE a swap happens, so playback/undo can rely on them).
     //   Overwrite      : valueA = the NEW value written to indexA.
-    //                    valueB = the OLD value it replaced, captured by SortRecorder::overwrite()
-    //                    itself (never by the algorithm). This is what lets SortPlayback undo an
-    //                    Overwrite in O(1) - assign valueB back - instead of re-simulating the algorithm.
-    //   Pivot          : valueA = the pivot's value, read from the buffer by SortRecorder::pivot().
-    //                    valueB is unused. The mark starts when the operation is applied and lasts
-    //                    until the next Pivot operation (indexA == -1 clears it) or the end of the
-    //                    run; SortPlayback::getPivotIndex() reports it in both play directions.
+    //                    valueB = the OLD value it replaced, captured by SortRecorder itself
+    //                    (never by the algorithm). This lets SortPlayback undo it in O(1).
+    //   Pivot          : valueA = the pivot's value (unused when releasing). valueB is unused.
     //   Sorted         : both are unused.
     int valueA = 0;
     int valueB = 0;

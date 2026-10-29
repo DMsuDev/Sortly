@@ -5,6 +5,8 @@
 
 namespace Sortly {
 
+// Insertion sort over elements `gap` apart, with the gap halving down to 1.
+// Early passes move far-away elements close to their place, so the last pass has little left to do.
 StepGenerator ShellSort::run()
 {
     const std::size_t n = m_Data.size();

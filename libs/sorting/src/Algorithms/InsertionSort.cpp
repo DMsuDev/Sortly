@@ -5,6 +5,8 @@
 
 namespace Sortly {
 
+// Element `i` slides left, one swap at a time, until the element before it is not larger.
+// Everything left of `i` is already sorted.
 StepGenerator InsertionSort::run()
 {
     const std::size_t n = m_Data.size();

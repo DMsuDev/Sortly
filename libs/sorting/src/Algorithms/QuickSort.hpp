@@ -5,23 +5,19 @@
 
 #pragma once
 
-#include "GeneratorSort.hpp"
-
-#include <string_view>
+#include "Algorithms/Core/GeneratorSort.hpp"
 
 namespace Sortly {
 
 // Private to the library: users create it through SortAlgorithmFactory.
-class QuickSort final : public GeneratorSort
+class QuickSort final : public GeneratorSortOf<QuickSort>
 {
 public:
-    static constexpr std::string_view kName        = "Quick Sort";
-    static constexpr std::string_view kComplexity  = "O(n log n)";
-    static constexpr std::string_view kDescription = "Partitions around a pivot (Lomuto scheme) and sorts each side.";
-
-    [[nodiscard]] std::string_view getName() const override { return kName; }
-    [[nodiscard]] std::string_view getComplexity() const override { return kComplexity; }
-    [[nodiscard]] std::string_view getDescription() const override { return kDescription; }
+    static constexpr AlgorithmMeta kMeta{
+        "Quick Sort",
+        "O(n log n)",
+        "Partitions around a pivot (Lomuto scheme) and sorts each side."
+    };
 
 protected:
     StepGenerator run() override;

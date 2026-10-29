@@ -14,6 +14,9 @@
 
 #include <vigil/vigil.h>
 
+#include <cstddef>
+#include <iterator>
+
 namespace Sortly {
 
 namespace {
@@ -21,31 +24,52 @@ namespace {
 template <class T>
 std::unique_ptr<SortAlgorithm> make() { return std::make_unique<T>(); }
 
+// Builds a registry entry from the algorithm's own `kMeta`, so metadata is never repeated.
+template <class T>
+constexpr AlgorithmInfo entry(SortAlgorithmType type)
+{
+    return { type, T::kMeta.name, T::kMeta.complexity, T::kMeta.description, &make<T> };
+}
+
+// The registry. Registering a new algorithm = one line here, in SortAlgorithmType order.
+constexpr AlgorithmInfo kRegistry[] = {
+    entry<BubbleSort>   (SortAlgorithmType::BubbleSort),
+    entry<CocktailSort> (SortAlgorithmType::CocktailSort),
+    entry<SelectionSort>(SortAlgorithmType::SelectionSort),
+    entry<InsertionSort>(SortAlgorithmType::InsertionSort),
+    entry<QuickSort>    (SortAlgorithmType::QuickSort),
+    entry<MergeSort>    (SortAlgorithmType::MergeSort),
+    entry<HeapSort>     (SortAlgorithmType::HeapSort),
+    entry<ShellSort>    (SortAlgorithmType::ShellSort),
+};
+
+constexpr bool registryMatchesEnum()
+{
+    if (std::size(kRegistry) != static_cast<std::size_t>(SortAlgorithmType::Count))
+        return false;
+
+    for (std::size_t i = 0; i < std::size(kRegistry); ++i)
+        if (static_cast<std::size_t>(kRegistry[i].type) != i)
+            return false;
+
+    return true;
+}
+
+static_assert(registryMatchesEnum(),
+              "SortAlgorithmFactory registry must list every SortAlgorithmType (before Count), in enum order.");
+
 } // namespace
 
 std::span<const AlgorithmInfo> SortAlgorithmFactory::all()
 {
-    // Single source of truth: registering a new algorithm = one line here.
-    static const AlgorithmInfo table[] = {
-        { SortAlgorithmType::BubbleSort,    BubbleSort::kName,    &make<BubbleSort>    },
-        { SortAlgorithmType::CocktailSort,  CocktailSort::kName,  &make<CocktailSort>  },
-        { SortAlgorithmType::SelectionSort, SelectionSort::kName, &make<SelectionSort> },
-        { SortAlgorithmType::InsertionSort, InsertionSort::kName, &make<InsertionSort> },
-        { SortAlgorithmType::QuickSort,     QuickSort::kName,     &make<QuickSort>     },
-        { SortAlgorithmType::MergeSort,     MergeSort::kName,     &make<MergeSort>     },
-        { SortAlgorithmType::HeapSort,      HeapSort::kName,      &make<HeapSort>      },
-        { SortAlgorithmType::ShellSort,     ShellSort::kName,     &make<ShellSort>     },
-    };
-    return table;
+    return kRegistry;
 }
 
 const AlgorithmInfo* SortAlgorithmFactory::find(SortAlgorithmType type)
 {
-    for (const auto& info : all())
-        if (info.type == type)
-            return &info;
-
-    return nullptr;
+    // The registry is indexed by type (static_assert above); negative values wrap to huge indices.
+    const auto index = static_cast<std::size_t>(type);
+    return index < std::size(kRegistry) ? &kRegistry[index] : nullptr;
 }
 
 std::unique_ptr<SortAlgorithm> SortAlgorithmFactory::create(SortAlgorithmType type)
@@ -53,7 +77,7 @@ std::unique_ptr<SortAlgorithm> SortAlgorithmFactory::create(SortAlgorithmType ty
     const auto* info = find(type);
     if (!info)
     {
-        VIGIL_LOG_ERROR("SortAlgorithmFactory: algorithm type {} is not yet implemented", static_cast<int>(type));
+        VIGIL_LOG_ERROR("SortAlgorithmFactory: algorithm type {} is not registered", static_cast<int>(type));
         return nullptr;
     }
 
@@ -69,7 +93,8 @@ std::string_view SortAlgorithmFactory::toString(SortAlgorithmType type)
 std::vector<SortAlgorithmType> SortAlgorithmFactory::getAvailableAlgorithms()
 {
     std::vector<SortAlgorithmType> types;
-    for (const auto& info : all())
+    types.reserve(std::size(kRegistry));
+    for (const auto& info : kRegistry)
         types.push_back(info.type);
     return types;
 }
