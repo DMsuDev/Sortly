@@ -72,6 +72,9 @@ jobs:
             paths:
               - apps
               - libs
+            paths-ignore:
+              - third_party
+              - build
 
       - name: Configure
         run: |
