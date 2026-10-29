@@ -15,6 +15,9 @@
 # fuzzing
 sync_dir*
 
+# Diff files
+diff*
+
 # Build folders
 [Bb]uild*/
 [Oo]ut-*/
