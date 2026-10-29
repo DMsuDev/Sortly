@@ -60,6 +60,9 @@ public:
     /// active, the window is maximized/fullscreen or the OS owns the frame.
     void beginDrag() noexcept;
 
+    void enterFullscreen() noexcept;
+    void leaveFullscreen() noexcept;
+
     /// @brief Border(s) being resized, or under the cursor. Used to pick the cursor shape.
     [[nodiscard]] Edges activeEdges() const noexcept;
 
@@ -116,6 +119,7 @@ private:
     std::unique_ptr<GLFWwindow, Deleter> m_Handle;
 
     Rect m_Windowed;                // Geometry to restore after fullscreen.
+    bool m_Borderless = false;      // Fullscreen done by covering the monitor, not by GLFW.
     bool m_WasMaximized = false;
 
     Drag   m_Drag        = Drag::None;

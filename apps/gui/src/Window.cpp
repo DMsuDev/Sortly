@@ -129,6 +129,7 @@ bool Window::create(int width, int height, const char* title, int minWidth, int 
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE); // Native fullscreen (Wayland) must not minimize on focus loss.
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #if defined(__APPLE__)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
@@ -168,7 +169,7 @@ bool Window::create(int width, int height, const char* title, int minWidth, int 
     if (area.valid())
     {
         const float percent = static_cast<float>(kAreaPercent) / 100.0f;
-        
+
         // Compute the maximum allowed width and height based on the area percentage.
         const float maxW = static_cast<float>(area.width * percent);
         const float maxH = static_cast<float>(area.height * percent);
@@ -225,6 +226,7 @@ void Window::destroy() noexcept
     m_MonitorDirty    = false;
     m_ScaleChanged    = false;
     m_Windowed        = {};
+    m_Borderless      = false;
     m_WasMaximized    = false;
     m_Drag            = Drag::None;
     m_ResizeEdges     = kEdgeNone;
@@ -277,7 +279,7 @@ bool Window::isMaximized() const noexcept
 
 bool Window::isFullscreen() const noexcept
 {
-    return m_Handle && glfwGetWindowMonitor(m_Handle.get()) != nullptr;
+    return m_Handle && (m_Borderless || glfwGetWindowMonitor(m_Handle.get()) != nullptr);
 }
 
 void Window::trackWindowedGeometry() noexcept
@@ -372,24 +374,20 @@ void Window::toggleMaximize() noexcept
 
 void Window::toggleFullscreen() noexcept
 {
-    GLFWwindow* window = m_Handle.get();
-    if (!window)
+    if (!m_Handle)
         return;
 
     m_Drag = Drag::None;
 
     if (isFullscreen())
-    {
-        if (m_Windowed.width <= 0 || m_Windowed.height <= 0)
-            return;
+        leaveFullscreen();
+    else
+        enterFullscreen();
+}
 
-        glfwSetWindowMonitor(window, nullptr, m_Windowed.x, m_Windowed.y,
-                             m_Windowed.width, m_Windowed.height, GLFW_DONT_CARE);
-        if (m_WasMaximized)
-            glfwMaximizeWindow(window);
-        return;
-    }
-
+void Window::enterFullscreen() noexcept
+{
+    GLFWwindow*        window  = m_Handle.get();
     GLFWmonitor*       monitor = monitorOf(window);
     const GLFWvidmode* mode    = monitor ? glfwGetVideoMode(monitor) : nullptr;
     if (!mode)
@@ -400,7 +398,43 @@ void Window::toggleFullscreen() noexcept
 
     int mx = 0, my = 0;
     glfwGetMonitorPos(monitor, &mx, &my);
-    glfwSetWindowMonitor(window, monitor, mx, my, mode->width, mode->height, mode->refreshRate);
+
+    if (m_OsFrame)
+    {
+        // Wayland cannot position windows: ask the compositor, with the current mode so nothing is switched.
+        glfwSetWindowMonitor(window, monitor, mx, my, mode->width, mode->height, mode->refreshRate);
+        return;
+    }
+
+    // Set first, so trackWindowedGeometry() does not record the monitor-sized geometry.
+    m_Borderless = true;
+    if (m_WasMaximized)
+        glfwRestoreWindow(window); // A maximized window ignores explicit sizes.
+
+    glfwSetWindowPos(window, mx, my);
+    glfwSetWindowSize(window, mode->width, mode->height);
+}
+
+void Window::leaveFullscreen() noexcept
+{
+    GLFWwindow* window = m_Handle.get();
+    if (m_Windowed.width <= 0 || m_Windowed.height <= 0)
+        return;
+
+    if (m_Borderless)
+    {
+        m_Borderless = false;
+        glfwSetWindowPos(window, m_Windowed.x, m_Windowed.y);
+        glfwSetWindowSize(window, m_Windowed.width, m_Windowed.height);
+    }
+    else
+    {
+        glfwSetWindowMonitor(window, nullptr, m_Windowed.x, m_Windowed.y,
+                             m_Windowed.width, m_Windowed.height, GLFW_DONT_CARE);
+    }
+
+    if (m_WasMaximized)
+        glfwMaximizeWindow(window);
 }
 
 // ================================================
