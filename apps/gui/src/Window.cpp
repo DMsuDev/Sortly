@@ -9,14 +9,33 @@
 #include <foundry/memory/scope_guard.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
+#include <utility>
 
 namespace Sortly {
 
 namespace {
 
-constexpr int kAreaPercent  = 90; // The first window uses at most 90% of the work area.
-constexpr int kResizeBorder = 6;  // Invisible resize border, in design pixels.
+constexpr float kMinUiScale    = 0.6f;
+constexpr float kScaleEpsilon  = 0.01f;
+constexpr int   kAreaPercent   = 90; // A window and the UI scale use at most 90% of the work area.
+constexpr int   kResizeBorder  = 6;  // Invisible resize border, in design pixels.
+
+struct WorkArea
+{
+    int x = 0, y = 0, width = 0, height = 0;
+
+    [[nodiscard]] bool valid() const noexcept { return width > 0 && height > 0; }
+};
+
+WorkArea workAreaOf(GLFWmonitor* monitor)
+{
+    WorkArea area;
+    if (monitor)
+        glfwGetMonitorWorkarea(monitor, &area.x, &area.y, &area.width, &area.height);
+    return area;
+}
 
 // On macOS the backend already handles the framebuffer scale and window
 // coordinates are in points; elsewhere the UI and size limits must be scaled.
@@ -27,13 +46,27 @@ float queryUiScale([[maybe_unused]] GLFWwindow* window)
 #else
     float scaleX = 1.0f, scaleY = 1.0f;
     glfwGetWindowContentScale(window, &scaleX, &scaleY);
-    return scaleX;
+
+    // Use one scale for UI-related window dimensions.
+    return std::max(scaleX, scaleY);
 #endif
+}
+
+// Largest scale not above `wanted` at which the design minimum still fits the work area.
+// max/min instead of std::clamp: clamp is undefined when its bounds are inverted.
+float fitScale(float wanted, int minWidth, int minHeight, const WorkArea& area)
+{
+    if (!area.valid())
+        return wanted;
+
+    const float fitW = static_cast<float>(area.width * kAreaPercent / 100) / static_cast<float>(std::max(1, minWidth));
+    const float fitH = static_cast<float>(area.height * kAreaPercent / 100) / static_cast<float>(std::max(1, minHeight));
+    return std::max(std::min({ wanted, fitW, fitH }), std::min(kMinUiScale, wanted));
 }
 
 int scaled(int value, float scale)
 {
-    return static_cast<int>(static_cast<float>(value) * scale);
+    return static_cast<int>(std::lround(static_cast<float>(value) * scale));
 }
 
 // Monitor showing most of the window; the primary one as a fallback.
@@ -100,20 +133,13 @@ bool Window::create(int width, int height, const char* title, int minWidth, int 
 #if defined(__APPLE__)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
-    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // Custom ImGui title bar.
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);   // Shown once centered: no flash in a corner.
 
-    // Keeps the first window inside the usable desktop area, whatever the display scale.
-    int areaX = 0, areaY = 0, areaW = 0, areaH = 0;
-    if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
-        glfwGetMonitorWorkarea(monitor, &areaX, &areaY, &areaW, &areaH);
-
-    const bool hasArea = areaW > 0 && areaH > 0;
-    if (hasArea)
-    {
-        width  = std::min(width,  areaW * kAreaPercent / 100);
-        height = std::min(height, areaH * kAreaPercent / 100);
-    }
+    // Wayland cannot move or resize windows from code, so there the OS keeps its frame.
+#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4)
+    m_OsFrame = glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
+#endif
+    glfwWindowHint(GLFW_DECORATED, m_OsFrame ? GLFW_TRUE : GLFW_FALSE); // Otherwise: custom ImGui title bar.
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // Shown once centered: no flash in a corner.
 
     m_Handle.reset(glfwCreateWindow(width, height, title, nullptr, nullptr));
     if (!m_Handle)
@@ -122,19 +148,62 @@ bool Window::create(int width, int height, const char* title, int minWidth, int 
         return false;
     }
 
-    glfwSetWindowOpacity(m_Handle.get(), 1.0f);
+    GLFWwindow* window = m_Handle.get();
+    glfwSetWindowOpacity(window, 1.0f);
+    glfwSetWindowUserPointer(window, this);
 
-    m_UiScale   = queryUiScale(m_Handle.get());
-    m_MinWidth  = scaled(minWidth,  m_UiScale);
-    m_MinHeight = scaled(minHeight, m_UiScale);
-    glfwSetWindowSizeLimits(m_Handle.get(), m_MinWidth, m_MinHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    // The first window is centered on the primary monitor.
+    m_Monitor = glfwGetPrimaryMonitor();
+    const WorkArea area = workAreaOf(m_Monitor);
 
-    if (hasArea)
-        glfwSetWindowPos(m_Handle.get(), areaX + (areaW - width) / 2, areaY + (areaH - height) / 2);
+    m_DesignMinWidth  = std::max(1, minWidth);
+    m_DesignMinHeight = std::max(1, minHeight);
+    m_UiScale         = fitScale(queryUiScale(window), m_DesignMinWidth, m_DesignMinHeight, area);
+    VIGIL_LOG_INFO("Initial UI scale: {:.2f}", m_UiScale);
+    applyMinSize();
 
-    glfwMakeContextCurrent(m_Handle.get());
+    // Sizes are given in design pixels. The window is still hidden, so resizing it is invisible.
+    width  = scaled(width,  m_UiScale);
+    height = scaled(height, m_UiScale);
+    if (area.valid())
+    {
+        const float percent = static_cast<float>(kAreaPercent) / 100.0f;
+        
+        // Compute the maximum allowed width and height based on the area percentage.
+        const float maxW = static_cast<float>(area.width * percent);
+        const float maxH = static_cast<float>(area.height * percent);
+
+        // Fit the window within the maximum allowed area while preserving aspect ratio.
+        const float fit = std::min({
+            1.0f,
+            maxW / static_cast<float>(width),
+            maxH / static_cast<float>(height)
+        });
+
+        width  = std::max(1, scaled(width, fit));
+        height = std::max(1, scaled(height, fit));
+    }
+    glfwSetWindowSize(window, width, height);
+
+    if (area.valid())
+        glfwSetWindowPos(window, area.x + (area.width - width) / 2, area.y + (area.height - height) / 2);
+
+    trackWindowedGeometry();
+
+    // From here on, moving the window or changing its display scale re-evaluates the monitor
+    // (handled in pollEvents(), once no drag is in progress).
+    glfwSetWindowPosCallback(window, [](GLFWwindow* w, int, int) {
+        if (auto* self = static_cast<Window*>(glfwGetWindowUserPointer(w)))
+            self->m_MonitorDirty = true;
+    });
+    glfwSetWindowContentScaleCallback(window, [](GLFWwindow* w, float, float) {
+        if (auto* self = static_cast<Window*>(glfwGetWindowUserPointer(w)))
+            self->m_MonitorDirty = true;
+    });
+
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // VSync.
-    glfwShowWindow(m_Handle.get());
+    glfwShowWindow(window);
 
     destroyGuard.dismiss();
     return true;
@@ -148,12 +217,18 @@ void Window::destroy() noexcept
     m_Handle.reset();
     glfwTerminate(); // This class owns GLFW's lifetime. No-op if it was not initialized.
 
-    m_UiScale      = 1.0f;
-    m_Windowed     = {};
-    m_WasMaximized = false;
-    m_Drag         = Drag::None;
-    m_ResizeEdges  = kEdgeNone;
-    m_LeftDown     = false;
+    m_UiScale         = 1.0f;
+    m_DesignMinWidth  = 1;
+    m_DesignMinHeight = 1;
+    m_OsFrame         = false;
+    m_Monitor         = nullptr;
+    m_MonitorDirty    = false;
+    m_ScaleChanged    = false;
+    m_Windowed        = {};
+    m_WasMaximized    = false;
+    m_Drag            = Drag::None;
+    m_ResizeEdges     = kEdgeNone;
+    m_LeftDown        = false;
 }
 
 // ================================================
@@ -164,14 +239,25 @@ void Window::pollEvents() noexcept
 {
     if (!m_Handle)
         return;
+
     glfwPollEvents();
+    trackWindowedGeometry();
     updateInteraction();
+
+    // Waits for the end of a drag: the monitor is decided where the window is dropped.
+    if (m_MonitorDirty && m_Drag == Drag::None && !isMinimized())
+        refreshMonitor();
 }
 
 void Window::waitEvents() noexcept
 {
     if (m_Handle)
         glfwWaitEvents();
+}
+
+bool Window::consumeScaleChange() noexcept
+{
+    return std::exchange(m_ScaleChanged, false);
 }
 
 bool Window::isCloseRequested() const noexcept
@@ -192,6 +278,68 @@ bool Window::isMaximized() const noexcept
 bool Window::isFullscreen() const noexcept
 {
     return m_Handle && glfwGetWindowMonitor(m_Handle.get()) != nullptr;
+}
+
+void Window::trackWindowedGeometry() noexcept
+{
+    if (!m_Handle || isMaximized() || isFullscreen() || isMinimized())
+        return;
+
+    glfwGetWindowPos(m_Handle.get(), &m_Windowed.x, &m_Windowed.y);
+    glfwGetWindowSize(m_Handle.get(), &m_Windowed.width, &m_Windowed.height);
+}
+
+// ================================================
+// MONITOR CHANGES
+// ================================================
+
+void Window::applyMinSize() noexcept
+{
+    m_MinWidth  = scaled(m_DesignMinWidth,  m_UiScale);
+    m_MinHeight = scaled(m_DesignMinHeight, m_UiScale);
+    glfwSetWindowSizeLimits(m_Handle.get(), m_MinWidth, m_MinHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
+}
+
+void Window::refreshMonitor() noexcept
+{
+    m_MonitorDirty = false;
+
+    GLFWwindow*  window  = m_Handle.get();
+    // Without an OS-reported position (Wayland) the monitor cannot be told apart: the scale callback is enough.
+    GLFWmonitor* monitor = m_OsFrame ? m_Monitor : monitorOf(window);
+    const WorkArea area  = workAreaOf(monitor);
+    const float  scale   = fitScale(queryUiScale(window), m_DesignMinWidth, m_DesignMinHeight, area);
+
+    const bool scaleChanged = std::abs(scale - m_UiScale) > kScaleEpsilon;
+    if (monitor == m_Monitor && !scaleChanged)
+        return;
+
+    const float ratio = scale / m_UiScale;
+    m_Monitor = monitor;
+    if (scaleChanged)
+    {
+        VIGIL_LOG_INFO("UI scale {:.2f} -> {:.2f}", m_UiScale, scale);
+        m_UiScale      = scale;
+        m_ScaleChanged = true;
+    }
+    applyMinSize();
+
+    // The OS keeps maximized and fullscreen windows on their screen.
+    if (m_OsFrame || !area.valid() || isMaximized() || isFullscreen())
+        return;
+
+    // Same proportions on the new scale, never bigger than the monitor allows, and fully inside it.
+    Rect r;
+    glfwGetWindowPos(window, &r.x, &r.y);
+    glfwGetWindowSize(window, &r.width, &r.height);
+
+    r.width  = std::max(m_MinWidth,  std::min(scaled(r.width,  ratio), area.width  * kAreaPercent / 100));
+    r.height = std::max(m_MinHeight, std::min(scaled(r.height, ratio), area.height * kAreaPercent / 100));
+    r.x      = std::max(area.x, std::min(r.x, area.x + area.width  - r.width));
+    r.y      = std::max(area.y, std::min(r.y, area.y + area.height - r.height));
+
+    glfwSetWindowSize(window, r.width, r.height);
+    glfwSetWindowPos(window, r.x, r.y);
 }
 
 // ================================================
@@ -247,8 +395,7 @@ void Window::toggleFullscreen() noexcept
     if (!mode)
         return;
 
-    glfwGetWindowPos(window, &m_Windowed.x, &m_Windowed.y);
-    glfwGetWindowSize(window, &m_Windowed.width, &m_Windowed.height);
+    // m_Windowed already holds the last normal geometry (see trackWindowedGeometry()).
     m_WasMaximized = isMaximized();
 
     int mx = 0, my = 0;
@@ -278,7 +425,7 @@ Window::Edges Window::activeEdges() const noexcept
 
 Window::Edges Window::edgesUnderCursor() const noexcept
 {
-    if (!m_Handle || isMaximized() || isFullscreen())
+    if (!m_Handle || m_OsFrame || isMaximized() || isFullscreen())
         return kEdgeNone;
 
     double cx = 0.0, cy = 0.0;
@@ -289,7 +436,7 @@ Window::Edges Window::edgesUnderCursor() const noexcept
     if (cx < 0.0 || cy < 0.0 || cx >= w || cy >= h)
         return kEdgeNone;
 
-    const double border = scaled(kResizeBorder, m_UiScale);
+    const double border = static_cast<double>(kResizeBorder) * static_cast<double>(m_UiScale);
     Edges edges = kEdgeNone;
     if (cx < border)           edges |= kEdgeLeft;
     else if (cx >= w - border) edges |= kEdgeRight;
@@ -313,7 +460,7 @@ void Window::begin(Drag drag, Edges edges) noexcept
 {
     GLFWwindow* window = m_Handle.get();
     // A resize already started on this click wins over the title-bar move.
-    if (!window || m_Drag != Drag::None || isMaximized() || isFullscreen())
+    if (!window || m_OsFrame || m_Drag != Drag::None || isMaximized() || isFullscreen())
         return;
 
     glfwGetWindowPos(window, &m_Start.x, &m_Start.y);

@@ -80,6 +80,24 @@ void ImGuiLayer::shutdown() noexcept
     m_Stage = Stage::None;
 }
 
+void ImGuiLayer::rescale(float uiScale)
+{
+    if (!isReady())
+        return;
+
+    try
+    {
+        // Drops the backend's font texture; the next beginFrame() recreates it from the new atlas.
+        ImGui_ImplOpenGL3_DestroyDeviceObjects();
+        ui::loadFonts(uiScale);
+        ui::applyTheme();
+    }
+    catch (...)
+    {
+        VIGIL_LOG_ERROR("UI rescale failed");
+    }
+}
+
 void ImGuiLayer::beginFrame()
 {
     VIGIL_ASSERT_MSG(m_Stage == Stage::OpenGlBackend, "ImGuiLayer::beginFrame called before initialization");

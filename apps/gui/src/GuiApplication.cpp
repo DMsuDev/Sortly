@@ -35,7 +35,7 @@ constexpr float kMaxFrameSeconds = 0.1f;
 // Gap between panels, in device-independent pixels.
 constexpr float kPanelGap = 14.0f;
 
-// Inset from the window edge to detect resizing.
+// Padding around the workspace: keeps panels clear of the invisible resize border (Window::kResizeBorder).
 constexpr float kEdgeInset = 8.0f;
 
 /// @brief Seconds elapsed between consecutive calls to tick(), capped at kMaxFrameSeconds.
@@ -125,6 +125,10 @@ int GuiApplication::onRun()
     while (!m_Window.isCloseRequested())
     {
         m_Window.pollEvents();
+
+        // Moved to a monitor with another resolution/DPI: rebuild fonts and theme before the next frame.
+        if (m_Window.consumeScaleChange())
+            m_Gui.rescale(m_Window.uiScale());
 
         // A minimized window has a 0x0 framebuffer and may stop waiting for vsync.
         // Sleep until something happens instead of spinning, and pause playback.

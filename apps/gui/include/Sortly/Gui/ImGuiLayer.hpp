@@ -24,6 +24,10 @@ public:
     /// @brief Tears down only what was built, newest first. Safe to call repeatedly.
     void shutdown() noexcept;
 
+    /// @brief Rebuilds fonts and theme for a new display scale. Call between frames, never inside one.
+    void rescale(float uiScale);
+
+    /// @brief Prepares ImGui for a new frame. Must be called before any ImGui drawing commands.
     void beginFrame();
 
     /// @brief ImGui::Render() followed by the OpenGL3 draw call.
@@ -34,7 +38,7 @@ public:
 private:
     // Records how far init() got, so shutdown() undoes only what was built.
     enum class Stage { None, ImGui, ImPlot, GlfwBackend, OpenGlBackend };
-    
+
     Stage m_Stage = Stage::None;
 };
 

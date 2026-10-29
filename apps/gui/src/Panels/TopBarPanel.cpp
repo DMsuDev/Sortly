@@ -17,6 +17,8 @@
 
 namespace Sortly {
 
+using namespace ui::literals; // 10_dp, 1.5_dp, ...
+
 namespace {
 
 constexpr float kBarHeight = 60.0f; // Minimum; grows with the font (see barHeight()).
@@ -53,7 +55,7 @@ constexpr std::array<ViewOption, 4> kViewOptions = {{
 enum class Glyph { Minimize, Maximize, Restore, Close };
 
 // Tall enough for the controls whatever the font size.
-float barHeight() { return std::max(ui::dp(kBarHeight), ui::compactButtonHeight() + ui::dp(24.0f)); }
+float barHeight() { return std::max(ui::dp(kBarHeight), ui::compactButtonHeight() + 24_dp); }
 
 float centeredY(float height) { return (barHeight() - height) * 0.5f; }
 
@@ -68,7 +70,7 @@ void drawLogo()
 
     const ImVec2 min(origin.x + margin, origin.y + (bar - badge) * 0.5f);
     const ImVec2 max(min.x + badge, min.y + badge);
-    const float  rounding = ui::dp(10.0f);
+    const float  rounding = 10_dp;
     dl->AddRectFilled(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, 0.18f)), rounding);
     dl->AddRect(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, 0.5f)), rounding);
 
@@ -87,7 +89,7 @@ void drawLogo()
         captionHeight = ImGui::GetTextLineHeight();
     }
 
-    const float textX = margin + badge + ui::dp(10.0f);
+    const float textX = margin + badge + 10_dp;
     ImGui::SetCursorPos(ImVec2(textX, centeredY(titleHeight + captionHeight)));
     {
         const ui::ScopedFont font(ui::fonts::Title);
@@ -95,7 +97,7 @@ void drawLogo()
     }
 
     ImGui::SetCursorPosX(textX);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y + ui::dp(1.0f));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y + 1_dp);
     const ui::ScopedFont font(ui::fonts::Label);
     ImGui::TextDisabled("SORTING LAB  \xC2\xB7  VISUALIZER");
 }
@@ -107,7 +109,7 @@ void drawViewSelector(UiContext& ctx)
 
     // Width and height follow the font: a bigger font grows the buttons instead of overflowing them.
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ui::dp(kViewPadX, kViewPadY));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, ui::dp(9.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 9_dp);
 
     ImVec2 size(0.0f, ui::compactButtonHeight()); // Equal-width segments: the widest label decides.
     for (const ViewOption& option : kViewOptions)
@@ -127,7 +129,7 @@ void drawViewSelector(UiContext& ctx)
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddRectFilled(
         ImVec2(origin.x - pad, origin.y - pad), ImVec2(origin.x + total + pad, origin.y + size.y + pad),
-        ui::toU32(ui::colors::Track), ui::dp(12.0f));
+        ui::toU32(ui::colors::Track), 12_dp);
 
     for (std::size_t i = 0; i < kViewOptions.size(); ++i)
     {
@@ -172,7 +174,7 @@ void drawBrackets(ImDrawList* dl, const ImVec2& c, float half, ImU32 color, bool
 {
     const float corner = exit ? half * 0.4f : half;
     const float arm    = exit ? half * 0.6f : -half * 0.6f;
-    const float stroke = ui::dp(1.5f);
+    const float stroke = 1.5_dp;
 
     for (const float sx : { -1.0f, 1.0f })
     {
@@ -191,20 +193,20 @@ void drawExitFullscreen(ImDrawList* dl, const ImVec2& c, float half, ImU32 color
 void drawGlyph(Glyph glyph, const ImVec2& c, ImU32 color)
 {
     ImDrawList* dl     = ImGui::GetWindowDrawList();
-    const float half   = ui::dp(5.0f);
-    const float stroke = ui::dp(1.5f);
+    const float half   = 5_dp;
+    const float stroke = 1.5_dp;
 
     switch (glyph)
     {
         case Glyph::Minimize:
-            dl->AddLine(ImVec2(c.x - half, c.y + ui::dp(2.0f)), ImVec2(c.x + half, c.y + ui::dp(2.0f)), color, stroke);
+            dl->AddLine(ImVec2(c.x - half, c.y + 2_dp), ImVec2(c.x + half, c.y + 2_dp), color, stroke);
             break;
         case Glyph::Maximize:
             dl->AddRect(ImVec2(c.x - half, c.y - half), ImVec2(c.x + half, c.y + half), color, 0.0f, 0, stroke);
             break;
         case Glyph::Restore:
         {
-            const float o = ui::dp(2.0f);
+            const float o = 2_dp;
             dl->AddRect(ImVec2(c.x - half + o, c.y - half - o), ImVec2(c.x + half + o, c.y + half - o), color, 0.0f, 0, stroke);
             dl->AddRect(ImVec2(c.x - half - o, c.y - half + o), ImVec2(c.x + half - o, c.y + half + o), color, 0.0f, 0, stroke);
             break;
@@ -237,8 +239,10 @@ bool windowButton(const char* id, const char* tooltip, Glyph glyph, float height
 }
 
 // [Fullscreen pill] | [minimize] [maximize] [close]
+// When the OS draws the frame (Wayland) only the fullscreen pill is shown: the frame has the rest.
 void drawWindowControls(Window& window)
 {
+    const bool  osFrame = window.hasOsFrame();
     const float height  = ui::compactButtonHeight();
     const float gap     = ui::dp(kCtrlGap);
     const float divider = ui::dp(kDividerGap);
@@ -246,7 +250,7 @@ void drawWindowControls(Window& window)
     // Sized for the longer label, so the group never shifts when the label changes.
     const float pillWidth     = ui::glyphButtonWidth(kExitFullscreenLabel);
     const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
-    const float total         = pillWidth + divider * 2.0f + ui::dp(1.0f) + controlsWidth;
+    const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::dp(kCtrlMargin) - total, centeredY(height)));
 
@@ -257,6 +261,9 @@ void drawWindowControls(Window& window)
         window.toggleFullscreen();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
         ui::setTooltip("%s (F11)", fullscreen ? "Leave fullscreen" : "Fill the whole screen");
+
+    if (osFrame)
+        return;
 
     ImGui::SameLine(0.0f, divider);
     ui::verticalDivider(height);
@@ -286,8 +293,9 @@ void TopBarPanel::draw(UiContext& ctx)
     drawViewSelector(ctx);
     drawWindowControls(m_Window);
 
-    // Free space in the bar moves the window; double click maximizes it.
-    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    // Free space in the bar moves the window; double click maximizes it. With an OS frame, the OS does both.
+    if (!m_Window.hasOsFrame() && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             m_Window.toggleMaximize();

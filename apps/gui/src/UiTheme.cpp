@@ -143,6 +143,7 @@ void loadFonts(float scale)
 void applyTheme()
 {
     auto& style = ImGui::GetStyle();
+    style = ImGuiStyle(); // Start from the defaults: ScaleAllSizes() would otherwise compound on every call.
     style.WindowPadding       = ImVec2(20.0f, 18.0f);
     style.FramePadding        = ImVec2(14.0f, 9.0f);
     style.ItemSpacing         = ImVec2(12.0f, 12.0f);
