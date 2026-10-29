@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" width="640" height="250">
+<rect width="640" height="250" rx="14" fill="#0C0F15"/>
+<text x="320" y="28" fill="#E8EFF7" font-size="15" font-weight="600" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif">What the UI paints for each operation</text>
+<rect x="20" y="130" width="38" height="60" rx="4" fill="#66E085"/>
+<rect x="70" y="90" width="38" height="100" rx="4" fill="#66E085"/>
+<rect x="120" y="150" width="38" height="40" rx="4" fill="#66E085"/>
+<rect x="170" y="70" width="38" height="120" rx="4" fill="#3A4352"/>
+<rect x="220" y="110" width="38" height="80" rx="4" fill="#FFB84F"/>
+<rect x="270" y="50" width="38" height="140" rx="4" fill="#FFB84F"/>
+<rect x="320" y="140" width="38" height="50" rx="4" fill="#3A4352"/>
+<rect x="370" y="80" width="38" height="110" rx="4" fill="#FF6B75"/>
+<rect x="420" y="120" width="38" height="70" rx="4" fill="#FF6B75"/>
+<rect x="470" y="60" width="38" height="130" rx="4" fill="#3A4352"/>
+<rect x="520" y="100" width="38" height="90" rx="4" fill="#3A4352"/>
+<rect x="570" y="40" width="38" height="150" rx="4" fill="#AD8CFF"/>
+<circle cx="30" cy="228" r="6" fill="#66E085"/>
+<text x="44" y="233" fill="#AAC4D6" font-size="12" font-weight="400" text-anchor="start" font-family="Inter, Segoe UI, Arial, sans-serif">Sorted</text>
+<circle cx="150" cy="228" r="6" fill="#FFB84F"/>
+<text x="164" y="233" fill="#AAC4D6" font-size="12" font-weight="400" text-anchor="start" font-family="Inter, Segoe UI, Arial, sans-serif">Compare</text>
+<circle cx="270" cy="228" r="6" fill="#FF6B75"/>
+<text x="284" y="233" fill="#AAC4D6" font-size="12" font-weight="400" text-anchor="start" font-family="Inter, Segoe UI, Arial, sans-serif">Swap</text>
+<circle cx="390" cy="228" r="6" fill="#AD8CFF"/>
+<text x="404" y="233" fill="#AAC4D6" font-size="12" font-weight="400" text-anchor="start" font-family="Inter, Segoe UI, Arial, sans-serif">Pivot</text>
+<circle cx="510" cy="228" r="6" fill="#3A4352"/>
+<text x="524" y="233" fill="#AAC4D6" font-size="12" font-weight="400" text-anchor="start" font-family="Inter, Segoe UI, Arial, sans-serif">Untouched</text>
+</svg>
