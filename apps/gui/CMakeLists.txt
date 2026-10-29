@@ -40,7 +40,11 @@ set_target_properties(SortlyGuiLib PROPERTIES FOLDER "Sortly/Apps")
 # ---------------------------------------------------------------------------
 #  Executable
 # ---------------------------------------------------------------------------
-add_executable(SortlyGui WIN32 src/main.cpp)
+add_executable(SortlyGui src/main.cpp)
+
+set_target_properties(SortlyGui PROPERTIES
+  WIN32_EXECUTABLE $<NOT:$<CONFIG:Debug>>
+)
 target_link_libraries(SortlyGui PRIVATE Sortly::GuiLib)
 
 # Copy the whole assets folder (fonts + licenses) next to the executable.
