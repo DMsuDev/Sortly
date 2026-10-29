@@ -8,24 +8,11 @@
 #  See LICENSE file in the project root for full license text.
 # ==============================================================================
 
-add_library(SortlySorting STATIC
-  src/SortSession.cpp
-  src/Algorithms/BubbleSort.cpp
-  src/Algorithms/CocktailSort.cpp
-  src/Algorithms/GeneratorSort.cpp
-  src/Algorithms/HeapSort.cpp
-  src/Algorithms/InsertionSort.cpp
-  src/Algorithms/MergeSort.cpp
-  src/Algorithms/QuickSort.cpp
-  src/Algorithms/SelectionSort.cpp
-  src/Algorithms/ShellSort.cpp
-  src/Algorithms/SortAlgorithmFactory.cpp
-  src/Data/DataSetBuilder.cpp
-  src/Data/SeedProvider.cpp
-  src/Operations/SortPlayback.cpp
-  src/Operations/SortRecorder.cpp
-)
+# Every .cpp under src/ is part of the library: adding an algorithm needs no CMake edit
+# (CONFIGURE_DEPENDS re-runs the glob on the next build).
+file(GLOB_RECURSE SORTLY_SORTING_SRC CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
+add_library(SortlySorting STATIC ${SORTLY_SORTING_SRC})
 add_library(Sortly::Sorting ALIAS SortlySorting)
 
 target_include_directories(SortlySorting
