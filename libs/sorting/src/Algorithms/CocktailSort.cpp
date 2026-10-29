@@ -5,86 +5,47 @@
 
 namespace Sortly {
 
-void CocktailSort::load(std::span<const int> data)
+// Bubble Sort in both directions: a forward pass moves the largest element to `end`,
+// a backward pass moves the smallest to `start`, and the unsorted range shrinks from both sides.
+// Stops as soon as a pass makes no swap.
+StepGenerator CocktailSort::run()
 {
-    m_Data.assign(data.begin(), data.end());
+    if (m_Data.size() < 2)
+        co_return;
 
-    m_Direction = Direction::Forward;
-    m_Index = 0;
+    std::size_t start = 0;
+    std::size_t end   = m_Data.size() - 1;
 
-    m_Start = 0;
-    m_End = m_Data.empty() ? 0 : m_Data.size() - 1;
-
-    m_Swapped = false;
-    m_Finished = false;
-}
-
-SortOperation CocktailSort::compareOrSwap(SortRecorder& recorder, std::size_t left)
-{
-    const std::size_t right = left + 1;
-
-    if (m_Data[left] > m_Data[right])
+    while (start < end)
     {
-        m_Swapped = true;
-        return recorder.swap(m_Data, left, right);
-    }
+        bool swapped = false;
 
-    return recorder.compare(m_Data, left, right);
-}
-
-SortOperation CocktailSort::finish(SortRecorder& recorder)
-{
-    m_Finished = true;
-    return recorder.sorted();
-}
-
-std::optional<SortOperation> CocktailSort::step(SortRecorder& recorder)
-{
-    if (m_Finished)
-        return std::nullopt;
-
-    // Pass boundaries don't produce an operation, so keep going until one does.
-    while (true)
-    {
-        // Covers empty and single-element input too (m_End is 0 then).
-        if (m_Start >= m_End)
-            return finish(recorder);
-
-        if (m_Direction == Direction::Forward)
+        for (std::size_t i = start; i < end; ++i)
         {
-            if (m_Index >= m_End)
+            co_yield Step::compare(i, i + 1);
+            if (m_Data[i] > m_Data[i + 1])
             {
-                if (!m_Swapped)
-                    return finish(recorder);
-
-                m_Direction = Direction::Backward;
-                --m_End; // The largest remaining element is in place.
-                m_Index = m_End;
-                m_Swapped = false;
-                continue;
+                co_yield Step::swap(i, i + 1);
+                swapped = true;
             }
-
-            const auto op = compareOrSwap(recorder, m_Index);
-            ++m_Index;
-            return op;
         }
+        if (!swapped)
+            break;
+        --end; // The largest remaining element is in place (end >= 1 here, so no underflow).
 
-        // Backward
-        if (m_Index <= m_Start)
+        swapped = false;
+        for (std::size_t i = end; i > start; --i)
         {
-            if (!m_Swapped)
-                return finish(recorder);
-
-            m_Direction = Direction::Forward;
-            ++m_Start; // The smallest remaining element is in place.
-            m_Index = m_Start;
-            m_Swapped = false;
-            continue;
+            co_yield Step::compare(i - 1, i);
+            if (m_Data[i - 1] > m_Data[i])
+            {
+                co_yield Step::swap(i - 1, i);
+                swapped = true;
+            }
         }
-
-        const auto op = compareOrSwap(recorder, m_Index - 1);
-        --m_Index;
-        return op;
+        if (!swapped)
+            break;
+        ++start; // The smallest remaining element is in place.
     }
 }
 
