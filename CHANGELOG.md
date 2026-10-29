@@ -4,6 +4,61 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Conventional Commits](https://www.conventionalcommits.org/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-29
+
+### 🚀 Features
+
+- **gui**: Add cornerGlow widget helper ([0ab28f3](https://github.com/DMsuDev/Sortly/commit/0ab28f34b7c2ecb8c14ebd666f16c82c559d1ac8))
+
+- **gui**: Add BarMotion to animate bars between slots ([344d531](https://github.com/DMsuDev/Sortly/commit/344d531eba29834a8366aaae56387f06d02dec7e))
+
+  Each bar keeps its identity: a Swap exchanges the slots of two bars and each one slides toward its new slot. Overwrites only change heights.
+
+- **gui**: Paint plot bars by state ([95cb494](https://github.com/DMsuDev/Sortly/commit/95cb494468c1c14b47b9f2cc8f6ae7bc2cf61ee1))
+
+  - Classify every bar as idle, placed, pivot or active and draw one batch per state
+  - Remove the outline around active bars
+  - Reuse the batch buffers between frames
+
+- **gui**: Animate bars and track in-place values per run ([955f7c4](https://github.com/DMsuDev/Sortly/commit/955f7c4f46253c4b5227fdd4fa80b1c4e8c7d83f))
+
+  - Each Run owns its BarMotion and a sorted copy of the dataset
+  - Add the smoothMotion setting and RunController::setSmooth
+  - Skip setDelayMs work when the delay did not change
+
+- **gui**: Start in single view with 64 elements ([7ceb363](https://github.com/DMsuDev/Sortly/commit/7ceb363dbc50a7dcf3f6b03c2ee63fff9c0e06a5))
+
+- **gui**: Add styled tooltips and popups ([1ab3fbc](https://github.com/DMsuDev/Sortly/commit/1ab3fbc335c9ffec2bfe33de92bea5a7ff666fb7))
+
+  Replace ImGui::SetTooltip with ui::setTooltip and add a slim themed scrollbar.
+
+- **gui**: Paint bars green with a sweep when a run finishes ([aa08a68](https://github.com/DMsuDev/Sortly/commit/aa08a6834b88a0f65a880dc6572ab066f14017cd))
+
+  Add Run::sweepProgress(), a Sorted bar state and faint Y guides; remove the axes option.
+
+- **gui**: Make RunCard responsive with side, inline and popup stats ([ba21f8d](https://github.com/DMsuDev/Sortly/commit/ba21f8d9d555865d9d65ad48ad2830541c63f263))
+
+  Add maxUsefulCardHeight() and drop the 1-1-1 layout for three algorithms.
+
+### 🐛 Bug Fixes
+
+- **gui**: Keep bars idle until the run starts ([3045175](https://github.com/DMsuDev/Sortly/commit/30451755c1ee7d4ddd5d712b849bc5fbc7c8583a))
+
+  - Split drawRunCard into header, body, stats column and footer
+  - Add the corner glow and drive the statistics from kMetrics
+
+- **gui**: Maintain pivot color during comparisons in ArrayPlot ([985f5ef](https://github.com/DMsuDev/Sortly/commit/985f5ef6fef73186124f13e360f1d2de07100060))
+
+- **tests**: Include private headers for white-box tests in CMakeLists.txt ([4f855a9](https://github.com/DMsuDev/Sortly/commit/4f855a9eb952584a05d8048448f7b1934c6abdf5))
+
+### 🚜 Refactor
+
+- **build**: Simplify library source file management in CMakeLists.txt ([cf0ebeb](https://github.com/DMsuDev/Sortly/commit/cf0ebeb2332480c4133c73e4d1ec98de7c408a41))
+
+### 🛠️ Build System
+
+- **cmake**: Set WIN32_EXECUTABLE property for SortlyGui target ([4e27119](https://github.com/DMsuDev/Sortly/commit/4e27119cae13fc13f3a253d32657220d3cc65265))
+
 ## [0.2.0] - 2026-10-24
 
 ### 💥 Breaking Changes
