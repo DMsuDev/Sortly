@@ -13,3 +13,6 @@ sortly_add_tests(sortly_sorting_tests
     Sortly::Sorting
     Sortly::Vigil
 )
+
+# White-box tests: some of them need the library's private headers (src/).
+target_include_directories(sortly_sorting_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
