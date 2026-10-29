@@ -37,21 +37,8 @@ Built with **GLFW**, **OpenGL**, **Dear ImGui** and **ImPlot**, it focuses on cl
 > This project is currently under active development. The application is reasonably stable at this stage, but future releases may introduce significant changes.
 
 <div align="center">
-  <img width="760" alt="Sortly comparing four sorting algorithms" src="docs/images/preview.png">
+  <img width="760px" alt="Sortly comparing four sorting algorithms" src="docs/images/preview.png">
 </div>
-
-## Algorithms
-
-| Algorithm      | Complexity  | Idea                                                          |
-| -------------- | ----------- | ------------------------------------------------------------- |
-| Bubble Sort    | O(n²)       | Swaps neighbors that are out of order, pass after pass.       |
-| Cocktail Sort  | O(n²)       | Bidirectional variation of Bubble Sort.                       |
-| Selection Sort | O(n²)       | Repeatedly moves the smallest remaining element into place.   |
-| Insertion Sort | O(n²)       | Grows a sorted prefix by sliding each element into its place. |
-| Quick Sort     | O(n log n)  | Partitions around a pivot (Lomuto) and sorts each side.       |
-| Merge Sort     | O(n log n)  | Bottom-up merging of sorted runs through an auxiliary buffer. |
-| Heap Sort      | O(n log n)  | Builds a max-heap, then moves its root to the end.            |
-| Shell Sort     | O(n log² n) | Insertion sort over shrinking gaps.                           |
 
 ## How it works
 
