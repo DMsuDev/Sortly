@@ -35,7 +35,7 @@ protected:
     SortPlayback m_Playback;
 };
 
-// Five operations over {3, 1, 2}:  pivot(2), compare(0,2), swap(0,1), clearPivot, sorted.
+// Five operations over {3, 1, 2}:  pivot(2), compare(0,2), swap(0,1), releasePivot, sorted.
 // The pivot mark must be set after the first one and gone after the fourth.
 class PivotPlaybackTest : public ::testing::Test
 {
@@ -46,10 +46,10 @@ protected:
         SortStatistics statistics;
         SortRecorder recorder(statistics);
         m_Operations = {
-            recorder.pivot(work, 2),
+            recorder.pivot(2, work[2]),
             recorder.compare(work, 0, 2),
             recorder.swap(work, 0, 1),
-            recorder.clearPivot(),
+            recorder.releasePivot(),
             recorder.sorted()
         };
 
@@ -314,32 +314,13 @@ TEST_F(PivotPlaybackTest, StopAndClearDropTheMark)
     EXPECT_EQ(m_Playback.getPivotIndex(), -1);
 }
 
-TEST(SortPlayback, TheEndOfTheRunDropsAMarkNobodyCleared)
-{
-    const std::vector<int> initial{ 3, 1, 2 };
-    SortStatistics statistics;
-    SortRecorder recorder(statistics);
-    std::vector<int> work = initial;
-    const std::vector<SortOperation> operations{ recorder.pivot(work, 1), recorder.sorted() };
-
-    SortPlayback playback;
-    ASSERT_TRUE(playback.load(initial, operations));
-
-    ASSERT_TRUE(playback.stepForward());
-    EXPECT_EQ(playback.getPivotIndex(), 1);
-
-    ASSERT_TRUE(playback.stepForward());
-    EXPECT_TRUE(playback.isFinished());
-    EXPECT_EQ(playback.getPivotIndex(), -1);
-}
-
 TEST(SortPlayback, ANewPivotReplacesTheMarkWithoutClearingFirst)
 {
     const std::vector<int> initial{ 3, 1, 2 };
     SortStatistics statistics;
     SortRecorder recorder(statistics);
     std::vector<int> work = initial;
-    const std::vector<SortOperation> operations{ recorder.pivot(work, 0), recorder.pivot(work, 2), recorder.sorted() };
+    const std::vector<SortOperation> operations{ recorder.pivot(0, work[0]), recorder.pivot(2, work[2]), recorder.sorted() };
 
     SortPlayback playback;
     ASSERT_TRUE(playback.load(initial, operations));

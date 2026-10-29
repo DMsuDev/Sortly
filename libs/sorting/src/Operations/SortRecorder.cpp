@@ -75,23 +75,18 @@ SortOperation SortRecorder::overwrite(std::span<int> buffer, std::size_t index, 
     });
 }
 
-SortOperation SortRecorder::pivot(std::span<const int> buffer, std::size_t index)
+SortOperation SortRecorder::pivot(std::size_t index, int value)
 {
-    assert(index < buffer.size());
-
-    // Like every other operation, the value comes from the buffer and the read is counted.
-    ++m_Statistics.reads;
-
     return record(SortOperation{
         .type = SortOperation::Type::Pivot,
         .indexA = toIndex(index),
-        .valueA = buffer[index]
+        .valueA = value
     });
 }
 
-SortOperation SortRecorder::clearPivot()
+SortOperation SortRecorder::releasePivot()
 {
-    // indexA stays at -1: "no pivot".
+    // indexA keeps its default (-1): "no pivot".
     return record(SortOperation{ .type = SortOperation::Type::Pivot });
 }
 

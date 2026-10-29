@@ -5,9 +5,7 @@
 
 #include <vigil/vigil.h>
 
-#include <algorithm>
 #include <cassert>
-#include <iterator>
 #include <optional>
 #include <utility>
 
@@ -20,7 +18,7 @@ bool inRange(int index, std::size_t size) noexcept
     return index >= 0 && static_cast<std::size_t>(index) < size;
 }
 
-/// Position of the first operation that uses an index outside [0, size), if any.
+/// Position of the first operation that touches an index outside [0, size), if any.
 std::optional<std::size_t> findInvalidOperation(std::span<const SortOperation> ops, std::size_t size) noexcept
 {
     for (std::size_t i = 0; i < ops.size(); ++i)
@@ -40,14 +38,14 @@ std::optional<std::size_t> findInvalidOperation(std::span<const SortOperation> o
                 break;
 
             case SortOperation::Type::Pivot:
-                // -1 clears the mark; anything else must point at a real element.
+                // -1 releases the pivot; anything else must point at a real element.
                 if (op.indexA != -1 && !inRange(op.indexA, size))
                     return i;
                 break;
 
             case SortOperation::Type::Compare:
             case SortOperation::Type::Sorted:
-                break; // Never touch the data; their indices are for display only.
+                break; // Display only; never touch the data.
         }
     }
 
@@ -71,6 +69,12 @@ void SortPlayback::execute(const SortOperation& op, bool reverse)
             // A swap is its own inverse.
             std::swap(m_Visual[static_cast<std::size_t>(op.indexA)],
                       m_Visual[static_cast<std::size_t>(op.indexB)]);
+
+            // The pivot is an element, so it moves with its value. Also its own inverse.
+            if (m_Pivot == op.indexA)
+                m_Pivot = op.indexB;
+            else if (m_Pivot == op.indexB)
+                m_Pivot = op.indexA;
             break;
 
         case SortOperation::Type::Overwrite:
@@ -79,9 +83,24 @@ void SortPlayback::execute(const SortOperation& op, bool reverse)
             m_Visual[static_cast<std::size_t>(op.indexA)] = reverse ? op.valueB : op.valueA;
             break;
 
+        case SortOperation::Type::Pivot:
+            if (reverse)
+            {
+                // Undo goes through the operations in LIFO order, so the history is never empty here.
+                assert(!m_PivotHistory.empty());
+                m_Pivot = m_PivotHistory.back();
+                m_PivotHistory.pop_back();
+            }
+            else
+            {
+                m_PivotHistory.push_back(m_Pivot);
+                m_Pivot = op.indexA;
+            }
+            break;
+
         case SortOperation::Type::Compare:
-        case SortOperation::Type::Pivot:  // The pivot mark is not data: see getPivotIndex().
         case SortOperation::Type::Sorted:
+            // No effect on the data.
             break;
     }
 }
@@ -89,33 +108,11 @@ void SortPlayback::execute(const SortOperation& op, bool reverse)
 void SortPlayback::reset()
 {
     m_Visual = m_Initial;
+    m_Pivot = -1;
+    m_PivotHistory.clear();
     m_CurrentIndex = 0;
     m_ElapsedTime = 0.0f;
     m_State = PlaybackState::Stopped;
-}
-
-void SortPlayback::buildPivotTimeline()
-{
-    m_PivotTimeline.clear();
-
-    // Only real changes are stored, so a long run with few pivots keeps a tiny timeline.
-    const auto change = [this](std::size_t appliedOps, int index) {
-        const int current = m_PivotTimeline.empty() ? -1 : m_PivotTimeline.back().index;
-        if (index != current)
-            m_PivotTimeline.push_back({ appliedOps, index });
-    };
-
-    for (std::size_t i = 0; i < m_Operations.size(); ++i)
-    {
-        const SortOperation& op = m_Operations[i];
-
-        if (op.type == SortOperation::Type::Pivot)
-            change(i + 1, op.indexA); // indexA == -1 is "cleared".
-        else if (op.type == SortOperation::Type::Sorted && op.indexA < 0)
-            change(i + 1, -1);        // The end of the run drops a mark nobody cleared.
-    }
-
-    m_PivotTimeline.shrink_to_fit();
 }
 
 // ================================================
@@ -141,7 +138,6 @@ bool SortPlayback::load(std::span<const int> initialData, std::span<const SortOp
 
     m_Initial.assign(initialData.begin(), initialData.end());
     m_Operations.assign(ops.begin(), ops.end());
-    buildPivotTimeline();
     reset();
 
     VIGIL_LOG_DEBUG("SortPlayback: Loaded {} operations over {} elements", m_Operations.size(), m_Initial.size());
@@ -152,8 +148,6 @@ void SortPlayback::clear()
 {
     m_Operations.clear();
     m_Operations.shrink_to_fit();
-    m_PivotTimeline.clear();
-    m_PivotTimeline.shrink_to_fit();
     m_Initial.clear();
     reset(); // m_Visual follows m_Initial (now empty)
 }
@@ -281,17 +275,6 @@ const SortOperation* SortPlayback::getCurrentOperation() const
         return nullptr;
 
     return &m_Operations[m_CurrentIndex];
-}
-
-int SortPlayback::getPivotIndex() const
-{
-    // The change in force is the last one whose operation is already applied: the first one
-    // that still needs more operations than the cursor has passed, minus one.
-    const auto next = std::upper_bound(
-        m_PivotTimeline.begin(), m_PivotTimeline.end(), m_CurrentIndex,
-        [](std::size_t applied, const PivotChange& change) { return applied < change.appliedOps; });
-
-    return next == m_PivotTimeline.begin() ? -1 : std::prev(next)->index;
 }
 
 // ================================================

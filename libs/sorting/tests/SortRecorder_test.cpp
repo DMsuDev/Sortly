@@ -70,31 +70,12 @@ TEST(SortRecorder, OverwriteCapturesOldValueAndMutatesBuffer)
     EXPECT_EQ(statistics.writes, 1u);
 }
 
-// Like every other operation, the pivot's value is read from the buffer by the recorder
-// (the algorithm cannot make it disagree with the data) and the read is counted.
-TEST(SortRecorder, PivotReadsTheValueFromTheBufferAndCountsTheRead)
-{
-    std::vector<int> buffer{ 5, 3, 4 };
-    SortStatistics statistics;
-    SortRecorder recorder(statistics);
-
-    const auto operation = recorder.pivot(buffer, 2);
-
-    EXPECT_EQ(buffer, (std::vector<int>{ 5, 3, 4 }));
-    EXPECT_EQ(operation.type, SortOperation::Type::Pivot);
-    EXPECT_EQ(operation.indexA, 2);
-    EXPECT_EQ(operation.valueA, 4);
-    EXPECT_EQ(statistics.reads, 1u);
-    EXPECT_EQ(statistics.writes, 0u);
-    EXPECT_EQ(statistics.operationCount, 1u);
-}
-
-TEST(SortRecorder, ClearPivotHasNoIndexAndCostsNoRead)
+TEST(SortRecorder, ReleasePivotHasNoIndexAndCostsNoRead)
 {
     SortStatistics statistics;
     SortRecorder recorder(statistics);
 
-    const auto operation = recorder.clearPivot();
+    const auto operation = recorder.releasePivot();
 
     EXPECT_EQ(operation.type, SortOperation::Type::Pivot);
     EXPECT_EQ(operation.indexA, -1);

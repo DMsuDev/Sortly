@@ -215,7 +215,7 @@ TEST(QuickSort, MarksOnePivotPerPartitionAndReadsItFromTheData)
     EXPECT_GT(marks, 0);
     EXPECT_EQ(marks, clears);
 
-    // Every pivot read is counted on top of the comparisons' own reads.
     EXPECT_EQ(recording.statistics.reads,
-              2 * recording.statistics.comparisons + 2 * recording.statistics.swaps + static_cast<std::uint64_t>(marks));
+          2 * recording.statistics.comparisons
+              + 2 * recording.statistics.swaps);
 }
