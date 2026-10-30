@@ -5,6 +5,8 @@
 #include "Sortly/Gui/BarMotion.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 
+#include "Sortly/Sorting/Operations/SortPlayback.hpp"
+
 #include <imgui.h>
 #include <implot.h>
 
@@ -55,10 +57,24 @@ BarBatches& cleanBatches()
     return op && (op->indexA == index || op->indexB == index);
 }
 
+// The data is settled, but the bar also has to have visually arrived at its slot.
+[[nodiscard]] bool isPlaced(const BarMotion* motion, std::span<const int> data, std::size_t slot,
+                            const ArrayHighlight& highlight)
+{
+    if (!highlight.playback || !highlight.playback->isSettled(slot))
+        return false;
+    if (!motion)
+        return true;
+
+    const std::size_t bar = motion->owner(slot);
+    return std::abs(motion->x(bar) - static_cast<float>(slot)) < 0.05f &&
+           std::abs(motion->height(bar) - static_cast<float>(data[slot])) < 0.5f;
+}
+
 // Priority: sorted sweep > active > pivot > in place > idle.
 // Once the run is finished every bar is in place; the sweep decides which ones already turned green.
 [[nodiscard]] BarState classify(std::size_t slot, std::size_t swept, std::span<const int> data,
-                                const ArrayHighlight& highlight)
+                                const ArrayHighlight& highlight, const BarMotion* motion)
 {
     if (highlight.sorted)
         return slot < swept ? BarState::Sorted : BarState::Placed;
@@ -70,7 +86,7 @@ BarBatches& cleanBatches()
     if (touchesSlot(highlight.operation, slot))
         return BarState::Active;
 
-    if (slot < highlight.target.size() && data[slot] == highlight.target[slot])
+    if (isPlaced(motion, data, slot, highlight))
         return BarState::Placed;
 
     return BarState::Idle;
@@ -93,7 +109,7 @@ BarBatches& cleanBatches()
         case BarState::Idle:   return colors::withAlpha(colors::BarIdle, 0.9f);
         case BarState::Placed: return colors::withAlpha(style.color, 0.88f);
         case BarState::Pivot:  return operationColor(SortOperation::Type::Pivot);
-        case BarState::Active: return operationColor(highlight.operation->type); // Only reached with an operation.
+        case BarState::Active: return operationColor(highlight.operation->type);
         case BarState::Sorted: return colors::withAlpha(colors::Success, 0.88f);
     }
     return colors::Accent;
@@ -109,7 +125,8 @@ void drawBars(std::span<const int> data, const ArrayHighlight& highlight, const 
 
     BarBatches& batches = cleanBatches();
     for (std::size_t slot = 0; slot < data.size(); ++slot)
-        batches[static_cast<std::size_t>(classify(slot, swept, data, highlight))].add(barAt(motion, data, slot));
+        batches[static_cast<std::size_t>(classify(slot, swept, data, highlight, motion))]
+            .add(barAt(motion, data, slot));
 
     for (std::size_t i = 0; i < kStateCount; ++i)
     {

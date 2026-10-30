@@ -27,7 +27,6 @@ struct Run
     bool                         computing = false;
     std::string                  error;  // Non-empty when the run could not be created or computed.
     BarMotion                    motion; // Fresh per run, so no stale bar identity can survive a restart.
-    std::vector<int>             target; // Sorted copy of the dataset (final state).
 
     // Finish sweep: purely visual, it never touches the statistics.
     static constexpr float kSweepSeconds = 0.9f; // Total time to paint every bar green, left to right.

@@ -153,7 +153,7 @@ ArrayHighlight makeHighlight(const Run& run)
 
     highlight.operation  = playback.getCurrentOperation();
     highlight.pivotIndex = playback.getPivotIndex();
-    highlight.target     = run.target;
+    highlight.playback   = &playback;
     return highlight;
 }
 

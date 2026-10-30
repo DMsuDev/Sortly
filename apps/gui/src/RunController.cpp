@@ -5,7 +5,6 @@
 
 #include <vigil/vigil.h>
 
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <utility>
@@ -102,13 +101,6 @@ void RunController::updateComputation()
             {
                 VIGIL_LOG_ERROR("Could not prepare playback for the completed sorting session");
                 run.error = "Could not prepare playback.";
-            }
-            else
-            {
-                // The dataset is never touched by playback, so it still holds the shuffled input.
-                const auto values = run.session->getDataSet().values();
-                run.target.assign(values.begin(), values.end());
-                std::ranges::sort(run.target);
             }
         }
     }

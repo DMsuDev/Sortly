@@ -9,7 +9,7 @@
 
 #include <span>
 
-namespace Sortly { class BarMotion; } // namespace Sortly
+namespace Sortly { class BarMotion; class SortPlayback; } // namespace Sortly
 
 namespace Sortly::ui {
 
@@ -20,7 +20,7 @@ struct ArrayHighlight
     bool                 sorted     = false;   // Whole run finished: every bar is painted as done.
     int                  pivotIndex = -1;      // Slot of the active pivot, or -1.
     float                sweep      = 1.0f;    // Only used when `sorted`: fraction of bars (left to right) already painted as sorted.
-    std::span<const int> target;               // Sorted values: a bar equal to target[slot] is in place.
+    const SortPlayback*  playback   = nullptr; // Tells which slots already hold their final value.
     const BarMotion*     motion     = nullptr; // Animated bar positions; null = each bar sits on its slot.
 };
 
