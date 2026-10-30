@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/Icons.hpp"
 
 #include <foundry/platform/paths.h>
@@ -25,7 +26,7 @@ constexpr const char* kIconFont     = "lucide.ttf";
 // Vertical nudge of the merged icons, as a fraction of the text size. It is tuned for the text
 // font: raise it if the icons sit too high next to the text, lower it if they sit too low.
 // (Switching fonts is the usual reason to touch it.)
-constexpr float kIconBaselineShift = 0.10f;
+constexpr float kIconBaselineShift = 0.20f;
 
 // ImGui expects UTF-8 paths. On Windows path::string() uses the ANSI code page,
 // which breaks as soon as the install path has an accented character.
@@ -53,6 +54,17 @@ std::string findFontFile(const char* name)
         if (fs::exists(candidate, ec))
             return toUtf8(candidate);
     }
+    return {};
+}
+
+fs::path findThemesDir()
+{
+    std::error_code ec;
+    const fs::path  relative = fs::path("assets") / "themes";
+
+    for (const fs::path& dir : { foundry::platform::executable_directory(ec) / relative, relative })
+        if (fs::is_directory(dir, ec))
+            return dir;
     return {};
 }
 
@@ -142,50 +154,9 @@ void loadFonts(float scale)
 
 void applyTheme()
 {
-    auto& style = ImGui::GetStyle();
-    style = ImGuiStyle(); // Start from the defaults: ScaleAllSizes() would otherwise compound on every call.
-    style.WindowPadding       = ImVec2(20.0f, 18.0f);
-    style.FramePadding        = ImVec2(14.0f, 9.0f);
-    style.ItemSpacing         = ImVec2(12.0f, 12.0f);
-    style.ItemInnerSpacing    = ImVec2(8.0f, 6.0f);
-    style.WindowRounding      = 0.0f;
-    style.ChildRounding       = 14.0f;
-    style.FrameRounding       = 10.0f;
-    style.PopupRounding       = 10.0f;
-    style.ScrollbarRounding   = 10.0f;
-    style.GrabRounding        = 10.0f;
-    style.GrabMinSize         = 16.0f;
-    style.WindowBorderSize    = 0.0f;
-    style.ChildBorderSize     = 1.0f;
-    style.FrameBorderSize     = 0.0f;
-    style.PopupBorderSize     = 1.0f;
-    style.ScrollbarSize     = 8.0f;
-    style.ScrollbarRounding = 10.0f;
-    style.ScaleAllSizes(g_Scale);
-
-    auto* c = style.Colors;
-    c[ImGuiCol_ScrollbarBg]          = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-    c[ImGuiCol_ScrollbarGrab]        = colors::withAlpha(colors::Muted, 0.22f);
-    c[ImGuiCol_ScrollbarGrabHovered] = colors::withAlpha(colors::Muted, 0.45f);
-    c[ImGuiCol_ScrollbarGrabActive]  = colors::withAlpha(colors::Accent, 0.85f);
-    c[ImGuiCol_WindowBg]             = colors::Clear;
-    c[ImGuiCol_ChildBg]              = colors::Surface;
-    c[ImGuiCol_PopupBg]              = ImVec4(0.085f, 0.102f, 0.133f, 0.98f);
-    c[ImGuiCol_Border]               = colors::Border;
-    c[ImGuiCol_Text]                 = ImVec4(0.91f, 0.94f, 0.97f, 1.00f);
-    c[ImGuiCol_TextDisabled]         = colors::TextDim;
-    c[ImGuiCol_FrameBg]              = ImVec4(0.11f, 0.13f, 0.17f, 1.00f);
-    c[ImGuiCol_FrameBgHovered]       = ImVec4(0.15f, 0.19f, 0.23f, 1.00f);
-    c[ImGuiCol_FrameBgActive]        = ImVec4(0.18f, 0.23f, 0.27f, 1.00f);
-    c[ImGuiCol_Button]               = ImVec4(0.14f, 0.17f, 0.22f, 1.00f);
-    c[ImGuiCol_ButtonHovered]        = ImVec4(0.19f, 0.23f, 0.29f, 1.00f);
-    c[ImGuiCol_ButtonActive]         = ImVec4(0.12f, 0.15f, 0.19f, 1.00f);
-    c[ImGuiCol_Header]               = ImVec4(0.10f, 0.43f, 0.39f, 0.55f);
-    c[ImGuiCol_HeaderHovered]        = ImVec4(0.12f, 0.57f, 0.51f, 0.70f);
-    c[ImGuiCol_HeaderActive]         = ImVec4(0.10f, 0.51f, 0.46f, 1.00f);
-    c[ImGuiCol_SliderGrab]           = colors::Accent;
-    c[ImGuiCol_SliderGrabActive]     = ImVec4(0.46f, 0.95f, 0.83f, 1.00f);
-    c[ImGuiCol_Separator]            = colors::Border;
+    theme::loadDirectory(findThemesDir());
+    if (!theme::apply("Dark"))
+        VIGIL_LOG_WARN("No 'Dark' theme in assets/themes: using ImGui's default style");
 }
 
 } // namespace Sortly::ui

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/GuiApplication.hpp"
+#include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 
 #include "Panels/ControlsPanel.hpp"
@@ -124,6 +125,8 @@ int GuiApplication::onRun()
 
     while (!m_Window.isCloseRequested())
     {
+        ui::theme::update();
+        
         m_Window.pollEvents();
 
         // Moved to a monitor with another resolution/DPI: rebuild fonts and theme before the next frame.

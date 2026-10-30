@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "TopBarPanel.hpp"
+#include "Sortly/Gui/Theme/ThemeManager.hpp"
 
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
@@ -214,9 +215,16 @@ void drawWindowControls(Window& window)
     // Sized for the longer label, so the group never shifts when the label changes.
     const float pillWidth     = ui::calculatePillWidth(kExitFullscreenLabel);
     const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
-    const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
+    const float themeWidth    = ui::dp(kCtrlWidth) + gap;
+    const float total         = themeWidth + (osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth);
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::dp(kCtrlMargin) - total, centeredY(height)));
+
+    ImGui::BeginDisabled(ui::theme::count() < 2);
+    if (windowButton("##Theme", "Switch theme", ICON_SUN_MOON, height))
+        ui::theme::requestNext();
+    ImGui::EndDisabled();
+    ImGui::SameLine(0.0f, gap);
 
     const bool fullscreen = window.isFullscreen();
     if (ui::pillButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,
