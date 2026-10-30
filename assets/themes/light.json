@@ -1,0 +1,77 @@
+
+{
+  "name": "Light",
+  "base": "light",
+  "colors": {
+    "imgui": {
+      "text": "#1B2230FF",
+      "text-disabled": "#6B778AFF",
+      "window-bg": "#E8ECF2FF",
+      "child-bg": "#F5F7FAFF",
+      "popup-bg": "#F6F8FBFA",
+      "border": "#CBD3DFCC",
+      "separator": "#CBD3DFCC",
+      "frame-bg": "#E2E7EFFF",
+      "frame-bg-hovered": "#D8E0EAFF",
+      "frame-bg-active": "#CDD7E4FF",
+      "button": "#DCE3ECFF",
+      "button-hovered": "#CDD7E4FF",
+      "button-active": "#C1CDDDFF",
+      "header": "#0F9D8A59",
+      "header-hovered": "#0F9D8A99",
+      "header-active": "#0F9D8AFF",
+      "slider-grab": "#0F9D8AFF",
+      "slider-grab-active": "#0B7F70FF",
+      "scrollbar-bg": "#00000000",
+      "scrollbar-grab": "#55627A38",
+      "scrollbar-grab-hovered": "#55627A73",
+      "scrollbar-grab-active": "#0F9D8AD9"
+    },
+    "implot": {},
+    "sortly": {
+      "bar-idle": "#A9B4C4FF",
+      "accent": "#0F9D8AFF",
+      "warning": "#E08A00FF",
+      "danger": "#E5484DFF",
+      "info": "#2F6FEDFF",
+      "violet": "#7C5CE6FF",
+      "success": "#1FA85AFF",
+      "muted": "#55627AFF",
+      "bar": "#0F9D8AE0",
+      "surface": "#F5F7FAFF",
+      "surface-hi": "#E9EDF4FF",
+      "clear": "#E8ECF2FF",
+      "text-dim": "#6B778AFF",
+      "border": "#CBD3DFCC",
+      "card-border": "#CBD3DFB3",
+      "track": "#D5DDE8FF",
+      "text-bright": "#0B1020FF",
+      "on-accent": "#FFFFFFFF",
+      "slot-0": "#2F6FEDFF",
+      "slot-1": "#D6409FFF",
+      "slot-2": "#0F9D8AFF",
+      "slot-3": "#7C5CE6FF"
+    }
+  },
+  "styles": {
+    "imgui": {
+      "window-padding": [20, 18],
+      "frame-padding": [14, 9],
+      "item-spacing": [12, 12],
+      "item-inner-spacing": [8, 6],
+      "window-rounding": 0,
+      "child-rounding": 14,
+      "frame-rounding": 10,
+      "popup-rounding": 10,
+      "scrollbar-rounding": 10,
+      "grab-rounding": 10,
+      "grab-min-size": 16,
+      "window-border-size": 0,
+      "child-border-size": 1,
+      "frame-border-size": 0,
+      "popup-border-size": 1,
+      "scrollbar-size": 8
+    },
+    "implot": {}
+  }
+}
