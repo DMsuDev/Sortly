@@ -19,4 +19,7 @@ void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size);
 /// VisualizationPanel uses it to cap the card instead of leaving empty space below it.
 [[nodiscard]] float maxUsefulCardHeight(float cardWidth);
 
+/// @brief Space a card spends outside its plot when the statistics sit beside it (scaled pixels).
+[[nodiscard]] ImVec2 cardSideChrome();
+
 } // namespace Sortly::ui

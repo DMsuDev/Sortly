@@ -123,19 +123,8 @@ void drawSpeed(RunSettings& settings)
 
 float ControlsPanel::width() const
 {
-    // The three playback buttons of one row must fit their labels (keep in sync with PlaybackBar).
-    const char* labels[] = { ICON_PLAY " Start", ICON_PAUSE " Pause", ICON_STOP " Stop" };
-
-    float widest = 0.0f;
-    {
-        const ui::ScopedFont font(ui::fonts::Body); // The font the playback buttons draw with.
-        for (const char* label : labels)
-            widest = std::max(widest, ImGui::CalcTextSize(label).x);
-    }
-
-    const float buttons = 3.0f * (widest + ui::dp(16.0f)) + 2.0f * ui::dp(8.0f); // frame padding + item spacing
-    const float chrome  = 2.0f * ui::dp(16.0f) + 2.0f;                          // window padding + border
-    return std::max(ui::dp(252.0f), buttons + chrome);
+    const float chrome = 2.0f * ui::dp(16.0f) + 2.0f; // window padding + border
+    return std::max(ui::dp(252.0f), ui::minPlaybackWidth() + chrome);
 }
 
 void ControlsPanel::draw(UiContext& ctx)

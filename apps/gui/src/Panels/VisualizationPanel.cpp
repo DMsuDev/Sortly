@@ -113,21 +113,18 @@ const std::vector<RowLayout>& candidateLayouts(std::size_t count)
     }
 }
 
-// Space a card spends outside its plot when the statistics sit beside it: statistics column,
-// padding, header and footer. Only used to rank the candidate layouts.
-constexpr float kCardExtraW = 150.0f;
-constexpr float kCardExtraH = 112.0f;
 constexpr float kPlotAspect = 1.7f;
 
 float layoutScore(const RowLayout& rows, const ImVec2& area, float gapX, float gapY)
 {
     const float cardH = (area.y - gapY * static_cast<float>(rows.size() - 1)) / static_cast<float>(rows.size());
     float worst = 0.0f;
+    const ImVec2 chrome = ui::cardSideChrome();
     for (const std::size_t columns : rows)
     {
         const float cardW = (area.x - gapX * static_cast<float>(columns - 1)) / static_cast<float>(columns);
-        const float plotW = cardW - ui::dp(kCardExtraW);
-        const float plotH = cardH - ui::dp(kCardExtraH);
+        const float plotW = cardW - chrome.x;
+        const float plotH = cardH - chrome.y;
         if (plotW < ui::dp(100.0f) || plotH < ui::dp(70.0f))
             return 1e9f;
         worst = std::max(worst, std::abs(std::log(plotW / plotH / kPlotAspect)));

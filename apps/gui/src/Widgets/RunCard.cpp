@@ -411,4 +411,10 @@ float maxUsefulCardHeight(float cardWidth)
     return plotW / kMinPlotAspect + chrome;
 }
 
+ImVec2 cardSideChrome()
+{
+    return dp(2.0f * kCardPaddingX + kStatsWidth + kPlotGap,
+              2.0f * kCardPaddingY + kHeaderHeight + kFooterHeight);
+}
+
 } // namespace Sortly::ui
