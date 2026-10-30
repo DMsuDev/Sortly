@@ -28,6 +28,8 @@ target_link_libraries(SortlyGuiLib
     Sortly::ImPlot
     Sortly::Vigil
     glfw::glfw
+  PRIVATE
+    nlohmann_json
 )
 
 # The lib holds all the real code, so the compiler policy must apply to it as well.
