@@ -114,7 +114,7 @@ void drawViewSelector(UiContext& ctx)
     ImVec2 size(0.0f, ui::compactButtonHeight()); // Equal-width segments: the widest label decides.
     for (const ViewOption& option : kViewOptions)
     {
-        const ImVec2 natural = ui::buttonSize(option.label, ui::fonts::Body);
+        const ImVec2 natural = ui::calculateButtonSize(option.label, ui::fonts::Body);
         size.x = std::max(size.x, natural.x);
         size.y = std::max(size.y, natural.y);
     }

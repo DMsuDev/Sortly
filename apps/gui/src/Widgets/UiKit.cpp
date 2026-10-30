@@ -83,7 +83,7 @@ void sectionLabel(const char* icon, const char* label)
     ImGui::TextColored(colors::Muted, "%s", label);
 }
 
-ImVec2 buttonSize(const char* label, ImFont* font)
+ImVec2 calculateButtonSize(const char* label, ImFont* font)
 {
     const ScopedFont scoped(font ? font : fonts::Heading);
     const ImVec2 padding = ImGui::GetStyle().FramePadding;

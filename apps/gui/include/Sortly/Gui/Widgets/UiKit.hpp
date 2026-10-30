@@ -71,10 +71,8 @@ void rightAlignedText(const char* text, const ImVec4& color);
 /// @brief Small caps caption with an accent icon: [icon] LABEL.
 void sectionLabel(const char* icon, const char* label);
 
-/// @brief Natural size of a button with @p label: text plus the current style's frame padding.
-/// Call it inside the same style scope the button will be drawn in. @p font defaults to the
-/// one iconButton() uses.
-[[nodiscard]] ImVec2 buttonSize(const char* label, ImFont* font = nullptr);
+/// @brief Calculates the button size for a button with @p label and optional @p font.
+[[nodiscard]] ImVec2 calculateButtonSize(const char* label, ImFont* font = nullptr);
 
 /// @brief Height of a compact toolbar button: one line of the body font plus padding, so it
 /// follows the font instead of a hard-coded pixel count.
