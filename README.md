@@ -1,6 +1,8 @@
 <div align="center">
   <picture>
-    <img width="320" alt="sortly-logo" src="docs/brand/sortly-logo.png">
+    <source media="(prefers-color-scheme: dark)"srcset="docs/brand/sortly-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/sortly-logo-light.png">
+    <img width="320" alt="Sortly logo" src="docs/brand/sortly-logo-dark.png">
   </picture>
   <div>
     <strong>Sorting Algorithm Visualizer built with C++</strong>
