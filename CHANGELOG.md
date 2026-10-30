@@ -4,6 +4,99 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Conventional Commits](https://www.conventionalcommits.org/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-30
+
+### 💥 Breaking Changes
+
+- **sorting**: Make the pivot an element tracked by SortPlayback ([d21e3f8](https://github.com/DMsuDev/Sortly/commit/d21e3f8f168c4fd6bfed432ffb43aa3890eee5a2))
+
+  SortPlayback follows the pivot through swaps and restores it on undo
+  (LIFO history) instead of building a timeline in load().
+
+> ⚠️ SortRecorder::pivot() takes (index, value),
+clearPivot() is now releasePivot(), Step::clearPivot() is
+
+### 🚀 Features
+
+- **gui**: Adapt window and UI to monitor constraints ([7b40c7f](https://github.com/DMsuDev/Sortly/commit/7b40c7f2e1fa9604a23b44ea974e39f2c3334b88))
+
+  - Fit window geometry and UI scale to each monitor.
+  - Preserve fullscreen restoration and support native Wayland decorations.
+
+- **gui**: Add borderless fullscreen and extract enter/leave helpers ([d31c908](https://github.com/DMsuDev/Sortly/commit/d31c90850ae911d8b809dd80065e46303a1f4fef))
+
+- **playback**: Implement settled slots tracking and related tests ([c82952a](https://github.com/DMsuDev/Sortly/commit/c82952a4438712fb53de24e65ce970df3b8cdb09))
+
+- **icons**: Add sun and moon icon definition and update codepoints ([ef39f86](https://github.com/DMsuDev/Sortly/commit/ef39f86b3adcb1cbf2a648532925bc64f38f801b))
+
+- **theme**: Implement theme management with loading, applying, and updating functionalities ([5bb7ef4](https://github.com/DMsuDev/Sortly/commit/5bb7ef42b7d33ce896520e1ffb0422401224f753))
+
+- **theme**: Integrate theme management and update UI components ([28cb0a7](https://github.com/DMsuDev/Sortly/commit/28cb0a796d153a90caa16d58bfb00779b918a358))
+
+- **gui**: Use logo as theme switch ([4f85fe3](https://github.com/DMsuDev/Sortly/commit/4f85fe3ffddeccdabe3444e65fd804dca9f8f4cb))
+
+  - Move theme switching to the Sortly logo badge.
+  - Add hover and active feedback to the interactive badge.
+  - Remove the redundant theme button from window controls.
+
+- **ui**: Refactor `rightAlignedText` and new `rightAlignedOnLine` ([7c763ee](https://github.com/DMsuDev/Sortly/commit/7c763ee6b503e2b46908842cff556f7b95e1899c))
+
+  - Update rightAlignedText to use std::string_view for improved performance
+
+- **ui**: Add minPlaybackWidth and cardSideChrome functions for improved layout calculations ([15e679f](https://github.com/DMsuDev/Sortly/commit/15e679f1ea9d5ed05a466779e867baabe676ae0f))
+
+### 🐛 Bug Fixes
+
+- **algorithms**: Count every comparison in Bubble and Cocktail sort ([c47fd16](https://github.com/DMsuDev/Sortly/commit/c47fd1688fc940ac5d1d1e0f13249683ad6fe144))
+
+  Both replaced the compare with a swap, so they undercounted comparisons
+  and looked faster than they are. Port them to GeneratorSort: yield a
+  compare before every decision and stop early when a pass makes no swap.
+
+### 🚜 Refactor
+
+- **sorting**: Add the Core authoring toolkit and a checked registry ([e6e8b98](https://github.com/DMsuDev/Sortly/commit/e6e8b9867ebb573b5ddf3f206a76fe84382da698))
+
+  - Move Step, StepGenerator and GeneratorSort to src/Algorithms/Core,
+    one header each.
+  - Validate every yielded index and throw std::out_of_range, reported by
+    SortSession as ComputeError::AlgorithmThrew.
+  - Add AlgorithmMeta and GeneratorSortOf so an algorithm declares its
+    name, complexity and description once (kMeta).
+  - Build the registry from kMeta, add SortAlgorithmType::Count and a
+    static_assert that the registry matches the enum, in order.
+  - Expose complexity and description in AlgorithmInfo.
+  - Add the Sorting.hpp umbrella header.
+
+- **gui**: Use settled slots to identify placed bars ([cce0dbb](https://github.com/DMsuDev/Sortly/commit/cce0dbb1f87159f6e183eecf8d8d5406951df5de))
+
+  - Replace the precomputed sorted target with playback state.
+  - Account for bar motion before marking slots as placed.
+
+- **gui**: Rename `buttonSize` to `calculateButtonSize` for clarity ([6434799](https://github.com/DMsuDev/Sortly/commit/643479982d48ba8a13ba24bed49704a67d03e7ad))
+
+- **ui**: Replace procedural glyph drawing with Lucide icons ([d2be5d8](https://github.com/DMsuDev/Sortly/commit/d2be5d8bdbee5eb27873086e1822988400c13dd6))
+
+  - Rename glyphButton to pillButton and glyphButtonWidth to calculatePillWidth.
+  - Remove GlyphDrawFn and procedural drawing helpers (drawBrackets, drawGlyph, Glyph enum).
+  - Update window controls and top bar panel to render icons via Lucide font strings.
+
+- **gui**: Remove duplicated local UI helpers ([2cd9881](https://github.com/DMsuDev/Sortly/commit/2cd9881b7b9b15d6b8d873552ac543acb48e58d5))
+
+- **ui**: Rename `calculatePillWidth` to `pillButtonWidth` for clarity ([9d28c8c](https://github.com/DMsuDev/Sortly/commit/9d28c8c24b892b0646c602bf57b9ef90baf657b5))
+
+### 🔧 Maintenance
+
+- **security**: Ignore third_party and build directories in CodeQL analysis ([02922f4](https://github.com/DMsuDev/Sortly/commit/02922f427cce5162d80bce5d1829cbb0775e4504))
+
+- **gitignore**: Add pattern to ignore diff files ([1928521](https://github.com/DMsuDev/Sortly/commit/192852101f819b5b2f0e7f5e19cf6e70715d1cb7))
+
+- **icons**: Add new icon definitions for UI enhancements ([5842f75](https://github.com/DMsuDev/Sortly/commit/5842f759bbad5869365c0f11f7301a965453397d))
+
+- **gitattributes**: Update assets folder and theme configuration for line endings ([6031df0](https://github.com/DMsuDev/Sortly/commit/6031df02b44020f79b7c03549c6a26e7954098dd))
+
+- **cmake**: Link nlohmann_json library to SortlyGuiLib ([cc83d96](https://github.com/DMsuDev/Sortly/commit/cc83d9628e17f97007100d41d0fcd2d549d4af51))
+
 ## [0.3.0] - 2026-10-29
 
 ### 🚀 Features
