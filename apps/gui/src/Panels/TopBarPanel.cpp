@@ -231,7 +231,7 @@ void drawWindowControls(Window& window)
     const float divider = ui::dp(kDividerGap);
 
     // Sized for the longer label, so the group never shifts when the label changes.
-    const float pillWidth     = ui::calculatePillWidth(kExitFullscreenLabel);
+    const float pillWidth     = ui::pillButtonWidth(kExitFullscreenLabel);
     const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
     const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
 

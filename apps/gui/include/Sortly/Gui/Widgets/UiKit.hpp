@@ -87,7 +87,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind = ButtonK
                 ImFont* font = nullptr);
 
 /// @brief Width a pill with @p label needs; use it to size and align the button.
-[[nodiscard]] float calculatePillWidth(const char* label);
+[[nodiscard]] float pillButtonWidth(const char* label);
 
 /// @brief Tinted pill button: [Icon] label, content centered. Reads as a labeled action,
 /// unlike the flat, icon-only buttons.

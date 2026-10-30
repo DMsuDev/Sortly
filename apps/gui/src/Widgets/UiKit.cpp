@@ -126,7 +126,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* 
     return ImGui::Button(label, size);
 }
 
-float calculatePillWidth(const char* label)
+float pillButtonWidth(const char* label)
 {
     const ScopedFont font(fonts::Body);
     return dp(kGlyphPadX) * 2.0f + dp(kGlyphBox) + dp(kGlyphGap) + ImGui::CalcTextSize(label).x;
