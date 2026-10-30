@@ -67,12 +67,28 @@ void centeredText(const char* text, const ImVec4& color, ImFont* font)
     ImGui::TextColored(color, "%s", text);
 }
 
-void rightAlignedText(const char* text, const ImVec4& color)
+void rightAlignedText(std::string_view text, const ImVec4& color)
 {
-    const float offset = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(text).x;
+    const char* begin = text.data();
+    const char* end   = begin + text.size();
+
+    const float offset = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(begin, end).x;
     if (offset > 0.0f)
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
-    ImGui::TextColored(color, "%s", text);
+    ImGui::PushStyleColor(ImGuiCol_Text, color);
+    ImGui::TextUnformatted(begin, end);
+    ImGui::PopStyleColor();
+}
+
+void rightAlignedOnLine(std::string_view text, const ImVec4& color)
+{
+    const char* begin = text.data();
+    const char* end   = begin + text.size();
+
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(begin, end).x);
+    ImGui::PushStyleColor(ImGuiCol_Text, color);
+    ImGui::TextUnformatted(begin, end);
+    ImGui::PopStyleColor();
 }
 
 void sectionLabel(const char* icon, const char* label)

@@ -66,7 +66,10 @@ private:
 void centeredText(const char* text, const ImVec4& color, ImFont* font = nullptr);
 
 /// @brief Draws @p text flush with the right edge of the remaining width of the current line.
-void rightAlignedText(const char* text, const ImVec4& color);
+void rightAlignedText(std::string_view text, const ImVec4& color);
+
+/// @brief Puts @p text at the right edge of the current line (SameLine), no allocation.
+void rightAlignedOnLine(std::string_view text, const ImVec4& color);
 
 /// @brief Small caps caption with an accent icon: [icon] LABEL.
 void sectionLabel(const char* icon, const char* label);
