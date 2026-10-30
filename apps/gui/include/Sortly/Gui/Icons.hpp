@@ -36,12 +36,20 @@
 #define ICON_COLUMNS_3     "\xEE\x82\x99"  // U+E099
 #define ICON_SINGLE        "\xEE\x8D\xB6"  // U+E376 (rectangle-horizontal)
 
+#define ICON_MINUS         "\xee\x84\x9c"  // U+e11c
+#define ICON_MAXIMIZE      "\xee\x85\xa7"  // U+e167 (square)
+#define ICON_RESTORE       "\xee\x82\x9e"  // U+e09e (copy)
+#define ICON_X             "\xee\x86\xb2"  // U+e1b2
+#define ICON_FULLSCREEN    "\xee\x88\x9a"  // U+e21a (expand)
+#define ICON_MINIMIZE_2    "\xee\x84\x9b"  // U+e11b
+
 namespace Sortly::ui {
 
 inline constexpr unsigned short kIconCodepoints[] = {
     0xE13C, 0xE12E, 0xE15F, 0xE160, 0xE148, 0xE412, 0xE24A, 0xE359, 0xE038, 0xE1E0,
     0xE1D1, 0xE2A3, 0xE29A, 0xE15E, 0xE1BF, 0xE0A9, 0xE0F9, 0xE0EF, 0xE1B4, 0xE06C,
     0xE109, 0xE167, 0xE373, 0xE0FF, 0xE098, 0xE099, 0xE376,
+    0xE11C, 0xE167, 0xE09E, 0xE1B2, 0xE21A, 0xE11B
 };
 
 } // namespace Sortly::ui
