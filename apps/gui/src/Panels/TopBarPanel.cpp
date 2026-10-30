@@ -52,8 +52,6 @@ constexpr std::array<ViewOption, 4> kViewOptions = {{
     { ICON_GRID      "  Compare 4", "Four algorithms in a grid",   ViewMode::Compare4 },
 }};
 
-enum class Glyph { Minimize, Maximize, Restore, Close };
-
 // Tall enough for the controls whatever the font size.
 float barHeight() { return std::max(ui::dp(kBarHeight), ui::compactButtonHeight() + 24_dp); }
 
@@ -169,60 +167,9 @@ void drawViewSelector(UiContext& ctx)
     ImGui::PopStyleVar(2);
 }
 
-// Four corner brackets: arms point inward to enter fullscreen, outward to leave it.
-void drawBrackets(ImDrawList* dl, const ImVec2& c, float half, ImU32 color, bool exit)
-{
-    const float corner = exit ? half * 0.4f : half;
-    const float arm    = exit ? half * 0.6f : -half * 0.6f;
-    const float stroke = 1.5_dp;
-
-    for (const float sx : { -1.0f, 1.0f })
-    {
-        for (const float sy : { -1.0f, 1.0f })
-        {
-            const ImVec2 p(c.x + sx * corner, c.y + sy * corner);
-            dl->AddLine(p, ImVec2(p.x + sx * arm, p.y), color, stroke);
-            dl->AddLine(p, ImVec2(p.x, p.y + sy * arm), color, stroke);
-        }
-    }
-}
-
-void drawEnterFullscreen(ImDrawList* dl, const ImVec2& c, float half, ImU32 color) { drawBrackets(dl, c, half, color, false); }
-void drawExitFullscreen(ImDrawList* dl, const ImVec2& c, float half, ImU32 color)  { drawBrackets(dl, c, half, color, true); }
-
-void drawGlyph(Glyph glyph, const ImVec2& c, ImU32 color)
-{
-    ImDrawList* dl     = ImGui::GetWindowDrawList();
-    const float half   = 5_dp;
-    const float stroke = 1.5_dp;
-
-    switch (glyph)
-    {
-        case Glyph::Minimize:
-            dl->AddLine(ImVec2(c.x - half, c.y + 2_dp), ImVec2(c.x + half, c.y + 2_dp), color, stroke);
-            break;
-        case Glyph::Maximize:
-            dl->AddRect(ImVec2(c.x - half, c.y - half), ImVec2(c.x + half, c.y + half), color, 0.0f, 0, stroke);
-            break;
-        case Glyph::Restore:
-        {
-            const float o = 2_dp;
-            dl->AddRect(ImVec2(c.x - half + o, c.y - half - o), ImVec2(c.x + half + o, c.y + half - o), color, 0.0f, 0, stroke);
-            dl->AddRect(ImVec2(c.x - half - o, c.y - half + o), ImVec2(c.x + half - o, c.y + half + o), color, 0.0f, 0, stroke);
-            break;
-        }
-        case Glyph::Close:
-            dl->AddLine(ImVec2(c.x - half, c.y - half), ImVec2(c.x + half, c.y + half), color, stroke);
-            dl->AddLine(ImVec2(c.x + half, c.y - half), ImVec2(c.x - half, c.y + half), color, stroke);
-            break;
-    }
-}
-
 // Flat, icon-only button (minimize / maximize / close).
-bool windowButton(const char* id, const char* tooltip, Glyph glyph, float height)
+bool windowButton(const char* id, const char* tooltip, const char* icon, float height, bool close = false)
 {
-    const bool close = glyph == Glyph::Close;
-
     const ui::ScopedColor idle (ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     const ui::ScopedColor hover(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.16f, 0.20f, 1.0f), close);
     const ui::ScopedColor press(ImGuiCol_ButtonActive,  ImVec4(0.60f, 0.12f, 0.16f, 1.0f), close);
@@ -231,10 +178,27 @@ bool windowButton(const char* id, const char* tooltip, Glyph glyph, float height
 
     const ImVec2 min = ImGui::GetItemRectMin();
     const ImVec2 max = ImGui::GetItemRectMax();
-    drawGlyph(glyph, ImVec2((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f), ImGui::GetColorU32(ImGuiCol_Text));
+    const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+
+    const bool hovered = ImGui::IsItemHovered();
+    const bool active  = ImGui::IsItemActive();
+
+    // const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
+    const ImU32 color = close && (hovered || active)
+        ? IM_COL32(255, 255, 255, 255)
+        : ImGui::GetColorU32(ImGuiCol_Text);
+
+    const ui::ScopedFont font(ui::fonts::Body);
+    const ImVec2 textSize = ImGui::CalcTextSize(icon);
+
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(center.x - textSize.x * 0.5f, center.y - textSize.y * 0.5f),
+        color,
+        icon);
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
         ui::setTooltip("%s", tooltip);
+
     return pressed;
 }
 
@@ -248,15 +212,15 @@ void drawWindowControls(Window& window)
     const float divider = ui::dp(kDividerGap);
 
     // Sized for the longer label, so the group never shifts when the label changes.
-    const float pillWidth     = ui::glyphButtonWidth(kExitFullscreenLabel);
+    const float pillWidth     = ui::calculatePillWidth(kExitFullscreenLabel);
     const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
     const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::dp(kCtrlMargin) - total, centeredY(height)));
 
     const bool fullscreen = window.isFullscreen();
-    if (ui::glyphButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,
-                        fullscreen ? &drawExitFullscreen : &drawEnterFullscreen,
+    if (ui::pillButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,
+                        fullscreen ? ICON_MINIMIZE_2 : ICON_FULLSCREEN,
                         ui::colors::Accent, ImVec2(pillWidth, height)))
         window.toggleFullscreen();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
@@ -269,17 +233,17 @@ void drawWindowControls(Window& window)
     ui::verticalDivider(height);
     ImGui::SameLine(0.0f, divider);
 
-    if (windowButton("##Minimize", "Minimize", Glyph::Minimize, height))
+    if (windowButton("##Minimize", "Minimize", ICON_MINUS, height))
         window.minimize();
 
     ImGui::SameLine(0.0f, gap);
     const bool maximized = window.isMaximized();
     if (windowButton("##Maximize", maximized ? "Restore" : "Maximize",
-                     maximized ? Glyph::Restore : Glyph::Maximize, height))
+                     maximized ? ICON_RESTORE : ICON_MAXIMIZE, height))
         window.toggleMaximize();
 
     ImGui::SameLine(0.0f, gap);
-    if (windowButton("##Close", "Close", Glyph::Close, height))
+    if (windowButton("##Close", "Close", ICON_X, height, true))
         window.requestClose();
 }
 

@@ -83,16 +83,13 @@ void sectionLabel(const char* icon, const char* label);
 bool iconButton(const char* label, const ImVec2& size, ButtonKind kind = ButtonKind::Secondary,
                 ImFont* font = nullptr);
 
-/// @brief Draws a glyph inside a square of side 2 * @p half centered on @p center.
-using GlyphDrawFn = void (*)(ImDrawList* drawList, const ImVec2& center, float half, ImU32 color);
+/// @brief Width a pill with @p label needs; use it to size and align the button.
+[[nodiscard]] float calculatePillWidth(const char* label);
 
-/// @brief Width a glyphButton with @p label needs; use it to size and align the button.
-[[nodiscard]] float glyphButtonWidth(const char* label);
-
-/// @brief Tinted pill button: [glyph] label, content centered. Reads as a labeled action,
+/// @brief Tinted pill button: [Icon] label, content centered. Reads as a labeled action,
 /// unlike the flat, icon-only buttons.
 /// @param id Unique within the ID stack, e.g. "##Fullscreen".
-bool glyphButton(const char* id, const char* label, GlyphDrawFn glyph, const ImVec4& tint, const ImVec2& size);
+bool pillButton(const char* id, const char* label, const char* icon, const ImVec4& tint, const ImVec2& size);
 
 /// @brief Thin vertical separator that occupies @p height on the current line (draws 60% of it).
 void verticalDivider(float height);

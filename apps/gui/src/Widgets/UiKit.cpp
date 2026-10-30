@@ -16,7 +16,7 @@ namespace {
 constexpr float kPillPadX = 12.0f;
 constexpr float kPillPadY = 4.0f;
 
-// glyphButton metrics.
+// pillButton metrics.
 constexpr float kGlyphBox  = 14.0f;
 constexpr float kGlyphGap  = 8.0f;
 constexpr float kGlyphPadX = 14.0f;
@@ -110,13 +110,13 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* 
     return ImGui::Button(label, size);
 }
 
-float glyphButtonWidth(const char* label)
+float calculatePillWidth(const char* label)
 {
     const ScopedFont font(fonts::Body);
     return dp(kGlyphPadX) * 2.0f + dp(kGlyphBox) + dp(kGlyphGap) + ImGui::CalcTextSize(label).x;
 }
 
-bool glyphButton(const char* id, const char* label, GlyphDrawFn glyph, const ImVec4& tint, const ImVec2& size)
+bool pillButton(const char* id, const char* label, const char* icon, const ImVec4& tint, const ImVec2& size)
 {
     const ImVec2 pos = ImGui::GetCursorScreenPos();
     const ImVec2 end(pos.x + size.x, pos.y + size.y);
@@ -134,15 +134,17 @@ bool glyphButton(const char* id, const char* label, GlyphDrawFn glyph, const ImV
     dl->AddRect(pos, end, toU32(colors::withAlpha(tint, borderAlpha)), rounding);
 
     const ScopedFont font(fonts::Body);
-    const ImVec2 textSize = ImGui::CalcTextSize(label);
-    const float  box      = dp(kGlyphBox);
-    const float  content  = box + dp(kGlyphGap) + textSize.x;
-    const float  startX   = pos.x + (size.x - content) * 0.5f;
+
+    const ImVec2 iconSize     = ImGui::CalcTextSize(icon);
+    const ImVec2 textSize     = ImGui::CalcTextSize(label);
+    const float  gap          = dp(kGlyphGap);
+    const float  contentWidth = iconSize.x + gap + textSize.x;
+
+    const float  startX   = pos.x + (size.x - contentWidth) * 0.5f;
     const float  centerY  = pos.y + size.y * 0.5f;
 
-    if (glyph)
-        glyph(dl, ImVec2(startX + box * 0.5f, centerY), box * 0.5f, toU32(tint));
-    dl->AddText(ImVec2(startX + box + dp(kGlyphGap), centerY - textSize.y * 0.5f), toU32(tint), label);
+    dl->AddText(ImVec2(startX, centerY - iconSize.y * 0.5f), toU32(tint), icon);
+    dl->AddText(ImVec2(startX + iconSize.x + gap, centerY - textSize.y * 0.5f), toU32(tint), label);
 
     return pressed;
 }
