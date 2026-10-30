@@ -67,11 +67,29 @@ void drawLogo()
     const ImVec2 origin = ImGui::GetWindowPos();
     ImDrawList*  dl     = ImGui::GetWindowDrawList();
 
-    const ImVec2 min(origin.x + margin, origin.y + (bar - badge) * 0.5f);
+    // The badge is the theme switch.
+    const ImVec2 badgePos(margin, (bar - badge) * 0.5f);
+    ImGui::SetCursorPos(badgePos);
+    const bool canSwitch = ui::theme::count() > 1;
+    ImGui::BeginDisabled(!canSwitch);
+    if (ImGui::InvisibleButton("##ThemeSwitch", ImVec2(badge, badge)))
+        ui::theme::requestNext();
+    ImGui::EndDisabled();
+
+    const bool hovered = canSwitch && ImGui::IsItemHovered();
+    const bool held    = canSwitch && ImGui::IsItemActive();
+    if (hovered)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_ForTooltip))
+        ui::setTooltip("%s", canSwitch ? "Switch theme" : "Only one theme available");
+
+    const ImVec2 min(origin.x + badgePos.x, origin.y + badgePos.y);
     const ImVec2 max(min.x + badge, min.y + badge);
     const float  rounding = 10_dp;
-    dl->AddRectFilled(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, 0.18f)), rounding);
-    dl->AddRect(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, 0.5f)), rounding);
+    const float  fill     = held ? 0.40f : hovered ? 0.30f : 0.18f;
+    const float  border   = hovered ? 0.90f : 0.50f;
+    dl->AddRectFilled(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, fill)), rounding);
+    dl->AddRect(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, border)), rounding);
 
     float titleHeight = 0.0f;
     {
@@ -215,16 +233,9 @@ void drawWindowControls(Window& window)
     // Sized for the longer label, so the group never shifts when the label changes.
     const float pillWidth     = ui::calculatePillWidth(kExitFullscreenLabel);
     const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
-    const float themeWidth    = ui::dp(kCtrlWidth) + gap;
-    const float total         = themeWidth + (osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth);
+    const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::dp(kCtrlMargin) - total, centeredY(height)));
-
-    ImGui::BeginDisabled(ui::theme::count() < 2);
-    if (windowButton("##Theme", "Switch theme", ICON_SUN_MOON, height))
-        ui::theme::requestNext();
-    ImGui::EndDisabled();
-    ImGui::SameLine(0.0f, gap);
 
     const bool fullscreen = window.isFullscreen();
     if (ui::pillButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,
