@@ -39,8 +39,6 @@ constexpr float kInfoButtonSize    = 20.0f;
 constexpr float kStatsPopupWidth   = 200.0f;
 constexpr float kMinTextGap        = 8.0f;   // Least space kept between left and right text on a line.
 
-ImU32 toU32(const ImVec4& c) { return ImGui::ColorConvertFloat4ToU32(c); }
-
 struct StateTag
 {
     const char* text;
@@ -84,18 +82,6 @@ std::string metricText(const Run& run, Metric metric)
     return run.ready() ? formatMetric(run.session->getStatistics(), metric) : std::string("-");
 }
 
-// Pushes the next item to the right edge of the line. Works on a view: no allocation.
-void rightAligned(std::string_view text, const ImVec4& color)
-{
-    const char* begin = text.data();
-    const char* end   = begin + text.size();
-
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(begin, end).x);
-    ImGui::PushStyleColor(ImGuiCol_Text, color);
-    ImGui::TextUnformatted(begin, end);
-    ImGui::PopStyleColor();
-}
-
 // Width left on the current line after the last item (window-local, no scrolling in cards).
 float spaceLeftOnLine()
 {
@@ -109,7 +95,7 @@ void drawStatRow(const char* label, std::string_view value)
     ImGui::TextColored(colors::Muted, "%s", label);
     ImGui::PopFont();
 
-    rightAligned(value, colors::TextBright);
+    rightAlignedOnLine(value, colors::TextBright);
 }
 
 void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
@@ -354,7 +340,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     const char*            begin      = complexity.data();
     const float            needed     = ImGui::CalcTextSize(begin, begin + complexity.size()).x + dp(kMinTextGap);
     if (!complexity.empty() && spaceLeftOnLine() >= needed)
-        rightAligned(complexity, colors::TextDim);
+        rightAlignedOnLine(complexity, colors::TextDim);
     ImGui::PopFont();
 }
 

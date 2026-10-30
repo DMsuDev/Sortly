@@ -26,21 +26,15 @@ void sectionSeparator()
     ImGui::Dummy(ImVec2(0.0f, ui::dp(4.0f)));
 }
 
-// Right-aligned small text on the line of the section caption just drawn.
-void rightCaption(const std::string& text, const ImVec4& color)
-{
-    ImGui::PushFont(ui::fonts::Label);
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(text.c_str()).x);
-    ImGui::TextColored(color, "%s", text.c_str());
-    ImGui::PopFont();
-}
-
 /// @return True if the selection changed.
 bool drawAlgorithmList(RunSettings& settings)
 {
     ui::sectionLabel(ICON_LIST, "ALGORITHMS");
-    rightCaption(std::to_string(settings.algorithms.size()) + " / " + std::to_string(settings.capacity()) + " selected",
-                 settings.complete() ? ui::colors::Muted : ui::colors::Warning);
+    {
+        const ui::ScopedFont font(ui::fonts::Label);
+        ui::rightAlignedOnLine(std::to_string(settings.algorithms.size()) + " / " + std::to_string(settings.capacity()) + " selected",
+                            settings.complete() ? ui::colors::Muted : ui::colors::Warning);
+    }
     ImGui::Spacing();
 
     bool changed = false;

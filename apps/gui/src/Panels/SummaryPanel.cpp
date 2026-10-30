@@ -32,14 +32,6 @@ std::string shortName(const Run& run)
     return name;
 }
 
-void rightAlignedText(const std::string& text, const ImVec4& color)
-{
-    const float offset = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(text.c_str()).x;
-    if (offset > 0.0f)
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
-    ImGui::TextColored(color, "%s", text.c_str());
-}
-
 // Lowest value of a metric among the finished runs, used to mark the best cell of each row.
 double bestValue(std::span<const Run> runs, ui::Metric metric)
 {
@@ -78,7 +70,7 @@ void drawSummaryTable(std::span<const Run> runs)
         for (std::size_t i = 0; i < runs.size(); ++i)
         {
             ImGui::TableNextColumn();
-            rightAlignedText(shortName(runs[i]), ui::colors::slot(i));
+            ui::rightAlignedText(shortName(runs[i]), ui::colors::slot(i));
         }
 
         for (const ui::Metric metric : ui::kMetrics)
@@ -94,13 +86,13 @@ void drawSummaryTable(std::span<const Run> runs)
                 ImGui::TableNextColumn();
                 if (!run.ready())
                 {
-                    rightAlignedText("-", ui::colors::TextDim);
+                    ui::rightAlignedText("-", ui::colors::TextDim);
                     continue;
                 }
                 const SortStatistics& stats = run.session->getStatistics();
                 const bool isBest = highlightBest && ui::metricValue(stats, metric) <= best;
-                rightAlignedText(ui::formatMetric(stats, metric, false),
-                                 isBest ? ui::colors::Success : ui::colors::TextBright);
+                ui::rightAlignedText(ui::formatMetric(stats, metric, false),
+                                     isBest ? ui::colors::Success : ui::colors::TextBright);
             }
         }
 
@@ -110,8 +102,8 @@ void drawSummaryTable(std::span<const Run> runs)
         for (const Run& run : runs)
         {
             ImGui::TableNextColumn();
-            rightAlignedText(run.session ? std::string(run.session->getAlgorithmComplexity()) : std::string("-"),
-                             ui::colors::TextDim);
+            ui::rightAlignedText(run.session ? std::string(run.session->getAlgorithmComplexity()) : std::string("-"),
+                                 ui::colors::TextDim);
         }
 
         ImGui::EndTable();
