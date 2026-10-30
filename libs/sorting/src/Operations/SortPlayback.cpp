@@ -115,6 +115,28 @@ void SortPlayback::reset()
     m_State = PlaybackState::Stopped;
 }
 
+void SortPlayback::buildSettledTimeline()
+{
+    // Slots no operation touches are settled from the start.
+    m_SettledAt.assign(m_Initial.size(), 0);
+
+    for (std::size_t i = 0; i < m_Operations.size(); ++i)
+    {
+        const SortOperation& op = m_Operations[i];
+
+        // Indices were validated by load().
+        if (op.type == SortOperation::Type::Swap)
+        {
+            m_SettledAt[static_cast<std::size_t>(op.indexA)] = i + 1;
+            m_SettledAt[static_cast<std::size_t>(op.indexB)] = i + 1;
+        }
+        else if (op.type == SortOperation::Type::Overwrite)
+        {
+            m_SettledAt[static_cast<std::size_t>(op.indexA)] = i + 1;
+        }
+    }
+}
+
 // ================================================
 // SETUP
 // ================================================
@@ -138,6 +160,7 @@ bool SortPlayback::load(std::span<const int> initialData, std::span<const SortOp
 
     m_Initial.assign(initialData.begin(), initialData.end());
     m_Operations.assign(ops.begin(), ops.end());
+    buildSettledTimeline();
     reset();
 
     VIGIL_LOG_DEBUG("SortPlayback: Loaded {} operations over {} elements", m_Operations.size(), m_Initial.size());
@@ -146,9 +169,11 @@ bool SortPlayback::load(std::span<const int> initialData, std::span<const SortOp
 
 void SortPlayback::clear()
 {
+    m_Initial.clear();
     m_Operations.clear();
     m_Operations.shrink_to_fit();
-    m_Initial.clear();
+    m_SettledAt.clear();
+    m_SettledAt.shrink_to_fit();
     reset(); // m_Visual follows m_Initial (now empty)
 }
 

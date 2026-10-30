@@ -84,6 +84,13 @@ public:
     /// @brief True if operations are loaded.
     [[nodiscard]] bool isLoaded() const { return !m_Operations.empty(); }
 
+    /// @brief True once no remaining operation changes this slot: it already holds its final value.
+    /// Exact in both play directions, and needs no help from the algorithms.
+    [[nodiscard]] bool isSettled(std::size_t slot) const
+    {
+        return slot < m_SettledAt.size() && m_CurrentIndex >= m_SettledAt[slot];
+    }
+
     /// @brief Current state of the data, reflecting every operation applied so far.
     [[nodiscard]] const std::vector<int>& getVisualData() const { return m_Visual; }
 
@@ -95,13 +102,13 @@ public:
     /// @brief Operation that the next stepForward() would apply, or nullptr if there is none.
     [[nodiscard]] const SortOperation* getCurrentOperation() const;
 
+    [[nodiscard]] std::size_t getCurrentOperationIndex() const { return m_CurrentIndex; }
+    [[nodiscard]] std::size_t getTotalOperations()       const { return m_Operations.size(); }
+
     /// @brief Index of the pivot element after the operations applied so far, or -1 if none.
     /// The pivot is an element, not a slot: the index follows it through every Swap, in both
     /// directions. Always a valid index into getVisualData() when it is not -1.
     [[nodiscard]] int getPivotIndex() const { return m_Pivot; }
-
-    [[nodiscard]] std::size_t getCurrentOperationIndex() const { return m_CurrentIndex; }
-    [[nodiscard]] std::size_t getTotalOperations()       const { return m_Operations.size(); }
 
     [[nodiscard]] PlaybackState getState() const { return m_State; }
 
@@ -117,6 +124,9 @@ private:
     /// Restores buffer, pivot and cursor to the initial state and goes to Stopped.
     void reset();
 
+    /// Fills m_SettledAt with the operation index at which each slot becomes settled.
+    void buildSettledTimeline();
+
     /// Applies (or, when @p reverse, undoes) one operation on m_Visual and the pivot.
     /// Swap is its own inverse; Overwrite restores valueB; Pivot restores the previous pivot
     /// from m_PivotHistory; Compare/Sorted are no-ops.
@@ -127,8 +137,9 @@ private:
     std::vector<int> m_Initial;
     std::vector<int> m_Visual;
 
-    int m_Pivot{-1};                 // Pivot element index, -1 when none.
-    std::vector<int> m_PivotHistory; // Pivot before each applied Pivot operation (LIFO, for undo).
+    int m_Pivot{-1};                         // Pivot element index, -1 when none.
+    std::vector<std::size_t> m_SettledAt;    // Per slot: operations that must be applied before it stops changing.
+    std::vector<int>         m_PivotHistory; // Pivot before each applied Pivot operation (LIFO, for undo).
 
     std::size_t m_CurrentIndex{0};
     float m_ElapsedTime{0.0f};

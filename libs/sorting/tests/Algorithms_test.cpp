@@ -194,6 +194,32 @@ TEST_P(AlgorithmTest, ThePivotMarkAlwaysPointsAtThePivotValue)
     }
 }
 
+// A slot reported as settled must already hold its final value, at every step.
+TEST_P(AlgorithmTest, SettledSlotsAlreadyHoldTheirFinalValue)
+{
+    for (const auto& input : test::standardInputs())
+    {
+        SCOPED_TRACE(::testing::PrintToString(input));
+
+        auto algorithm = SortAlgorithmFactory::create(GetParam());
+        const auto recording = test::record(*algorithm, input);
+        const auto finalData = algorithm->getData();
+
+        SortPlayback playback;
+        ASSERT_TRUE(playback.load(input, recording.operations));
+
+        do
+        {
+            for (std::size_t slot = 0; slot < input.size(); ++slot)
+                if (playback.isSettled(slot))
+                    EXPECT_EQ(playback.getVisualData()[slot], finalData[slot]);
+        } while (playback.stepForward());
+
+        for (std::size_t slot = 0; slot < input.size(); ++slot)
+            EXPECT_TRUE(playback.isSettled(slot));
+    }
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AllAlgorithms, AlgorithmTest,
     ::testing::ValuesIn(SortAlgorithmFactory::getAvailableAlgorithms()),
