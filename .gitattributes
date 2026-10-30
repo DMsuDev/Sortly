@@ -65,8 +65,12 @@ CMakeLists.txt text eol=lf
 # ===================================================================
 # BINARY FILES - Never normalize line endings
 # ===================================================================
-# Assets folder
+
+# Assets
 assets/** binary
+
+# Theme configuration
+assets/themes/**/*.json text eol=lf diff
 
 # Images
 *.png  binary
