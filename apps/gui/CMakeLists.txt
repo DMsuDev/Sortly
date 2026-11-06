@@ -22,7 +22,7 @@ target_include_directories(SortlyGuiLib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/incl
 
 target_link_libraries(SortlyGuiLib
   PUBLIC
-    Sortly::Sorting
+    sortrace::sortrace
     Sortly::Version
     Sortly::ImGui
     Sortly::ImPlot
