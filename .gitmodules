@@ -7,3 +7,6 @@
 [submodule "third_party/vigil"]
 	path = third_party/vigil
 	url = https://github.com/DMsuDev/vigil.git
+[submodule "third_party/sortrace"]
+	path = third_party/sortrace
+	url = https://github.com/DMsuDev/sortrace
