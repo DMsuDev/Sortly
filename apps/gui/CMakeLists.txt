@@ -20,6 +20,16 @@ add_library(Sortly::GuiLib ALIAS SortlyGuiLib)
 
 target_include_directories(SortlyGuiLib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+target_compile_definitions(SortlyGuiLib PRIVATE
+  SORTLY_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+  SORTLY_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+  SORTLY_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+  SORTLY_VERSION_PRERELEASE="${SORTLY_VERSION_PRERELEASE}"
+)
+target_compile_definitions(SortlyGuiLib PRIVATE
+  $<$<CONFIG:Debug>:SORTLY_DEBUG>
+)
+
 target_link_libraries(SortlyGuiLib
   PUBLIC
     sortrace::sortrace
