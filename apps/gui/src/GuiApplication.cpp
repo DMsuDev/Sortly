@@ -79,12 +79,11 @@ void applyEdgeCursor(Window::Edges edges)
 GuiApplication::GuiApplication()
     : Application({ .name = "Sortly", .verboseLogging = true })
     , m_Run([this](SortAlgorithmType type, const RunSettings& settings) {
-          // Every algorithm in a run gets the same seed, so they all sort the same data.
+          // Same seed for every algorithm, so they all sort the same dataset.
           sessions().setSeedProvider(SeedProvider::globalSeed(settings.seed));
-
-          DataSetConfig config;
-          config.count = settings.elementCount;
-          return sessions().createSession(type, config);
+          // The range is pinned to the requested count so the builder never clamps it.
+          return sessions().createSession(
+              type, DataSetConfig{ .count = settings.elementCount, .minCount = 1, .maxCount = settings.elementCount });
       })
 {}
 
