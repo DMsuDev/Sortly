@@ -11,6 +11,14 @@
 include_guard()
 
 # ------------------------------------------------------------------------------
+#  sortrace
+# ------------------------------------------------------------------------------
+set(SORTRACE_BUILD_TESTS     OFF CACHE BOOL "" FORCE)
+set(SORTRACE_BUILD_EXAMPLES  OFF CACHE BOOL "" FORCE)
+
+add_subdirectory("${SORTLY_THIRD_PARTY_DIR}/sortrace" "${PROJECT_BINARY_DIR}/third_party/sortrace")
+
+# ------------------------------------------------------------------------------
 #  nlohmann/json (header-only)
 # ------------------------------------------------------------------------------
 add_library(nlohmann_json INTERFACE IMPORTED GLOBAL)
