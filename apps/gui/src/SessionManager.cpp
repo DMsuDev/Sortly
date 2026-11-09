@@ -3,11 +3,28 @@
 
 #include "Sortly/Gui/SessionManager.hpp"
 
+#include <vigil/vigil.h>
+
 #include <string>
 #include <string_view>
 #include <utility>
 
 namespace Sortly {
+
+sortrace::LogSink vigilLogSink()
+{
+    return [](sortrace::LogLevel level, std::string_view message) {
+        const std::string text(message);
+        switch (level)
+        {
+            case sortrace::LogLevel::Trace: VIGIL_LOG_TRACE("{}", text); break;
+            case sortrace::LogLevel::Debug: VIGIL_LOG_DEBUG("{}", text); break;
+            case sortrace::LogLevel::Info:  VIGIL_LOG_INFO ("{}", text); break;
+            case sortrace::LogLevel::Warn:  VIGIL_LOG_WARN ("{}", text); break;
+            case sortrace::LogLevel::Error: VIGIL_LOG_ERROR("{}", text); break;
+        }
+    };
+}
 
 SessionResult SessionManager::createSession(SortAlgorithmType type, const DataSetConfig& config)
 {
@@ -21,6 +38,7 @@ SessionResult SessionManager::createSession(SortAlgorithmType type, const DataSe
         return { nullptr, SessionError::NoData };
 
     auto session = std::make_unique<SortSession>();
+    session->setLogSink(vigilLogSink());
     session->setAlgorithm(std::move(algorithm));
     session->setData(std::move(data));
 
