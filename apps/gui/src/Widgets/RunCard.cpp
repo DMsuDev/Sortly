@@ -8,6 +8,8 @@
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 
+#include "Sortly/Gui/SortTypes.hpp"
+
 #include <imgui.h>
 
 #include <algorithm>
@@ -52,7 +54,7 @@ StateTag stateOf(const Run& run)
     if (run.computing || !run.session)
         return { "BUILDING", colors::Warning };
 
-    const SortPlayback& playback = run.session->getPlayback();
+    const SortPlayback& playback = run.playback;
     if (playback.isPlaying())  return { "RUNNING", colors::Info    };
     if (playback.isPaused())   return { "PAUSED",  colors::Warning };
     if (playback.isFinished()) return run.sweepDone() ? StateTag{ "SORTED",  colors::Success }
@@ -101,7 +103,7 @@ void drawStatRow(const char* label, std::string_view value)
 void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
 {
     const StateTag         state = stateOf(run);
-    const std::string_view name  = SortAlgorithmFactory::toString(run.type);
+    const std::string_view name  = sortrace::toString(run.type);
 
     char title[64];
     std::snprintf(title, sizeof(title), "%zu. %.*s", slot + 1, static_cast<int>(name.size()), name.data());
@@ -129,7 +131,7 @@ ArrayHighlight makeHighlight(const Run& run)
     if (!run.ready())
         return highlight;
 
-    const SortPlayback& playback = run.session->getPlayback();
+    const SortPlayback& playback = run.playback;
     highlight.motion = &run.motion;
     highlight.sorted = playback.isFinished();
     highlight.sweep  = run.sweepProgress();
@@ -138,8 +140,9 @@ ArrayHighlight makeHighlight(const Run& run)
         return highlight;
 
     highlight.operation  = playback.getCurrentOperation();
-    highlight.pivotIndex = playback.getPivotIndex();
+    highlight.pivotIndex = playback.getMarkIndex(sortrace::MarkRole::Pivot);
     highlight.playback   = &playback;
+    highlight.settledAt  = run.settledAt;
     return highlight;
 }
 
@@ -306,7 +309,7 @@ void drawStatsButton(const Run& run, const ImVec4& color)
 void drawFooter(const Run& run, const ImVec4& color, bool compact)
 {
     const bool  ready    = run.ready();
-    const float progress = ready ? run.session->getPlayback().getProgress() : 0.0f;
+    const float progress = ready ? run.playback.getProgress() : 0.0f;
 
     ImGui::Spacing();
     progressBar(progress, dp(6.0f), &color);
@@ -314,7 +317,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     char caption[96];
     if (ready)
     {
-        const SortPlayback& playback = run.session->getPlayback();
+        const SortPlayback& playback = run.playback;
         std::snprintf(caption, sizeof(caption), compact ? "%.0f%%  \xC2\xB7  %s / %s" : "%.0f%%  \xC2\xB7  %s / %s steps",
                       static_cast<double>(progress) * 100.0,
                       formatCount(playback.getCurrentOperationIndex()).c_str(),
@@ -349,7 +352,7 @@ void drawBody(const Run& run, const ImVec4& color)
     const BodyLayout layout = chooseLayout(ImGui::GetContentRegionAvail());
 
     const ArrayPlotStyle style{ color };
-    drawArrayPlot("##Plot", run.session->getVisualData(), makeHighlight(run), style, layout.plot);
+    drawArrayPlot("##Plot", run.visualData(), makeHighlight(run), style, layout.plot);
 
     switch (layout.stats)
     {

@@ -28,10 +28,10 @@ void BarMotion::reset(std::span<const int> initial)
 
 void BarMotion::applySwap(const SortOperation& op)
 {
-    if (op.type != SortOperation::Type::Swap)
+    if (op.type != SortOperationType::Swap)
         return;
 
-    // Indices were validated by SortPlayback::load().
+    // Indices were validated by Playback::load().
     const auto a = static_cast<std::size_t>(op.indexA);
     const auto b = static_cast<std::size_t>(op.indexB);
     std::swap(m_Owner[a], m_Owner[b]);
@@ -42,7 +42,7 @@ void BarMotion::applySwap(const SortOperation& op)
 bool BarMotion::sync(const SortPlayback& playback)
 {
     const auto&       initial = playback.getInitialData();
-    const auto&       ops     = playback.getOperations(); // Reference: do not copy the list.
+    const auto&       ops     = playback.getOperations();
     const std::size_t cursor  = playback.getCurrentOperationIndex();
 
     // First use or a large step back (Stop, restart): rebuild identity without animating.
@@ -66,7 +66,7 @@ void BarMotion::update(const SortPlayback& playback, float deltaTime, float ease
     const bool  snap = sync(playback) || !smooth || easeSeconds <= 0.0f;
     const float k    = snap ? 1.0f : 1.0f - std::exp(-deltaTime / easeSeconds);
 
-    const auto& data = playback.getVisualData(); // Reference: do not copy per frame.
+    const auto& data = playback.getData();
     for (std::size_t bar = 0; bar < m_X.size(); ++bar)
     {
         const std::size_t slot = m_Slot[bar];

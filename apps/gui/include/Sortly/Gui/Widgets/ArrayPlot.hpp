@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Operations/SortOperation.hpp"
+#include "Sortly/Gui/SortTypes.hpp"
 
 #include <imgui.h>
 
 #include <span>
 
-namespace Sortly { class BarMotion; class SortPlayback; } // namespace Sortly
+namespace Sortly { class BarMotion; }
 
 namespace Sortly::ui {
 
@@ -20,8 +20,9 @@ struct ArrayHighlight
     bool                 sorted     = false;   // Whole run finished: every bar is painted as done.
     int                  pivotIndex = -1;      // Slot of the active pivot, or -1.
     float                sweep      = 1.0f;    // Only used when `sorted`: fraction of bars (left to right) already painted as sorted.
-    const SortPlayback*  playback   = nullptr; // Tells which slots already hold their final value.
-    const BarMotion*     motion     = nullptr; // Animated bar positions; null = each bar sits on its slot.
+    const SortPlayback*  playback   = nullptr;
+    std::span<const std::size_t> settledAt; // Last data-changing operation for each slot.
+    const BarMotion* motion = nullptr; // Animated bar positions; null = each bar sits on its slot.
 };
 
 struct ArrayPlotStyle

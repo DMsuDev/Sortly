@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Operations/SortStatistics.hpp"
+#include <sortrace/core/statistics.hpp>
 
 #include <array>
 #include <string>
@@ -29,10 +29,10 @@ inline constexpr std::array<Metric, 5> kMetrics = {
 /// @brief Wording used when an algorithm wins this metric, e.g. "Fewest comparisons".
 [[nodiscard]] const char* metricWinLabel(Metric metric);
 
-[[nodiscard]] double metricValue(const SortStatistics& stats, Metric metric);
+[[nodiscard]] double metricValue(const sortrace::Statistics& stats, Metric metric);
 
 /// @brief Display text: thousands-separated counts, milliseconds with two decimals.
 /// @param withUnit Append " ms" to the compute time (tables put the unit in the row label).
-[[nodiscard]] std::string formatMetric(const SortStatistics& stats, Metric metric, bool withUnit = true);
+[[nodiscard]] std::string formatMetric(const sortrace::Statistics& stats, Metric metric, bool withUnit = true);
 
 } // namespace Sortly::ui

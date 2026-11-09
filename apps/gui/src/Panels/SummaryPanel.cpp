@@ -20,7 +20,7 @@ namespace Sortly {
 
 namespace {
 
-std::string fullName(const Run& run) { return std::string(SortAlgorithmFactory::toString(run.type)); }
+std::string fullName(const Run& run) { return std::string(sortrace::toString(run.type)); }
 
 // "Bubble Sort" -> "Bubble": column headers and chart labels are too narrow for the suffix.
 std::string shortName(const Run& run)
@@ -89,7 +89,7 @@ void drawSummaryTable(std::span<const Run> runs)
                     ui::rightAlignedText("-", ui::colors::TextDim);
                     continue;
                 }
-                const SortStatistics& stats = run.session->getStatistics();
+                const sortrace::Statistics& stats = run.session->getStatistics();
                 const bool isBest = highlightBest && ui::metricValue(stats, metric) <= best;
                 ui::rightAlignedText(ui::formatMetric(stats, metric, false),
                                      isBest ? ui::colors::Success : ui::colors::TextBright);
@@ -170,7 +170,7 @@ void drawBarChart(std::span<const Run> runs, ui::Metric metric, float height)
         if (!run.ready())
             continue;
 
-        const SortStatistics& stats = run.session->getStatistics();
+        const sortrace::Statistics& stats = run.session->getStatistics();
         const double value = ui::metricValue(stats, metric);
         const float  barH  = maxValue > 0.0 ? std::max(ui::dp(2.0f), areaH * static_cast<float>(value / maxValue)) : ui::dp(2.0f);
         const ImVec2 barMin(centerX - barW * 0.5f, bottom - barH);

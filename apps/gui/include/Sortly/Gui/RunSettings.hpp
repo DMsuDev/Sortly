@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp"
+#include "Sortly/Gui/SessionManager.hpp"
 
 #include <cstddef>
 #include <cstdint>

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Operations/SortPlayback.hpp"
+#include "Sortly/Gui/SortTypes.hpp"
 
 #include <cstddef>
 #include <span>

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Operations/SortOperation.hpp"
+#include <sortrace/core/operation.hpp>
 
 #include <imgui.h>
 
@@ -74,7 +74,7 @@ inline namespace literals {
 }
 
 /// @brief Tint used for an operation type (plot highlight, operation pill).
-[[nodiscard]] ImVec4 operationColor(SortOperation::Type type);
+[[nodiscard]] ImVec4 operationColor(sortrace::OperationType type);
 
 /// @brief Builds the font atlas (system UI font + Lucide icons) for the given display scale.
 /// Call before the backend init.

@@ -22,7 +22,7 @@ RunSettings::RunSettings()
 
 bool RunSettings::isViewAvailable(ViewMode mode)
 {
-    return slotCount(mode) <= SortAlgorithmFactory::all().size();
+    return slotCount(mode) <= sortrace::algorithms().size();
 }
 
 bool RunSettings::isSelected(SortAlgorithmType type) const
@@ -65,7 +65,7 @@ void RunSettings::setView(ViewMode mode)
     if (algorithms.size() > capacity())
         algorithms.resize(capacity());
 
-    for (const auto& info : SortAlgorithmFactory::all())
+    for (const auto& info : sortrace::algorithms())
     {
         if (algorithms.size() >= capacity())
             break;

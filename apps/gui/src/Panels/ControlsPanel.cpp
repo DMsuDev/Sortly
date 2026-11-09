@@ -7,7 +7,7 @@
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 
-#include <Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp>
+#include <sortrace/algorithms/algorithm.hpp>
 
 #include <imgui.h>
 
@@ -38,7 +38,7 @@ bool drawAlgorithmList(RunSettings& settings)
     ImGui::Spacing();
 
     bool changed = false;
-    for (const auto& info : SortAlgorithmFactory::all())
+    for (const auto& info : sortrace::algorithms())
     {
         const auto found = std::find(settings.algorithms.begin(), settings.algorithms.end(), info.type);
         const bool selected = found != settings.algorithms.end();
@@ -57,7 +57,7 @@ bool drawAlgorithmList(RunSettings& settings)
 
         ImGui::BeginDisabled(locked);
         bool checked = selected;
-        if (ImGui::Checkbox(info.name.data(), &checked))
+        if (ImGui::Checkbox(info.meta.name.data(), &checked))
             changed |= settings.toggle(info.type);
         ImGui::EndDisabled();
 

@@ -106,15 +106,16 @@ ImFont* addFont(const std::string& textFont, const std::string& iconFont, float 
 
 } // namespace
 
-ImVec4 operationColor(SortOperation::Type type)
+ImVec4 operationColor(sortrace::OperationType type)
 {
     switch (type)
     {
-        case SortOperation::Type::Compare:   return colors::Warning;
-        case SortOperation::Type::Swap:
-        case SortOperation::Type::Overwrite: return colors::Danger;
-        case SortOperation::Type::Pivot:     return colors::Violet;
-        case SortOperation::Type::Sorted:    return colors::Success;
+        case sortrace::OperationType::Compare:   return colors::Warning;
+        case sortrace::OperationType::Swap:
+        case sortrace::OperationType::Overwrite: return colors::Danger;
+        case sortrace::OperationType::MarkSet:
+        case sortrace::OperationType::MarkClear: return colors::Violet;
+        case sortrace::OperationType::Sorted:    return colors::Success;
     }
     return colors::Accent;
 }

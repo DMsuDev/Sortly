@@ -5,8 +5,6 @@
 #include "Sortly/Gui/BarMotion.hpp"
 #include "Sortly/Gui/UiTheme.hpp"
 
-#include "Sortly/Sorting/Operations/SortPlayback.hpp"
-
 #include <imgui.h>
 #include <implot.h>
 
@@ -61,7 +59,8 @@ BarBatches& cleanBatches()
 [[nodiscard]] bool isPlaced(const BarMotion* motion, std::span<const int> data, std::size_t slot,
                             const ArrayHighlight& highlight)
 {
-    if (!highlight.playback || !highlight.playback->isSettled(slot))
+    if (!highlight.playback || slot >= highlight.settledAt.size() ||
+        highlight.playback->getCurrentOperationIndex() < highlight.settledAt[slot])
         return false;
     if (!motion)
         return true;
@@ -108,7 +107,7 @@ BarBatches& cleanBatches()
     {
         case BarState::Idle:   return colors::withAlpha(colors::BarIdle, 0.9f);
         case BarState::Placed: return colors::withAlpha(style.color, 0.88f);
-        case BarState::Pivot:  return operationColor(SortOperation::Type::Pivot);
+        case BarState::Pivot:  return colors::Violet;
         case BarState::Active: return operationColor(highlight.operation->type);
         case BarState::Sorted: return colors::withAlpha(colors::Success, 0.88f);
     }

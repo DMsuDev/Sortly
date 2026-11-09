@@ -37,7 +37,7 @@ void drawHeader(const RunController& run)
     {
         if (r.session)
         {
-            values = r.session->getVisualData().size();
+            values = r.visualData().size();
             break;
         }
     }
@@ -58,10 +58,10 @@ void drawLegend()
         ImVec4      color;
     };
     const std::array<Item, 4> items = {{
-        { "Comparing", ui::operationColor(SortOperation::Type::Compare) },
-        { "Swapping",  ui::operationColor(SortOperation::Type::Swap)    },
-        { "Pivot",     ui::operationColor(SortOperation::Type::Pivot)   },
-        { "Sorted",    ui::colors::Success                              },
+        { "Comparing", ui::operationColor(sortrace::OperationType::Compare) },
+        { "Swapping",  ui::operationColor(sortrace::OperationType::Swap)    },
+        { "Mark",      ui::operationColor(sortrace::OperationType::MarkSet) },
+        { "Sorted",    ui::colors::Success                                  },
     }};
 
     const float dot     = ui::dp(5.0f);

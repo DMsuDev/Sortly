@@ -34,7 +34,7 @@ const char* metricWinLabel(Metric metric)
     return "";
 }
 
-double metricValue(const SortStatistics& stats, Metric metric)
+double metricValue(const sortrace::Statistics& stats, Metric metric)
 {
     switch (metric)
     {
@@ -47,7 +47,7 @@ double metricValue(const SortStatistics& stats, Metric metric)
     return 0.0;
 }
 
-std::string formatMetric(const SortStatistics& stats, Metric metric, bool withUnit)
+std::string formatMetric(const sortrace::Statistics& stats, Metric metric, bool withUnit)
 {
     if (metric == Metric::ComputeTime)
     {

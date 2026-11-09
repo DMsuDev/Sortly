@@ -27,15 +27,14 @@ const char* describe(SessionError error)
     return "Could not create this run.";
 }
 
-const char* describe(SortSession::ComputeError error)
+const char* describe(sortrace::ComputeError error)
 {
     switch (error)
     {
-        case SortSession::ComputeError::NoAlgorithm:         return "Choose an algorithm first.";
-        case SortSession::ComputeError::NoData:              return "The dataset is empty.";
-        case SortSession::ComputeError::TooLargeForBlocking: return "The dataset is too large for this algorithm.";
-        case SortSession::ComputeError::AlgorithmThrew:      return "The algorithm failed unexpectedly.";
-        case SortSession::ComputeError::None:                break;
+        case sortrace::ComputeError::NoAlgorithm:         return "Choose an algorithm first.";
+        case sortrace::ComputeError::NoData:              return "The dataset is empty.";
+        case sortrace::ComputeError::TooLargeForBlocking: return "The dataset is too large for this algorithm.";
+        case sortrace::ComputeError::AlgorithmThrew:      return "The algorithm failed unexpectedly.";
     }
     return "Could not build this run.";
 }
@@ -58,7 +57,8 @@ void RunController::start(const RunSettings& settings)
         if (result.session)
         {
             run.session = std::move(result.session);
-            run.session->getPlayback().setDelayMs(m_DelayMs);
+            run.playback.setLogSink(vigilLogSink());
+            run.playback.setDelayMs(m_DelayMs);
             run.computing = true;
         }
         else
@@ -86,21 +86,42 @@ void RunController::updateComputation()
         if (!run.computing)
             continue;
 
-        const auto result = run.session->computeOperations(share);
-        if (result == SortSession::ComputeStatus::Failed)
+        const auto result = run.session->compute(share);
+        if (!result)
         {
-            const auto error = run.session->getLastComputeError();
-            VIGIL_LOG_ERROR("Computing the operations failed: {}", toString(error));
+            const auto error = result.error();
+            VIGIL_LOG_ERROR("Computing the operations failed: {}", sortrace::toString(error));
             run.computing = false;
             run.error     = describe(error);
         }
-        else if (result == SortSession::ComputeStatus::Complete)
+        else if (*result == sortrace::Progress::Complete)
         {
             run.computing = false;
-            if (!run.session->loadPlayback())
+            const auto loaded = run.playback.load(run.session->getRecording());
+            if (!loaded)
             {
                 VIGIL_LOG_ERROR("Could not prepare playback for the completed sorting session");
                 run.error = "Could not prepare playback.";
+            }
+            else // Build the settled animation timeline for this run.
+            {
+                const auto recording = run.session->getRecording();
+                run.settledAt.assign(recording->initial.size(), 0);
+
+                for (std::size_t i = 0; i < recording->operations.size(); ++i)
+                {
+                    const auto& operation = recording->operations[i];
+                    const auto settledAt = i + 1;
+                    if (operation.type == sortrace::OperationType::Swap)
+                    {
+                        run.settledAt[static_cast<std::size_t>(operation.indexA)] = settledAt;
+                        run.settledAt[static_cast<std::size_t>(operation.indexB)] = settledAt;
+                    }
+                    else if (operation.type == sortrace::OperationType::Overwrite)
+                    {
+                        run.settledAt[static_cast<std::size_t>(operation.indexA)] = settledAt;
+                    }
+                }
             }
         }
     }
@@ -132,12 +153,11 @@ void RunController::update(float deltaTime)
         if (!run.ready())
             continue;
 
-        SortPlayback& playback = run.session->getPlayback();
-        playback.update(deltaTime);
-        run.motion.update(playback, deltaTime, easeSeconds, m_Smooth);
+        run.playback.update(deltaTime);
+        run.motion.update(run.playback, deltaTime, easeSeconds, m_Smooth);
 
         // Stepping back, Stop or a restart leave Finished, which rewinds the sweep.
-        run.sweepSeconds = playback.isFinished() ? run.sweepSeconds + deltaTime : 0.0f;
+        run.sweepSeconds = run.playback.isFinished() ? run.sweepSeconds + deltaTime : 0.0f;
     }
 }
 
@@ -150,7 +170,7 @@ void RunController::setDelayMs(float delayMs)
     m_DelayMs = delayMs;
     for (Run& run : m_Runs)
         if (run.session)
-            run.session->getPlayback().setDelayMs(delayMs);
+            run.playback.setDelayMs(delayMs);
 }
 
 void RunController::playAll()
@@ -167,10 +187,9 @@ void RunController::playAll()
     {
         if (!run.ready())
             continue;
-        SortPlayback& playback = run.session->getPlayback();
-        if (playback.isFinished() && !restart)
+        if (run.playback.isFinished() && !restart)
             continue;
-        playback.play();
+        run.playback.play();
     }
 }
 
@@ -179,7 +198,7 @@ void RunController::pauseAll()
     m_Autoplay = false;
     for (Run& run : m_Runs)
         if (run.ready())
-            run.session->getPlayback().pause();
+            run.playback.pause();
 }
 
 void RunController::stopAll()
@@ -187,7 +206,7 @@ void RunController::stopAll()
     m_Autoplay = false;
     for (Run& run : m_Runs)
         if (run.ready())
-            run.session->getPlayback().stop();
+            run.playback.stop();
 }
 
 void RunController::stepAll(bool forward)
@@ -197,11 +216,10 @@ void RunController::stepAll(bool forward)
     {
         if (!run.ready())
             continue;
-        SortPlayback& playback = run.session->getPlayback();
         // Manual steps already leave Stopped by themselves; they only need automatic play halted.
-        playback.pause();
-        if (forward) playback.stepForward();
-        else         playback.stepBackward();
+        run.playback.pause();
+        if (forward) run.playback.stepForward();
+        else         run.playback.stepBackward();
     }
 }
 
@@ -226,7 +244,7 @@ bool RunController::allReady() const
 bool RunController::anyPlaying() const
 {
     for (const Run& run : m_Runs)
-        if (run.ready() && run.session->getPlayback().isPlaying())
+        if (run.ready() && run.playback.isPlaying())
             return true;
     return false;
 }
@@ -238,7 +256,7 @@ bool RunController::allFinished() const
     {
         if (!run.ready())
             continue;
-        if (!run.session->getPlayback().isFinished())
+        if (!run.playback.isFinished())
             return false;
         any = true;
     }

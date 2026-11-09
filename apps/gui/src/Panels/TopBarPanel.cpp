@@ -8,7 +8,7 @@
 #include "Sortly/Gui/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 #include "Sortly/Gui/Window.hpp"
-#include "Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp"
+#include <sortrace/algorithms/algorithm.hpp>
 
 #include <imgui.h>
 
@@ -180,7 +180,7 @@ void drawViewSelector(UiContext& ctx)
                 ui::setTooltip("%s", option.tooltip);
             else
                 ui::setTooltip("Needs %zu algorithms; only %zu are implemented so far.",
-                                  slotCount(option.mode), SortAlgorithmFactory::all().size());
+                                  slotCount(option.mode), sortrace::algorithms().size());
         }
     }
     ImGui::PopStyleVar(2);

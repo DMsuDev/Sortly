@@ -7,6 +7,7 @@
 #include "Sortly/Gui/SessionManager.hpp"
 #include "Sortly/Gui/BarMotion.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -15,15 +16,17 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 namespace Sortly {
 
-/// @brief One algorithm of a run: its session plus the state of building its timeline.
+/// @brief One algorithm of a run: the session that records it, the playback that replays it,
+/// and the state of building the timeline.
 struct Run
 {
     SortAlgorithmType            type = SortAlgorithmType::BubbleSort;
     std::unique_ptr<SortSession> session;
+    std::vector<std::size_t>     settledAt;
+    SortPlayback                 playback; // Loaded from the session's recording once it is complete.
     bool                         computing = false;
     std::string                  error;  // Non-empty when the run could not be created or computed.
     BarMotion                    motion; // Fresh per run, so no stale bar identity can survive a restart.
@@ -38,10 +41,18 @@ struct Run
     /// @brief True once the finished playback has also finished its sweep.
     [[nodiscard]] bool sweepDone() const { return sweepSeconds >= kSweepSeconds; }
 
+    /// @brief What a view should draw right now: the playback's data once loaded, otherwise the raw input.
+    [[nodiscard]] std::span<const SortValue> visualData() const
+    {
+        if (playback.isLoaded())
+            return playback.getData();
+        return session ? session->getData() : std::span<const SortValue>{};
+    }
+
     /// @brief Timeline built and loaded: statistics are final and playback can be used.
     [[nodiscard]] bool ready() const
     {
-        return session && !computing && error.empty() && session->getPlayback().isLoaded();
+        return session && !computing && error.empty() && playback.isLoaded();
     }
 };
 

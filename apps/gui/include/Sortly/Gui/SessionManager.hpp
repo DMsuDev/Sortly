@@ -3,12 +3,9 @@
 
 #pragma once
 
-#include "Sortly/Sorting/Algorithms/SortAlgorithmFactory.hpp"
-#include "Sortly/Sorting/Data/DataSetConfig.hpp"
-#include "Sortly/Sorting/Data/SeedProvider.hpp"
-#include "Sortly/Sorting/SortSession.hpp"
+#include "Sortly/Gui/SortTypes.hpp"
 
-#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace Sortly {
@@ -17,14 +14,14 @@ namespace Sortly {
 enum class SessionError
 {
     None,
-    NoAlgorithm, // The factory has no algorithm for the requested type.
+    NoAlgorithm, // sortrace has no algorithm for the requested type.
     NoData       // The dataset came out empty.
 };
 
 struct SessionResult
 {
     std::unique_ptr<SortSession> session;
-    SessionError                 error = SessionError::None;
+    SessionError error = SessionError::None;
 };
 
 /// @brief Builds sessions and decides where their randomness comes from.
