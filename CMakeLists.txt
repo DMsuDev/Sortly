@@ -74,23 +74,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR
 include("${SORTLY_BASE_FOLDER}/cmake/dependencies/core.cmake")
 
 # ------------------------------------------------------------------------------
-#  Generated Version Header
-# ------------------------------------------------------------------------------
-configure_file(
-  "${SORTLY_BASE_FOLDER}/cmake/templates/version.hpp.in"
-  "${PROJECT_BINARY_DIR}/generated/include/Sortly/version.hpp"
-  @ONLY
-)
-
-add_library(SortlyVersion INTERFACE)
-add_library(Sortly::Version ALIAS SortlyVersion)
-
-target_include_directories(SortlyVersion INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/include>
-)
-target_link_libraries(SortlyVersion INTERFACE Sortly::Foundry)
-
-# ------------------------------------------------------------------------------
 #  Test Infrastructure
 # ------------------------------------------------------------------------------
 include("${SORTLY_BASE_FOLDER}/cmake/helpers/test_helpers.cmake")
