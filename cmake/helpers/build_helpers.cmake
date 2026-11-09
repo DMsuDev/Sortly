@@ -117,6 +117,28 @@ function(sortly_configure_project)
   endif()
 endfunction()
 
+# ---------------------------------------------------------------------------
+# sortly_configure_platform(target)
+#
+# Defines the target operating system without exposing it to dependencies.
+# ---------------------------------------------------------------------------
+
+function(sortly_configure_platform target)
+  if(NOT TARGET "${target}")
+    message(FATAL_ERROR "sortly_configure_platform: target '${target}' does not exist.")
+  endif()
+
+  _sortly_target_scope("${target}" _scope)
+
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_compile_definitions("${target}" ${_scope} OS_WINDOWS)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_definitions("${target}" ${_scope} OS_MACOS)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_definitions("${target}" ${_scope} OS_LINUX)
+  endif()
+endfunction()
+
 # ------------------------------------------------------------------------------
 # sortly_strip_dead_code(target)
 #
