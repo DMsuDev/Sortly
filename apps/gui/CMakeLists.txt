@@ -33,16 +33,21 @@ target_compile_definitions(SortlyGuiLib PRIVATE
 target_link_libraries(SortlyGuiLib
   PUBLIC
     sortrace::sortrace
-    Sortly::Version
     Sortly::ImGui
     Sortly::ImPlot
     Sortly::Vigil
+    Sortly::Foundry
     glfw::glfw
   PRIVATE
     nlohmann_json
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_link_libraries(SortlyGuiLib PRIVATE ntdll)
+endif()
+
 # The lib holds all the real code, so the compiler policy must apply to it as well.
+sortly_configure_platform(SortlyGuiLib)
 sortly_configure_compiler(SortlyGuiLib)
 sortly_configure_warnings(SortlyGuiLib)
 sortly_strip_dead_code(SortlyGuiLib)
@@ -66,6 +71,7 @@ add_custom_command(TARGET SortlyGui POST_BUILD
           "$<TARGET_FILE_DIR:SortlyGui>/assets"
 )
 
+sortly_configure_platform(SortlyGui)
 sortly_configure_compiler(SortlyGui)
 sortly_configure_warnings(SortlyGui)
 sortly_strip_dead_code(SortlyGui)
