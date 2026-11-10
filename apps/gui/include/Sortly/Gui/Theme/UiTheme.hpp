@@ -4,10 +4,11 @@
 #pragma once
 
 #include <sortrace/core/operation.hpp>
+#include "Sortly/Gui/Scaling.hpp"
 
 #include <imgui.h>
-
 #include <cstddef>
+
 namespace Sortly::ui {
 
 namespace colors {
@@ -52,33 +53,17 @@ inline ImVec4 Slot3{0.68f, 0.55f, 1.00f, 1.0f};
 } // namespace colors
 
 // Fonts are baked once in loadFonts(); every one of them also contains the Lucide icons.
-namespace fonts {
-inline ImFont* Body    = nullptr; // regular text
-inline ImFont* Label   = nullptr; // small semibold, used for CAPS captions
-inline ImFont* Heading = nullptr; // semibold section / panel titles
-inline ImFont* Title   = nullptr; // app title
-inline ImFont* Value   = nullptr; // big statistic numbers
-} // namespace fonts
-
-/// @brief Display scale (1.0 = 96 dpi). Set by loadFonts(), which runs again when the window changes monitor.
-inline float g_Scale = 1.0f;
-
-/// @brief Converts a design-time pixel size to the current display scale.
-[[nodiscard]] inline float dp(float pixels) { return pixels * g_Scale; }
-[[nodiscard]] inline ImVec2 dp(float x, float y) { return ImVec2(x * g_Scale, y * g_Scale); }
-
-/// @brief 16_dp / 1.5_dp: design pixels scaled to the display.
-inline namespace literals {
-[[nodiscard]] inline float operator""_dp(long double px)        { return static_cast<float>(px) * g_Scale; }
-[[nodiscard]] inline float operator""_dp(unsigned long long px) { return static_cast<float>(px) * g_Scale; }
+namespace fonts
+{
+    inline ImFont* Body    = nullptr; // regular text
+    inline ImFont* Label   = nullptr; // small semibold, used for CAPS captions
+    inline ImFont* Heading = nullptr; // semibold section / panel titles
+    inline ImFont* Title   = nullptr; // app title
+    inline ImFont* Value   = nullptr; // big statistic numbers
 }
 
 /// @brief Tint used for an operation type (plot highlight, operation pill).
 [[nodiscard]] ImVec4 operationColor(sortrace::OperationType type);
-
-/// @brief Builds the font atlas (system UI font + Lucide icons) for the given display scale.
-/// Call before the backend init.
-void loadFonts(float scale = 1.0f);
 
 /// @brief Applies colors and metrics; sizes are scaled by the value given to loadFonts().
 void applyTheme();

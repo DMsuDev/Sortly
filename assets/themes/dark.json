@@ -1,6 +1,5 @@
 {
   "name": "Dark",
-  "base": "dark",
   "colors": {
     "imgui": {
       "text": "#E8F0F7FF",
@@ -26,7 +25,6 @@
       "scrollbar-grab-hovered": "#ABC4D673",
       "scrollbar-grab-active": "#4FDBBFD9"
     },
-    "implot": {},
     "sortly": {
       "bar-idle": "#5C697AFF",
       "accent": "#4FDBBFFF",
@@ -70,7 +68,6 @@
       "frame-border-size": 0,
       "popup-border-size": 1,
       "scrollbar-size": 8
-    },
-    "implot": {}
+    }
   }
 }
