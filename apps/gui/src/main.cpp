@@ -3,7 +3,7 @@
 
 #include "Sortly/Gui/GuiApplication.hpp"
 
-#if defined(_WIN32)
+#if defined(OS_WINDOWS)
 #include <Windows.h>
 #endif
 
@@ -22,7 +22,7 @@ int main()
     return runSortly();
 }
 
-#if defined(_WIN32)
+#if defined(OS_WINDOWS)
 
 // Entry point for the GUI subsystem (add_executable WIN32).
 // WinMain (not wWinMain) so it links with both MSVC and MinGW without -municode.
