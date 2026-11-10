@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/ImGuiLayer.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/FontManager.hpp"
+#include "Sortly/Gui/Theme/ThemeManager.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -21,7 +22,7 @@ constexpr const char* kGlslVersion = "#version 330";
 
 } // namespace
 
-bool ImGuiLayer::init(GLFWwindow* window, float uiScale)
+bool ImGuiLayer::init(GLFWwindow* window)
 {
     shutdown();
     FOUNDRY_SCOPE_EXIT_NAMED(shutdownGuard) { shutdown(); };
@@ -36,7 +37,9 @@ bool ImGuiLayer::init(GLFWwindow* window, float uiScale)
         ImPlot::CreateContext();
         m_Stage = Stage::ImPlot;
 
-        ui::loadFonts(uiScale);
+        ui::registerDefaultFonts();
+        if (!ui::FontManager::load())
+            VIGIL_LOG_WARN("No fonts could be baked");
 
         if (!ImGui_ImplGlfw_InitForOpenGL(window, true))
         {
@@ -74,13 +77,20 @@ void ImGuiLayer::shutdown() noexcept
         case Stage::OpenGlBackend: ImGui_ImplOpenGL3_Shutdown(); [[fallthrough]];
         case Stage::GlfwBackend:   ImGui_ImplGlfw_Shutdown();    [[fallthrough]];
         case Stage::ImPlot:        ImPlot::DestroyContext();     [[fallthrough]];
-        case Stage::ImGui:         ImGui::DestroyContext();      [[fallthrough]];
-        case Stage::None:          break;
+
+        case Stage::ImGui:
+            ImGui::DestroyContext();
+            ui::FontManager::clear();
+            ui::ThemeManager::clearHandlers();
+            [[fallthrough]];
+
+        case Stage::None:
+            break;
     }
     m_Stage = Stage::None;
 }
 
-void ImGuiLayer::rescale(float uiScale)
+void ImGuiLayer::rescale()
 {
     if (!isReady())
         return;
@@ -89,8 +99,8 @@ void ImGuiLayer::rescale(float uiScale)
     {
         // Drops the backend's font texture; the next beginFrame() recreates it from the new atlas.
         ImGui_ImplOpenGL3_DestroyDeviceObjects();
-        ui::loadFonts(uiScale);
-        ui::applyTheme();
+        ui::FontManager::load();
+        ui::ThemeManager::reapplyCurrentTheme();
     }
     catch (...)
     {

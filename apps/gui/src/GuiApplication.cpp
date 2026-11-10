@@ -3,7 +3,8 @@
 
 #include "Sortly/Gui/GuiApplication.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
+#include "Sortly/Gui/System.hpp"
 
 #include "Panels/ControlsPanel.hpp"
 #include "Panels/SummaryPanel.hpp"
@@ -14,6 +15,7 @@
 
 #include <foundry/memory/scope_guard.h>
 #include <vigil/logging/log_system.h>
+#include <vigil/vigil.h>
 
 #include <algorithm>
 #include <chrono>
@@ -95,8 +97,12 @@ bool GuiApplication::onInit()
     try
     {
         // The UI layer needs the window's GL context current, so the order is fixed.
-        if (!m_Window.create(kWindowWidth, kWindowHeight, kWindowTitle, kMinWidth, kMinHeight) ||
-            !m_Gui.init(m_Window.handle(), m_Window.uiScale()))
+        if (!m_Window.create(kWindowWidth, kWindowHeight, kWindowTitle, kMinWidth, kMinHeight))
+            return false;
+
+        System::impl::setGlobalScale(m_Window.uiScale());
+
+        if (!m_Gui.init(m_Window.handle()))
             return false;
 
         // Adding a screen section = one new IPanel (with its dock) + one line here.
@@ -124,13 +130,14 @@ int GuiApplication::onRun()
 
     while (!m_Window.isCloseRequested())
     {
-        ui::theme::update();
-        
         m_Window.pollEvents();
 
         // Moved to a monitor with another resolution/DPI: rebuild fonts and theme before the next frame.
         if (m_Window.consumeScaleChange())
-            m_Gui.rescale(m_Window.uiScale());
+        {
+            System::impl::setGlobalScale(m_Window.uiScale());
+            m_Gui.rescale();
+        }
 
         // A minimized window has a 0x0 framebuffer and may stop waiting for vsync.
         // Sleep until something happens instead of spinning, and pause playback.
@@ -140,6 +147,8 @@ int GuiApplication::onRun()
             clock.reset();
             continue;
         }
+
+        ui::ThemeManager::update();
 
         m_Run.setDelayMs(m_Settings.stepDelayMs());
         m_Run.setSmooth(m_Settings.smoothMotion);
@@ -182,7 +191,7 @@ void GuiApplication::drawUi()
     const auto& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(kEdgeInset, kEdgeInset));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::scaled(kEdgeInset, kEdgeInset));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::Begin(kWorkspaceName, nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
@@ -203,7 +212,7 @@ void GuiApplication::layoutPanels(UiContext& ctx)
 {
     // Top panels take a full-width row. Other panels sit side by side on the
     // row below. Fill panels take whatever the fixed-width Right panels leave over.
-    const float gap = ui::dp(kPanelGap);
+    const float gap = ui::scaled(kPanelGap);
 
     float reservedRight = 0.0f;
     for (const auto& panel : m_Panels)

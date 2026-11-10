@@ -19,13 +19,13 @@ public:
     ImGuiLayer& operator=(const ImGuiLayer&) = delete;
 
     /// @brief The GL context of `window` must be current. On failure nothing stays alive.
-    [[nodiscard]] bool init(GLFWwindow* window, float uiScale);
+    [[nodiscard]] bool init(GLFWwindow* window);
 
     /// @brief Tears down only what was built, newest first. Safe to call repeatedly.
     void shutdown() noexcept;
 
     /// @brief Rebuilds fonts and theme for a new display scale. Call between frames, never inside one.
-    void rescale(float uiScale);
+    void rescale();
 
     /// @brief Prepares ImGui for a new frame. Must be called before any ImGui drawing commands.
     void beginFrame();
