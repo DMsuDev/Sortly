@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Application.hpp"
-#include "Sortly/version.hpp"
+#include "Sortly/Gui/System.hpp"
 
 #include <vigil/vigil.h>
 
@@ -28,7 +28,7 @@ int Application::Run()
 
     vigil::CrashHandler::Install();
 
-    VIGIL_LOG_INFO("{} version {}", m_Config.name, version::current.to_string());
+    VIGIL_LOG_INFO("{} version {}", m_Config.name, System::getSortlyVersion().to_string());
 
     try
     {
