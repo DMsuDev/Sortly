@@ -6,7 +6,7 @@
 #include "Sortly/Gui/Widgets/RunMetrics.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 #include "Sortly/Gui/Icons.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
 #include "Sortly/Gui/SortTypes.hpp"
 
@@ -22,7 +22,7 @@ namespace Sortly::ui {
 
 namespace {
 
-// Layout, in design pixels (scaled with dp()).
+// Layout, in design pixels (scaled with scaled()).
 constexpr float kCardPaddingX      = 14.0f;
 constexpr float kCardPaddingY      = 12.0f;
 constexpr float kHeaderHeight      = 32.0f;
@@ -110,12 +110,12 @@ void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
 
     ImGui::PushFont(fonts::Heading);
     const float  titleHeight = ImGui::GetTextLineHeight();
-    const float  dot         = dp(10.0f);
+    const float  dot         = scaled(10.0f);
     const ImVec2 pos         = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddRectFilled(
         ImVec2(pos.x, pos.y + (titleHeight - dot) * 0.5f), ImVec2(pos.x + dot, pos.y + (titleHeight + dot) * 0.5f),
-        toU32(color), dp(2.0f));
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + dot + dp(8.0f));
+        toU32(color), scaled(2.0f));
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + dot + scaled(8.0f));
     ImGui::TextUnformatted(title);
     ImGui::PopFont();
 
@@ -158,18 +158,18 @@ struct BodyLayout
     ImVec2      plot;
 };
 
-// Side or Inline when the plot stays readable (the most landscape one wins);
-// otherwise the statistics move into a popup (Compact) and the plot gets all the space.
+// Prefer Side or Inline when the plot stays readable. Inline is only used when every
+// metric fits; otherwise the statistics move into a popup (Compact).
 BodyLayout chooseLayout(const ImVec2& avail)
 {
-    const float inlineH = dp(kInlineStatsHeight) + ImGui::GetStyle().ItemSpacing.y;
+    const float inlineH = scaled(kInlineStatsHeight) + ImGui::GetStyle().ItemSpacing.y;
 
-    const ImVec2 side(std::max(dp(kMinPlotWidth),  avail.x - dp(kStatsWidth) - dp(kPlotGap)),
-                      std::max(dp(kMinPlotHeight), avail.y - dp(kFooterHeight)));
-    const ImVec2 below(std::max(dp(kMinPlotWidth),  avail.x),
-                       std::max(dp(kMinPlotHeight), avail.y - dp(kFooterHeight) - inlineH));
+    const ImVec2 side(std::max(scaled(kMinPlotWidth),  avail.x - scaled(kStatsWidth) - scaled(kPlotGap)),
+                      std::max(scaled(kMinPlotHeight), avail.y - scaled(kFooterHeight)));
+    const ImVec2 below(std::max(scaled(kMinPlotWidth),  avail.x),
+                       std::max(scaled(kMinPlotHeight), avail.y - scaled(kFooterHeight) - inlineH));
 
-    const auto viable   = [](const ImVec2& p) { return p.x >= dp(kViablePlotWidth) && p.y >= dp(kViablePlotHeight); };
+    const auto viable   = [](const ImVec2& p) { return p.x >= scaled(kViablePlotWidth) && p.y >= scaled(kViablePlotHeight); };
     const auto distance = [](const ImVec2& p) { return std::abs(std::log(p.x / p.y / kIdealPlotAspect)); };
 
     const bool sideOk  = viable(side);
@@ -181,22 +181,22 @@ BodyLayout chooseLayout(const ImVec2& avail)
         return { StatsLayout::Inline, below };
 
     return { StatsLayout::Compact,
-             ImVec2(std::max(dp(kMinPlotWidth),  avail.x),
-                    std::max(dp(kMinPlotHeight), avail.y - dp(kFooterHeight))) };
+             ImVec2(std::max(scaled(kMinPlotWidth),  avail.x),
+                    std::max(scaled(kMinPlotHeight), avail.y - scaled(kFooterHeight))) };
 }
 
 // Vertical list beside the plot. Rows that do not fit are dropped instead of making the card scroll.
 void drawStatsColumn(const Run& run, float height)
 {
-    ImGui::BeginChild("##Stats", ImVec2(dp(kStatsWidth), height), ImGuiChildFlags_None,
+    ImGui::BeginChild("##Stats", ImVec2(scaled(kStatsWidth), height), ImGuiChildFlags_None,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     ImGui::PushFont(fonts::Label);
     ImGui::TextColored(colors::TextDim, "STATISTICS");
     ImGui::PopFont();
-    ImGui::Dummy(ImVec2(0.0f, dp(2.0f)));
+    ImGui::Dummy(ImVec2(0.0f, scaled(2.0f)));
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, dp(6.0f, 5.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, scaled(6.0f, 5.0f));
     for (const Metric metric : kMetrics)
     {
         if (ImGui::GetCursorPosY() + ImGui::GetTextLineHeight() > height)
@@ -214,7 +214,7 @@ void drawStatsColumn(const Run& run, float height)
 void drawStatsInline(const Run& run)
 {
     const float width   = ImGui::GetContentRegionAvail().x;
-    const auto  columns = std::clamp<std::size_t>(static_cast<std::size_t>(width / dp(kInlineMinCell)), 1, kMetrics.size());
+    const auto  columns = std::clamp<std::size_t>(static_cast<std::size_t>(width / scaled(kInlineMinCell)), 1, kMetrics.size());
     const float cellW   = width / static_cast<float>(columns);
 
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -236,7 +236,7 @@ void drawStatsInline(const Run& run)
         ImGui::PopFont();
     }
 
-    ImGui::Dummy(ImVec2(width, dp(kInlineStatsHeight)));
+    ImGui::Dummy(ImVec2(width, scaled(kInlineStatsHeight)));
 }
 
 // Full statistics list, shared by the hover tooltip and the click popup.
@@ -245,9 +245,9 @@ void drawStatsContent(const Run& run)
     ImGui::PushFont(fonts::Label);
     ImGui::TextColored(colors::TextDim, "STATISTICS");
     ImGui::PopFont();
-    ImGui::Dummy(ImVec2(0.0f, dp(2.0f)));
+    ImGui::Dummy(ImVec2(0.0f, scaled(2.0f)));
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, dp(6.0f, 5.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, scaled(6.0f, 5.0f));
     for (const Metric metric : kMetrics)
         drawStatRow(shortLabel(metric), metricText(run, metric));
     drawStatRow("Complexity", run.session->getAlgorithmComplexity());
@@ -259,7 +259,7 @@ void drawStatsContent(const Run& run)
 void drawStatsButton(const Run& run, const ImVec4& color)
 {
     constexpr const char* kPopupId = "##StatsPopup";
-    const float size = dp(kInfoButtonSize);
+    const float size = scaled(kInfoButtonSize);
 
     ImGui::SameLine(ImGui::GetContentRegionMax().x - size);
 
@@ -275,7 +275,7 @@ void drawStatsButton(const Run& run, const ImVec4& color)
     ImGui::PopStyleColor(4);
 
     const bool   hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort);
-    const ImVec2 anchor(ImGui::GetItemRectMax().x, ImGui::GetItemRectMin().y - dp(6.0f));
+    const ImVec2 anchor(ImGui::GetItemRectMax().x, ImGui::GetItemRectMin().y - scaled(6.0f));
 
     if (clicked)
         ImGui::OpenPopup(kPopupId);
@@ -287,7 +287,7 @@ void drawStatsButton(const Run& run, const ImVec4& color)
         return;
 
     ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
-    ImGui::SetNextWindowSize(ImVec2(dp(kStatsPopupWidth), 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(scaled(kStatsPopupWidth), 0.0f));
 
     if (pinned)
     {
@@ -312,7 +312,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     const float progress = ready ? run.playback.getProgress() : 0.0f;
 
     ImGui::Spacing();
-    progressBar(progress, dp(6.0f), &color);
+    progressBar(progress, scaled(6.0f), &color);
 
     char caption[96];
     if (ready)
@@ -341,7 +341,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     // The complexity is secondary: it is dropped instead of overlapping a long caption.
     const std::string_view complexity = run.session->getAlgorithmComplexity();
     const char*            begin      = complexity.data();
-    const float            needed     = ImGui::CalcTextSize(begin, begin + complexity.size()).x + dp(kMinTextGap);
+    const float            needed     = ImGui::CalcTextSize(begin, begin + complexity.size()).x + scaled(kMinTextGap);
     if (!complexity.empty() && spaceLeftOnLine() >= needed)
         rightAlignedOnLine(complexity, colors::TextDim);
     ImGui::PopFont();
@@ -357,7 +357,7 @@ void drawBody(const Run& run, const ImVec4& color)
     switch (layout.stats)
     {
         case StatsLayout::Side:
-            ImGui::SameLine(0.0f, dp(kPlotGap));
+            ImGui::SameLine(0.0f, scaled(kPlotGap));
             drawStatsColumn(run, layout.plot.y);
             break;
         case StatsLayout::Inline:
@@ -386,7 +386,7 @@ void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size)
     ImGui::PushID(static_cast<int>(slot));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, cardBackground(color));
     ImGui::PushStyleColor(ImGuiCol_Border, colors::withAlpha(color, 0.55f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, dp(kCardPaddingX, kCardPaddingY));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, scaled(kCardPaddingX, kCardPaddingY));
     ImGui::BeginChild("Card", size, ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
@@ -409,14 +409,14 @@ void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size)
 
 float maxUsefulCardHeight(float cardWidth)
 {
-    const float plotW  = cardWidth - 2.0f * dp(kCardPaddingX);
-    const float chrome = 2.0f * dp(kCardPaddingY) + dp(kHeaderHeight) + dp(kFooterHeight) + dp(kInlineStatsHeight);
+    const float plotW  = cardWidth - 2.0f * scaled(kCardPaddingX);
+    const float chrome = 2.0f * scaled(kCardPaddingY) + scaled(kHeaderHeight) + scaled(kFooterHeight) + scaled(kInlineStatsHeight);
     return plotW / kMinPlotAspect + chrome;
 }
 
 ImVec2 cardSideChrome()
 {
-    return dp(2.0f * kCardPaddingX + kStatsWidth + kPlotGap,
+    return scaled(2.0f * kCardPaddingX + kStatsWidth + kPlotGap,
               2.0f * kCardPaddingY + kHeaderHeight + kFooterHeight);
 }
 

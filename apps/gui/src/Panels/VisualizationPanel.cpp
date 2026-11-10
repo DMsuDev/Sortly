@@ -3,7 +3,7 @@
 
 #include "VisualizationPanel.hpp"
 #include "Sortly/Gui/Icons.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/RunCard.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 
@@ -64,9 +64,9 @@ void drawLegend()
         { "Sorted",    ui::colors::Success                                  },
     }};
 
-    const float dot     = ui::dp(5.0f);
-    const float gapText = ui::dp(8.0f);
-    const float gapItem = ui::dp(22.0f);
+    const float dot     = ui::scaled(5.0f);
+    const float gapText = ui::scaled(8.0f);
+    const float gapItem = ui::scaled(22.0f);
 
     ImGui::PushFont(ui::fonts::Label);
     float total = 0.0f;
@@ -125,7 +125,7 @@ float layoutScore(const RowLayout& rows, const ImVec2& area, float gapX, float g
         const float cardW = (area.x - gapX * static_cast<float>(columns - 1)) / static_cast<float>(columns);
         const float plotW = cardW - chrome.x;
         const float plotH = cardH - chrome.y;
-        if (plotW < ui::dp(100.0f) || plotH < ui::dp(70.0f))
+        if (plotW < ui::scaled(100.0f) || plotH < ui::scaled(70.0f))
             return 1e9f;
         worst = std::max(worst, std::abs(std::log(plotW / plotH / kPlotAspect)));
     }
@@ -136,7 +136,7 @@ void drawGrid(const RunController& run, const ImVec2& area)
 {
     const auto runs = run.runs();
 
-    const float gapX = ui::dp(12.0f);
+    const float gapX = ui::scaled(12.0f);
     const float gapY = ImGui::GetStyle().ItemSpacing.y;
 
     const RowLayout* best = nullptr;
@@ -174,7 +174,7 @@ void drawGrid(const RunController& run, const ImVec2& area)
 
 void VisualizationPanel::draw(UiContext& ctx)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(22.0f, 18.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::scaled(22.0f, 18.0f));
     ImGui::BeginChild("Visualization", ImVec2(ctx.width, 0.0f),
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -189,9 +189,9 @@ void VisualizationPanel::draw(UiContext& ctx)
     }
     else
     {
-        const float legendH = ui::dp(34.0f);
+        const float legendH = ui::scaled(34.0f);
         const ImVec2 avail  = ImGui::GetContentRegionAvail();
-        drawGrid(ctx.run, ImVec2(avail.x, std::max(ui::dp(120.0f), avail.y - legendH)));
+        drawGrid(ctx.run, ImVec2(avail.x, std::max(ui::scaled(120.0f), avail.y - legendH)));
 
         ImGui::Spacing();
         drawLegend();

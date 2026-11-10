@@ -5,7 +5,7 @@
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 
 #include "Sortly/Gui/Icons.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 #include "Sortly/Gui/Window.hpp"
 #include <sortrace/algorithms/algorithm.hpp>
@@ -17,8 +17,6 @@
 #include <cstddef>
 
 namespace Sortly {
-
-using namespace ui::literals; // 10_dp, 1.5_dp, ...
 
 namespace {
 
@@ -54,15 +52,15 @@ constexpr std::array<ViewOption, 4> kViewOptions = {{
 }};
 
 // Tall enough for the controls whatever the font size.
-float barHeight() { return std::max(ui::dp(kBarHeight), ui::compactButtonHeight() + 24_dp); }
+float barHeight() { return std::max(ui::scaled(kBarHeight), ui::compactButtonHeight() + 24_scaled); }
 
 float centeredY(float height) { return (barHeight() - height) * 0.5f; }
 
 void drawLogo()
 {
     const float bar    = barHeight();
-    const float badge  = ui::dp(kBadge);
-    const float margin = ui::dp(kMargin);
+    const float badge  = ui::scaled(kBadge);
+    const float margin = ui::scaled(kMargin);
 
     const ImVec2 origin = ImGui::GetWindowPos();
     ImDrawList*  dl     = ImGui::GetWindowDrawList();
@@ -70,10 +68,10 @@ void drawLogo()
     // The badge is the theme switch.
     const ImVec2 badgePos(margin, (bar - badge) * 0.5f);
     ImGui::SetCursorPos(badgePos);
-    const bool canSwitch = ui::theme::count() > 1;
+    const bool canSwitch = ui::ThemeManager::getThemeCount() > 1;
     ImGui::BeginDisabled(!canSwitch);
     if (ImGui::InvisibleButton("##ThemeSwitch", ImVec2(badge, badge)))
-        ui::theme::requestNext();
+        ui::ThemeManager::requestNext();
     ImGui::EndDisabled();
 
     const bool hovered = canSwitch && ImGui::IsItemHovered();
@@ -85,7 +83,7 @@ void drawLogo()
 
     const ImVec2 min(origin.x + badgePos.x, origin.y + badgePos.y);
     const ImVec2 max(min.x + badge, min.y + badge);
-    const float  rounding = 10_dp;
+    const float  rounding = 10_scaled;
     const float  fill     = held ? 0.40f : hovered ? 0.30f : 0.18f;
     const float  border   = hovered ? 0.90f : 0.50f;
     dl->AddRectFilled(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, fill)), rounding);
@@ -106,7 +104,7 @@ void drawLogo()
         captionHeight = ImGui::GetTextLineHeight();
     }
 
-    const float textX = margin + badge + 10_dp;
+    const float textX = margin + badge + 10_scaled;
     ImGui::SetCursorPos(ImVec2(textX, centeredY(titleHeight + captionHeight)));
     {
         const ui::ScopedFont font(ui::fonts::Title);
@@ -114,7 +112,7 @@ void drawLogo()
     }
 
     ImGui::SetCursorPosX(textX);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y + 1_dp);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y + 1_scaled);
     const ui::ScopedFont font(ui::fonts::Label);
     ImGui::TextDisabled("SORTING LAB  \xC2\xB7  VISUALIZER");
 }
@@ -125,8 +123,8 @@ void drawViewSelector(UiContext& ctx)
     RunSettings& settings = ctx.settings;
 
     // Width and height follow the font: a bigger font grows the buttons instead of overflowing them.
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ui::dp(kViewPadX, kViewPadY));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 9_dp);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ui::scaled(kViewPadX, kViewPadY));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 9_scaled);
 
     ImVec2 size(0.0f, ui::compactButtonHeight()); // Equal-width segments: the widest label decides.
     for (const ViewOption& option : kViewOptions)
@@ -136,8 +134,8 @@ void drawViewSelector(UiContext& ctx)
         size.y = std::max(size.y, natural.y);
     }
 
-    const float gap   = ui::dp(kViewGap);
-    const float pad   = ui::dp(kViewPad);
+    const float gap   = ui::scaled(kViewGap);
+    const float pad   = ui::scaled(kViewPad);
     const float count = static_cast<float>(kViewOptions.size());
     const float total = size.x * count + gap * (count - 1.0f);
 
@@ -146,7 +144,7 @@ void drawViewSelector(UiContext& ctx)
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddRectFilled(
         ImVec2(origin.x - pad, origin.y - pad), ImVec2(origin.x + total + pad, origin.y + size.y + pad),
-        ui::toU32(ui::colors::Track), 12_dp);
+        ui::toU32(ui::colors::Track), 12_scaled);
 
     for (std::size_t i = 0; i < kViewOptions.size(); ++i)
     {
@@ -193,7 +191,7 @@ bool windowButton(const char* id, const char* tooltip, const char* icon, float h
     const ui::ScopedColor hover(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.16f, 0.20f, 1.0f), close);
     const ui::ScopedColor press(ImGuiCol_ButtonActive,  ImVec4(0.60f, 0.12f, 0.16f, 1.0f), close);
 
-    const bool pressed = ImGui::Button(id, ImVec2(ui::dp(kCtrlWidth), height));
+    const bool pressed = ImGui::Button(id, ImVec2(ui::scaled(kCtrlWidth), height));
 
     const ImVec2 min = ImGui::GetItemRectMin();
     const ImVec2 max = ImGui::GetItemRectMax();
@@ -227,15 +225,15 @@ void drawWindowControls(Window& window)
 {
     const bool  osFrame = window.hasOsFrame();
     const float height  = ui::compactButtonHeight();
-    const float gap     = ui::dp(kCtrlGap);
-    const float divider = ui::dp(kDividerGap);
+    const float gap     = ui::scaled(kCtrlGap);
+    const float divider = ui::scaled(kDividerGap);
 
     // Sized for the longer label, so the group never shifts when the label changes.
     const float pillWidth     = ui::pillButtonWidth(kExitFullscreenLabel);
-    const float controlsWidth = ui::dp(kCtrlWidth) * 3.0f + gap * 2.0f;
-    const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_dp + controlsWidth;
+    const float controlsWidth = ui::scaled(kCtrlWidth) * 3.0f + gap * 2.0f;
+    const float total         = osFrame ? pillWidth : pillWidth + divider * 2.0f + 1_scaled + controlsWidth;
 
-    ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::dp(kCtrlMargin) - total, centeredY(height)));
+    ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - ui::scaled(kCtrlMargin) - total, centeredY(height)));
 
     const bool fullscreen = window.isFullscreen();
     if (ui::pillButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,

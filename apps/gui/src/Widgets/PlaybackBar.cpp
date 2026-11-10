@@ -4,7 +4,7 @@
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 #include "Sortly/Gui/Icons.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
 #include <algorithm>
 #include <imgui.h>
@@ -41,7 +41,7 @@ float minPlaybackWidth()
         for (const char* label : { kStartLabel, kPauseLabel, kStopLabel })
             widest = std::max(widest, ImGui::CalcTextSize(label).x);
     }
-    return 3.0f * (widest + dp(16.0f)) + 2.0f * dp(8.0f); // frame padding + item spacing
+    return 3.0f * (widest + scaled(16.0f)) + 2.0f * scaled(8.0f); // frame padding + item spacing
 }
 
 void drawPlaybackControls(RunController& run, const RunSettings& settings)

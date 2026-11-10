@@ -3,7 +3,7 @@
 
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/FontManager.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
 namespace Sortly::ui {
 

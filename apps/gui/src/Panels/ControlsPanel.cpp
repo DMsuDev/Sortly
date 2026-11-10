@@ -3,7 +3,7 @@
 
 #include "ControlsPanel.hpp"
 #include "Sortly/Gui/Icons.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 
@@ -21,9 +21,9 @@ namespace {
 
 void sectionSeparator()
 {
-    ImGui::Dummy(ImVec2(0.0f, ui::dp(4.0f)));
+    ImGui::Dummy(ImVec2(0.0f, ui::scaled(4.0f)));
     ImGui::Separator();
-    ImGui::Dummy(ImVec2(0.0f, ui::dp(4.0f)));
+    ImGui::Dummy(ImVec2(0.0f, ui::scaled(4.0f)));
 }
 
 /// @return True if the selection changed.
@@ -123,22 +123,22 @@ void drawSpeed(RunSettings& settings)
 
 float ControlsPanel::width() const
 {
-    const float chrome = 2.0f * ui::dp(16.0f) + 2.0f; // window padding + border
-    return std::max(ui::dp(252.0f), ui::minPlaybackWidth() + chrome);
+    const float chrome = 2.0f * ui::scaled(16.0f) + 2.0f; // window padding + border
+    return std::max(ui::scaled(252.0f), ui::minPlaybackWidth() + chrome);
 }
 
 void ControlsPanel::draw(UiContext& ctx)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::dp(16.0f, 14.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::scaled(16.0f, 14.0f));
     ImGui::BeginChild("Controls", ImVec2(ctx.width, 0.0f),
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
 
     // Compact metrics for everything in the sidebar: checkboxes, sliders and buttons.
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ui::dp(8.0f, 4.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ui::dp(8.0f, 6.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, ui::dp(10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ui::scaled(8.0f, 4.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,  ui::scaled(8.0f, 6.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize,  ui::scaled(10.0f));
 
     RunSettings& settings = ctx.settings;
     bool changed = false;

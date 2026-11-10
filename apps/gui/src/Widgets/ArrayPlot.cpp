@@ -3,7 +3,7 @@
 
 #include "Sortly/Gui/Widgets/ArrayPlot.hpp"
 #include "Sortly/Gui/BarMotion.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
 #include <imgui.h>
 #include <implot.h>
@@ -152,7 +152,7 @@ void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlig
     ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.80f));
     ImPlot::PushStyleColor(ImPlotCol_PlotBorder, colors::Border);
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.07f));
-    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, dp(6.0f, 6.0f));
+    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, scaled(6.0f, 6.0f));
 
     if (ImPlot::BeginPlot(id, size, ImPlotFlags_CanvasOnly | ImPlotFlags_NoInputs))
     {

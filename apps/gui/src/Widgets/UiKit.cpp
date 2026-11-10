@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Widgets/UiKit.hpp"
-#include "Sortly/Gui/UiTheme.hpp"
+#include "Sortly/Gui/Theme/UiTheme.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -35,10 +35,10 @@ const ImVec4 kPrimaryActive { 0.14f, 0.62f, 0.55f, 1.0f };
 
 void pushOverlayStyle()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,    dp(12.0f, 9.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   dp(10.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,    dp(10.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, dp(1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,    scaled(12.0f, 9.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   scaled(10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,    scaled(10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, scaled(1.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, colors::withAlpha(colors::Accent, 0.30f));
 }
 
@@ -95,7 +95,7 @@ void sectionLabel(const char* icon, const char* label)
 {
     const ScopedFont font(fonts::Label);
     ImGui::TextColored(colors::Accent, "%s", icon);
-    ImGui::SameLine(0.0f, dp(8.0f));
+    ImGui::SameLine(0.0f, scaled(8.0f));
     ImGui::TextColored(colors::Muted, "%s", label);
 }
 
@@ -110,7 +110,7 @@ ImVec2 calculateButtonSize(const char* label, ImFont* font)
 float compactButtonHeight()
 {
     const ScopedFont font(fonts::Body);
-    return ImGui::GetTextLineHeight() + dp(kCompactPadY);
+    return ImGui::GetTextLineHeight() + scaled(kCompactPadY);
 }
 
 bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* font)
@@ -129,7 +129,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* 
 float pillButtonWidth(const char* label)
 {
     const ScopedFont font(fonts::Body);
-    return dp(kGlyphPadX) * 2.0f + dp(kGlyphBox) + dp(kGlyphGap) + ImGui::CalcTextSize(label).x;
+    return scaled(kGlyphPadX) * 2.0f + scaled(kGlyphBox) + scaled(kGlyphGap) + ImGui::CalcTextSize(label).x;
 }
 
 bool pillButton(const char* id, const char* label, const char* icon, const ImVec4& tint, const ImVec2& size)
@@ -153,7 +153,7 @@ bool pillButton(const char* id, const char* label, const char* icon, const ImVec
 
     const ImVec2 iconSize     = ImGui::CalcTextSize(icon);
     const ImVec2 textSize     = ImGui::CalcTextSize(label);
-    const float  gap          = dp(kGlyphGap);
+    const float  gap          = scaled(kGlyphGap);
     const float  contentWidth = iconSize.x + gap + textSize.x;
 
     const float  startX   = pos.x + (size.x - contentWidth) * 0.5f;
@@ -168,7 +168,7 @@ bool pillButton(const char* id, const char* label, const char* icon, const ImVec
 void verticalDivider(float height)
 {
     const ImVec2 pos   = ImGui::GetCursorScreenPos();
-    const float  width = dp(1.0f);
+    const float  width = scaled(1.0f);
     const float  inset = height * 0.2f;
 
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y + inset), ImVec2(pos.x + width, pos.y + height - inset),
@@ -179,13 +179,13 @@ void verticalDivider(float height)
 float pillWidth(const char* text)
 {
     const ScopedFont font(fonts::Label);
-    return ImGui::CalcTextSize(text).x + dp(kPillPadX) * 2.0f;
+    return ImGui::CalcTextSize(text).x + scaled(kPillPadX) * 2.0f;
 }
 
 void pill(const char* text, const ImVec4& color)
 {
-    const float padX = dp(kPillPadX);
-    const float padY = dp(kPillPadY);
+    const float padX = scaled(kPillPadX);
+    const float padY = scaled(kPillPadY);
 
     const ScopedFont font(fonts::Label);
     const ImVec2 textSize = ImGui::CalcTextSize(text);
@@ -208,22 +208,22 @@ void statCard(const char* icon, const char* label, const std::string& value,
     const ImVec2 end(pos.x + size.x, pos.y + size.y);
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
-    const float rounding = dp(10.0f);
+    const float rounding = scaled(10.0f);
     dl->AddRectFilled(pos, end, toU32(colors::SurfaceHi), rounding);
     dl->AddRect(pos, end, toU32(colors::CardBorder), rounding);
     // Thin accent strip on the left edge ties the card to its metric color.
-    dl->AddRectFilled(ImVec2(pos.x + 1.0f, pos.y + dp(10.0f)), ImVec2(pos.x + dp(4.0f), end.y - dp(10.0f)),
-                      toU32(color), dp(2.0f));
+    dl->AddRectFilled(ImVec2(pos.x + 1.0f, pos.y + scaled(10.0f)), ImVec2(pos.x + scaled(4.0f), end.y - scaled(10.0f)),
+                      toU32(color), scaled(2.0f));
 
-    const float padX = dp(14.0f);
-    const float padY = dp(9.0f);
+    const float padX = scaled(14.0f);
+    const float padY = scaled(9.0f);
 
     {
         // Caption row: tinted icon followed by the label.
         const ScopedFont font(fonts::Label);
         const ImVec2 iconSize = ImGui::CalcTextSize(icon);
         dl->AddText(ImVec2(pos.x + padX, pos.y + padY), toU32(color), icon);
-        dl->AddText(ImVec2(pos.x + padX + iconSize.x + dp(6.0f), pos.y + padY), toU32(colors::Muted), label);
+        dl->AddText(ImVec2(pos.x + padX + iconSize.x + scaled(6.0f), pos.y + padY), toU32(colors::Muted), label);
     }
 
     ImVec2 valuePos;
@@ -239,7 +239,7 @@ void statCard(const char* icon, const char* label, const std::string& value,
     {
         const ScopedFont font(fonts::Body);
         const ImVec2 unitSize = ImGui::CalcTextSize(unit);
-        dl->AddText(ImVec2(valuePos.x + valueSize.x + dp(6.0f), end.y - padY - unitSize.y - dp(2.0f)),
+        dl->AddText(ImVec2(valuePos.x + valueSize.x + scaled(6.0f), end.y - padY - unitSize.y - scaled(2.0f)),
                     toU32(colors::TextDim), unit);
     }
 
@@ -333,7 +333,7 @@ void setTooltip(const char* fmt, ...)
     if (!beginTooltip())
         return;
 
-    ImGui::PushTextWrapPos(dp(280.0f));
+    ImGui::PushTextWrapPos(scaled(280.0f));
     va_list args;
     va_start(args, fmt);
     ImGui::TextV(fmt, args);
