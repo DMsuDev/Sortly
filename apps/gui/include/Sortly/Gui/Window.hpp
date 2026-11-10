@@ -6,16 +6,22 @@
 #include <memory>
 
 struct GLFWwindow;
-struct GLFWmonitor;
 
 namespace Sortly {
 
 /// @brief Owns GLFW, one undecorated window and its OpenGL context. Knows nothing about ImGui.
-/// With no OS frame, it also provides what the frame gave: move, edge resize, minimize/maximize/fullscreen.
+/// With no OS frame it also provides what the frame gave: move, edge resize, minimize/maximize/fullscreen.
 /// On Wayland, where windows cannot be moved or resized from code, the OS frame is kept instead.
 class Window
 {
 public:
+    struct Rect
+    {
+        int x = 0, y = 0, width = 0, height = 0;
+
+        [[nodiscard]] bool valid() const noexcept { return width > 0 && height > 0; }
+    };
+
     using Edges = unsigned; // Bit mask of the kEdge* values.
     static constexpr Edges kEdgeNone   = 0;
     static constexpr Edges kEdgeLeft   = 1;
@@ -31,13 +37,13 @@ public:
 
     /// @brief Sizes are in design pixels. The UI scale is reduced when the minimum size would not
     /// fit the work area, so read uiScale() afterwards.
-    /// @return true when the window is ready and its GL context is current. On failure nothing stays alive.
+    /// @return true when the window is shown and its GL context is current. On failure nothing stays alive.
     [[nodiscard]] bool create(int width, int height, const char* title, int minWidth, int minHeight);
 
     /// @brief Destroys the window, then terminates GLFW. Safe to call repeatedly.
     void destroy() noexcept;
 
-    /// @brief Processes events, advances an active move/resize and adapts to a monitor change.
+    /// @brief Processes events, advances an active move/resize and re-evaluates the UI scale.
     void pollEvents() noexcept;
     void waitEvents() noexcept; // Use while minimized.
 
@@ -54,14 +60,11 @@ public:
     void requestClose() noexcept;
     void minimize() noexcept;
     void toggleMaximize() noexcept;
-    void toggleFullscreen() noexcept;
+    void toggleFullscreen() noexcept; // Borderless: covers the monitor, no video mode switch.
 
     /// @brief Starts moving the window with the mouse. Call on the click; ignored if a resize is
     /// active, the window is maximized/fullscreen or the OS owns the frame.
-    void beginDrag() noexcept;
-
-    void enterFullscreen() noexcept;
-    void leaveFullscreen() noexcept;
+    void beginDrag() noexcept { begin(Drag::Move, kEdgeNone); }
 
     /// @brief Border(s) being resized, or under the cursor. Used to pick the cursor shape.
     [[nodiscard]] Edges activeEdges() const noexcept;
@@ -86,46 +89,36 @@ private:
         void operator()(GLFWwindow* window) const noexcept;
     };
 
-    struct Rect
-    {
-        int x = 0, y = 0, width = 0, height = 0;
-    };
-
     enum class Drag { None, Move, Resize };
 
-    [[nodiscard]] Edges edgesUnderCursor() const noexcept;
-    void cursorOnScreen(double& x, double& y) const noexcept;
     void begin(Drag drag, Edges edges) noexcept;
     void updateInteraction() noexcept;
 
-    /// Remembers the last normal (not maximized, fullscreen or minimized) geometry.
-    void trackWindowedGeometry() noexcept;
+    /// Sets the UI scale and the minimum window size (design size * scale).
+    void applyScale(float scale) noexcept;
 
-    /// Recomputes the minimum size from the design size and the current scale.
-    void applyMinSize() noexcept;
-
-    /// Re-evaluates the monitor under the window: scale, minimum size and, if needed, geometry.
-    void refreshMonitor() noexcept;
-
-    float        m_UiScale         = 1.0f;
-    int          m_DesignMinWidth  = 1; // Unscaled.
-    int          m_DesignMinHeight = 1;
-    int          m_MinWidth        = 0; // Scaled, in screen coordinates.
-    int          m_MinHeight       = 0;
-    bool         m_OsFrame         = false;
-    GLFWmonitor* m_Monitor         = nullptr; // Monitor the current scale was computed for.
-    bool         m_MonitorDirty    = false;   // The window moved or its display scale changed.
-    bool         m_ScaleChanged    = false;
     std::unique_ptr<GLFWwindow, Deleter> m_Handle;
+    bool m_OsFrame = false;
 
-    Rect m_Windowed;                // Geometry to restore after fullscreen.
-    bool m_Borderless = false;      // Fullscreen done by covering the monitor, not by GLFW.
+    // Scale
+    float m_UiScale         = 1.0f;
+    int   m_DesignMinWidth  = 1; // Unscaled.
+    int   m_DesignMinHeight = 1;
+    int   m_MinWidth        = 0; // Scaled, in screen coordinates.
+    int   m_MinHeight       = 0;
+    bool  m_ScaleDirty      = false; // The window moved or its display scale changed.
+    bool  m_ScaleChanged    = false; // uiScale() changed and was not consumed yet.
+
+    // Fullscreen
+    Rect m_Windowed;               // Last normal geometry, restored after fullscreen.
+    bool m_Borderless   = false;   // Fullscreen done by covering the monitor, not by GLFW.
     bool m_WasMaximized = false;
 
+    // Move / resize
     Drag   m_Drag        = Drag::None;
     Edges  m_ResizeEdges = kEdgeNone;
-    Rect   m_Start;                 // Geometry when the move/resize began.
-    double m_AnchorX     = 0.0;     // Cursor position (screen) when it began.
+    Rect   m_Start;                // Geometry when the move/resize began.
+    double m_AnchorX     = 0.0;    // Cursor position (screen) when it began.
     double m_AnchorY     = 0.0;
     bool   m_LeftDown    = false;
 };
