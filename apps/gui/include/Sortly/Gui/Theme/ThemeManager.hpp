@@ -3,25 +3,103 @@
 
 #pragma once
 
+#include <imgui.h>
+#include <nlohmann/json.hpp>
+
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
-#include <string_view>
+#include <functional>
+#include <map>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
 
-namespace Sortly::ui::theme {
+namespace Sortly::ui {
 
-/// @brief Reads every *.json in @p dir (file-name order). Returns how many themes were loaded.
-std::size_t loadDirectory(const std::filesystem::path& dir);
+/// @brief Loads, applies and exports themes. It knows nothing about ImGui, ImPlot or the
+/// Sortly tokens: each library registers a handler (see ThemeHandlers.cpp). UI thread only.
+class ThemeManager
+{
+public:
+    using ColorMap = std::map<std::string, std::uint32_t>; // kebab-case key -> library color id
 
-/// @brief Applies a theme by name right now. Only call it outside a frame.
-/// @return False (nothing changes) if no theme has that name.
-bool apply(std::string_view name);
+    struct Style
+    {
+        std::variant<ImVec2*, float*> value;
+        float min;         // Design pixels.
+        float max;         // Design pixels.
+        bool needsScaling; // Pixel sizes follow the display scale; ratios and alphas do not.
+    };
+    using StyleMap = std::map<std::string, Style>;
 
-/// @brief Asks for the next theme (wrapping around). Safe to call from inside the UI.
-void requestNext();
+    struct ThemeHandler
+    {
+        ColorMap colorMap;
+        std::function<ImVec4(std::uint32_t)> getFunction;
+        std::function<void(std::uint32_t, ImVec4)> setFunction;
+    };
 
-/// @brief Applies a pending requestNext(). Call it once per frame, before ImGuiLayer::beginFrame().
-void update();
+    struct StyleHandler
+    {
+        StyleMap styleMap;
+    };
 
-[[nodiscard]] std::size_t count();
+    // --- Registration ---------------------------------------------------------
 
-} // namespace Sortly::ui::theme
+    /// @brief Registers the colors of a library. Its current values become its "native" ones.
+    static void addThemeHandler(const std::string& name, const ColorMap& colorMap,
+                                const std::function<ImVec4(std::uint32_t)>& getFunction,
+                                const std::function<void(std::uint32_t, ImVec4)>& setFunction);
+
+    /// @brief Registers the styles of a library. Its current values become its "native" ones.
+    static void addStyleHandler(const std::string& name, const StyleMap& styleMap);
+
+    /// @brief Forgets every handler (their pointers die with the library contexts).
+    static void clearHandlers();
+
+    // --- Themes ---------------------------------------------------------------
+
+    /// @brief Adds a theme from JSON text. Replaces one with the same name.
+    /// @return False if the JSON is not an object with a "name".
+    static bool addTheme(const std::string& content);
+
+    /// @brief Adds every *.json of @p dir. Returns how many were added.
+    static std::size_t loadDirectory(const std::filesystem::path& dir);
+
+    /// @brief Applies a theme right now. Only call it outside a frame.
+    /// @return False (nothing changes) if no theme has that name.
+    static bool changeTheme(const std::string& name);
+
+    /// @brief Applies the current theme again (e.g. after the display scale changed).
+    static void reapplyCurrentTheme();
+
+    /// @brief Asks for a theme; the next update() applies it.
+    static void requestChange(const std::string& name);
+    static void requestNext();
+
+    /// @brief Applies a pending request. Call once per frame, before beginFrame().
+    static void update();
+
+    // --- Queries / export -----------------------------------------------------
+
+    [[nodiscard]] static std::vector<std::string> getThemeNames();
+    [[nodiscard]] static std::size_t getThemeCount();
+    [[nodiscard]] static const std::string& getCurrentThemeName();
+
+    /// @brief Current colors and styles as theme JSON (sizes are stored unscaled).
+    [[nodiscard]] static nlohmann::json exportCurrentTheme(const std::string& name);
+
+    /// @brief "#RRGGBB", "#RRGGBBAA" or "auto" (ImPlot's automatic color).
+    [[nodiscard]] static std::optional<ImVec4> parseColorString(const std::string& text);
+    [[nodiscard]] static std::string colorToString(const ImVec4& color);
+
+    [[nodiscard]] static const std::map<std::string, ThemeHandler>& getThemeHandlers();
+    [[nodiscard]] static const std::map<std::string, StyleHandler>& getStyleHandlers();
+
+private:
+    ThemeManager() = default;
+};
+
+} // namespace Sortly::ui
