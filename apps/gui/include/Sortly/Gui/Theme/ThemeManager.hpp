@@ -6,7 +6,6 @@
 #include <imgui.h>
 #include <nlohmann/json.hpp>
 
-#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -18,19 +17,18 @@
 
 namespace Sortly::ui {
 
-/// @brief Loads, applies and exports themes. It knows nothing about ImGui, ImPlot or the
-/// Sortly tokens: each library registers a handler (see ThemeHandlers.cpp). UI thread only.
+/// @brief Loads, applies and exports themes.
 class ThemeManager
 {
 public:
-    using ColorMap = std::map<std::string, std::uint32_t>; // kebab-case key -> library color id
+    using ColorMap = std::map<std::string, std::uint32_t>;
 
     struct Style
     {
         std::variant<ImVec2*, float*> value;
-        float min;         // Design pixels.
-        float max;         // Design pixels.
-        bool needsScaling; // Pixel sizes follow the display scale; ratios and alphas do not.
+        float min;
+        float max;
+        bool needsScaling;
     };
     using StyleMap = std::map<std::string, Style>;
 
@@ -101,5 +99,8 @@ public:
 private:
     ThemeManager() = default;
 };
+
+/// @brief Registers the ImGui, ImPlot and Sortly handlers with the ThemeManager.
+void registerThemeHandlers();
 
 } // namespace Sortly::ui

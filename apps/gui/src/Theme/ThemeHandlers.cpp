@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Dayron Mustelier (@DMsuDev)
 // SPDX-License-Identifier: MIT
 
-#include "Sortly/Gui/Theme/ThemeHandlers.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 
@@ -17,13 +16,12 @@
 
 namespace Sortly::ui {
 
-namespace {
-
+// Constants for style limits
 constexpr float kMaxSize = 64.0f;
 constexpr float kMaxBorder = 8.0f;
 constexpr float kMaxWindow = 1000.0f;
 
-// "FrameBgHovered" -> "frame-bg-hovered"
+// Converts camelCase or PascalCase names to kebab-case for theme keys. "FrameBgHovered" --> "frame-bg-hovered"
 std::string toKebab(std::string_view name)
 {
     std::string out;
