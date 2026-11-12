@@ -52,7 +52,7 @@ void RunController::start(const RunSettings& settings)
         Run run;
         run.type = type;
 
-        SessionResult result = m_Factory ? m_Factory(type, settings) : SessionResult{ nullptr, SessionError::NoAlgorithm };
+        SessionResult result = m_Factory ? m_Factory(type, settings) : SessionResult{ .session = nullptr, .error = SessionError::NoAlgorithm };
         if (result.session)
         {
             run.session = std::move(result.session);

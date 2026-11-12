@@ -26,9 +26,9 @@ public:
     struct Style
     {
         std::variant<ImVec2*, float*> value;
-        float min;
-        float max;
-        bool needsScaling;
+        float min{0.0f};
+        float max{1.0f};
+        bool needsScaling{false};
     };
     using StyleMap = std::map<std::string, Style>;
 
@@ -47,9 +47,9 @@ public:
     // --- Registration ---------------------------------------------------------
 
     /// @brief Registers the colors of a library. Its current values become its "native" ones.
-    static void addThemeHandler(const std::string& name, const ColorMap& colorMap,
-                                const std::function<ImVec4(std::uint32_t)>& getFunction,
-                                const std::function<void(std::uint32_t, ImVec4)>& setFunction);
+    static void addThemeHandler(const std::string& name, const ColorMap& colors,
+                                const std::function<ImVec4(std::uint32_t)>& getter,
+                                const std::function<void(std::uint32_t, ImVec4)>& setter);
 
     /// @brief Registers the styles of a library. Its current values become its "native" ones.
     static void addStyleHandler(const std::string& name, const StyleMap& styleMap);

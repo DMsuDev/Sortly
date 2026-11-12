@@ -57,14 +57,14 @@ void drawLegend()
 {
     struct Item
     {
-        const char* label;
+        const char* label = nullptr;
         ImVec4      color;
     };
     const std::array<Item, 4> items = {{
-        { "Comparing", ui::operationColor(sortrace::OperationType::Compare) },
-        { "Swapping",  ui::operationColor(sortrace::OperationType::Swap)    },
-        { "Mark",      ui::operationColor(sortrace::OperationType::MarkSet) },
-        { "Sorted",    palette::getColor(palette::Color::Success)                                          },
+        { .label = "Comparing", .color = ui::operationColor(sortrace::OperationType::Compare) },
+        { .label = "Swapping",  .color = ui::operationColor(sortrace::OperationType::Swap)    },
+        { .label = "Mark",      .color = ui::operationColor(sortrace::OperationType::MarkSet) },
+        { .label = "Sorted",    .color = palette::getColor(palette::Color::Success)           },
     }};
 
     const float dot     = ui::scaled(5.0f);

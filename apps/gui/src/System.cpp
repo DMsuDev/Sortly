@@ -42,9 +42,13 @@ namespace Sortly::System
             s_glRenderer = renderer;
         }
 
-        static SemanticVersion s_openGLVersion{0, 0, 0};
+        // Meyers' singleton for OpenGL version.
+        static SemanticVersion& glVersion() {
+            static SemanticVersion s_openGLVersion{0, 0, 0};
+            return s_openGLVersion;
+        }
         void setGLVersion(SemanticVersion version) {
-            s_openGLVersion = version;
+            glVersion() = std::move(version);
         }
 
     } // namespace impl
@@ -135,7 +139,7 @@ namespace Sortly::System
 
     const std::string &getGPUVendor() { return impl::s_gpuVendor; }
     const std::string &getGLRenderer() { return impl::s_glRenderer; }
-    const SemanticVersion &getGLVersion() { return impl::s_openGLVersion; }
+    const SemanticVersion &getGLVersion() { return impl::glVersion(); }
 
     bool isDebugBuild() {
         #if defined(SORTLY_DEBUG)

@@ -20,7 +20,7 @@ Application::Application(ApplicationConfig config)
 int Application::Run()
 {
     vigil::LogSystem::Init({
-        .Name         = m_Config.name.c_str(),
+        .Name         = m_Config.name,
         .LogDir       = m_Config.logDir,
         .LogFile      = m_Config.logFile,
         .ConsoleLevel = m_Config.verboseLogging ? vigil::LogLevel::Trace

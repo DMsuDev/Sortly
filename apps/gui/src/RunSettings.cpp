@@ -27,12 +27,12 @@ bool RunSettings::isViewAvailable(ViewMode mode)
 
 bool RunSettings::isSelected(SortAlgorithmType type) const
 {
-    return std::find(algorithms.begin(), algorithms.end(), type) != algorithms.end();
+    return std::ranges::find(algorithms, type) != algorithms.end();
 }
 
 bool RunSettings::toggle(SortAlgorithmType type)
 {
-    const auto found = std::find(algorithms.begin(), algorithms.end(), type);
+    const auto found = std::ranges::find(algorithms, type);
     if (found != algorithms.end())
     {
         // Single view always keeps one algorithm; clicking the current one changes nothing.

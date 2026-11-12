@@ -45,7 +45,7 @@ std::string resolve(const std::string& file)
         return {};
 
     const auto u8 = found->u8string();
-    return std::string(reinterpret_cast<const char*>(u8.data()), u8.size());
+    return { reinterpret_cast<const char*>(u8.data()), u8.size() };
 }
 
 ImFont* bake(const std::string& textPath, const std::string& iconPath, const std::vector<ImWchar>& ranges,

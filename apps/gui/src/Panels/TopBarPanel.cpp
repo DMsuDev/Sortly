@@ -48,10 +48,10 @@ struct ViewOption
 };
 
 constexpr std::array<ViewOption, 4> kViewOptions = {{
-    { ICON_SINGLE    "  Single",    "One algorithm, full size",    ViewMode::Single   },
-    { ICON_COLUMNS_2 "  Compare 2", "Two algorithms side by side", ViewMode::Compare2 },
-    { ICON_COLUMNS_3 "  Compare 3", "Three algorithms at once",    ViewMode::Compare3 },
-    { ICON_GRID      "  Compare 4", "Four algorithms in a grid",   ViewMode::Compare4 },
+    { .label = ICON_SINGLE    "  Single",    .tooltip = "One algorithm, full size",    .mode = ViewMode::Single   },
+    { .label = ICON_COLUMNS_2 "  Compare 2", .tooltip = "Two algorithms side by side", .mode = ViewMode::Compare2 },
+    { .label = ICON_COLUMNS_3 "  Compare 3", .tooltip = "Three algorithms at once",    .mode = ViewMode::Compare3 },
+    { .label = ICON_GRID      "  Compare 4", .tooltip = "Four algorithms in a grid",   .mode = ViewMode::Compare4 },
 }};
 
 // Tall enough for the controls whatever the font size.
@@ -87,7 +87,11 @@ void drawLogo()
     const ImVec2 min(origin.x + badgePos.x, origin.y + badgePos.y);
     const ImVec2 max(min.x + badge, min.y + badge);
     const float  rounding = 10_scaled;
-    const float  fill     = held ? 0.40f : hovered ? 0.30f : 0.18f;
+
+    float fill = 0.18f; // Idle
+    if (held) fill = 0.40f;
+    else if (hovered) fill = 0.30f;
+
     const float  border   = hovered ? 0.90f : 0.50f;
     dl->AddRectFilled(min, max, ui::toU32(palette::withAlpha(palette::getColor(palette::Color::Accent), fill)), rounding);
     dl->AddRect(min, max, ui::toU32(palette::withAlpha(palette::getColor(palette::Color::Accent), border)), rounding);
@@ -139,7 +143,7 @@ void drawViewSelector(UiContext& ctx)
 
     const float gap   = ui::scaled(kViewGap);
     const float pad   = ui::scaled(kViewPad);
-    const float count = static_cast<float>(kViewOptions.size());
+    const auto  count = static_cast<float>(kViewOptions.size());
     const float total = size.x * count + gap * (count - 1.0f);
 
     ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - total) * 0.5f, centeredY(size.y)));

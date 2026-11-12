@@ -42,7 +42,7 @@ bool drawAlgorithmList(RunSettings& settings)
     bool changed = false;
     for (const auto& info : sortrace::algorithms())
     {
-        const auto found = std::find(settings.algorithms.begin(), settings.algorithms.end(), info.type);
+        const auto found = std::ranges::find(settings.algorithms, info.type);
         const bool selected = found != settings.algorithms.end();
         // With several slots, a full selection must be released before another algorithm can join.
         const bool locked = !selected && settings.algorithms.size() >= settings.capacity() && settings.capacity() > 1;
@@ -59,7 +59,7 @@ bool drawAlgorithmList(RunSettings& settings)
 
         ImGui::BeginDisabled(locked);
         bool checked = selected;
-        if (ImGui::Checkbox(info.meta.name.data(), &checked))
+        if (ImGui::Checkbox(std::string(info.meta.name).c_str(), &checked))
             changed |= settings.toggle(info.type);
         ImGui::EndDisabled();
 

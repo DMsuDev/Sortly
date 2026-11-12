@@ -64,8 +64,8 @@ void drawSummaryTable(std::span<const Run> runs)
                           ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg))
     {
         ImGui::TableSetupColumn("Metric", ImGuiTableColumnFlags_WidthStretch, 1.5f);
-        for (std::size_t i = 0; i < runs.size(); ++i)
-            ImGui::TableSetupColumn(shortName(runs[i]).c_str(), ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        for (const Run& run : runs)
+            ImGui::TableSetupColumn(shortName(run).c_str(), ImGuiTableColumnFlags_WidthStretch, 1.0f);
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
@@ -119,11 +119,11 @@ void drawMetricCombo(int& selected)
     if (!ImGui::BeginCombo("##ChartMetric", ui::metricLabel(ui::kMetrics[static_cast<std::size_t>(selected)])))
         return;
 
-    for (std::size_t i = 0; i < ui::kMetrics.size(); ++i)
+    for (int i = 0; i < static_cast<int>(ui::kMetrics.size()); ++i)
     {
-        const bool isSelected = static_cast<int>(i) == selected;
+        const bool isSelected = selected == i;
         if (ImGui::Selectable(ui::metricLabel(ui::kMetrics[i]), isSelected))
-            selected = static_cast<int>(i);
+            selected = i;
         if (isSelected)
             ImGui::SetItemDefaultFocus();
     }
@@ -230,7 +230,7 @@ Winner findWinner(std::span<const Run> runs)
 void drawWinner(std::span<const Run> runs)
 {
     const bool comparable = runs.size() > 1;
-    const bool done = std::all_of(runs.begin(), runs.end(), [](const Run& run) { return run.ready(); });
+    const bool done = std::ranges::all_of(runs, [](const Run& run) { return run.ready(); });
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, palette::getColor(palette::Color::SurfaceHi));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ui::scaled(14.0f, 12.0f));

@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <sstream>
@@ -79,7 +80,7 @@ void restoreNative()
             }
             else if (const auto* vector = std::get_if<ImVec2*>(&style.value))
             {
-                const ImVec2& design = std::get<ImVec2>(native);
+                const auto& design = std::get<ImVec2>(native);
                 **vector = ImVec2(design.x * scale, design.y * scale);
             }
         }
@@ -207,16 +208,16 @@ void applyWithBase(const std::string& name, std::vector<std::string>& chain)
 // REGISTRATION
 // ================================================
 
-void ThemeManager::addThemeHandler(const std::string& name, const ColorMap& colorMap,
-                                   const std::function<ImVec4(std::uint32_t)>& getFunction,
-                                   const std::function<void(std::uint32_t, ImVec4)>& setFunction)
+void ThemeManager::addThemeHandler(const std::string& name, const ColorMap& colors,
+                                   const std::function<ImVec4(std::uint32_t)>& getter,
+                                   const std::function<void(std::uint32_t, ImVec4)>& setter)
 {
-    s_themeHandlers[name] = { colorMap, getFunction, setFunction };
+    s_themeHandlers[name] = { .colorMap = colors, .getFunction = getter, .setFunction = setter };
 
     auto& native = s_nativeColors[name];
     native.clear();
-    for (const auto& [key, id] : colorMap)
-        native[key] = getFunction(id);
+    for (const auto& [key, id] : colors)
+        native[key] = getter(id);
 }
 
 void ThemeManager::addStyleHandler(const std::string& name, const StyleMap& styleMap)
@@ -345,6 +346,7 @@ void ThemeManager::update()
 std::vector<std::string> ThemeManager::getThemeNames()
 {
     std::vector<std::string> names;
+    names.reserve(s_themes.size());
     for (const auto& [name, theme] : s_themes)
         names.push_back(name);
     return names;
@@ -415,7 +417,7 @@ std::string ThemeManager::colorToString(const ImVec4& color)
     if (color.w < 0.0f)
         return "auto";
 
-    const auto byte = [](float value) { return static_cast<unsigned>(std::clamp(value, 0.0f, 1.0f) * 255.0f + 0.5f); };
+    const auto byte = [](float value) { return static_cast<unsigned>(std::lround(std::clamp(value, 0.0f, 1.0f) * 255.0f)); };
 
     char buffer[10];
     std::snprintf(buffer, sizeof(buffer), "#%02X%02X%02X%02X", byte(color.x), byte(color.y), byte(color.z), byte(color.w));

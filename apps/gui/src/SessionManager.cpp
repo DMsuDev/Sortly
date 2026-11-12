@@ -32,19 +32,19 @@ SessionResult SessionManager::createSession(SortAlgorithmType type, const DataSe
 {
     auto algorithm = sortrace::make<SortValue>(type);
     if (!algorithm)
-        return { nullptr, SessionError::NoAlgorithm };
+        return { .session = nullptr, .error = SessionError::NoAlgorithm };
 
     auto rng  = m_Seeds.createEngine(m_NextIndex++);
     auto data = sortrace::DataSetBuilder::buildShuffled<SortValue>(config, rng);
     if (data.empty())
-        return { nullptr, SessionError::NoData };
+        return { .session = nullptr, .error = SessionError::NoData };
 
     auto session = std::make_unique<SortSession>();
     session->setLogSink(vigilLogSink());
     session->setAlgorithm(std::move(algorithm));
     session->setData(std::move(data));
 
-    return { std::move(session), SessionError::None };
+    return { .session = std::move(session), .error = SessionError::None };
 }
 
 } // namespace Sortly

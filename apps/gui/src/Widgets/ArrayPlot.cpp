@@ -11,10 +11,10 @@
 #include <implot.h>
 
 #include <algorithm>
-#include <cstddef>
 #include <vector>
 #include <array>
 #include <cmath>
+#include <utility>
 
 namespace Sortly::ui {
 
@@ -81,7 +81,7 @@ BarBatches& cleanBatches()
         return slot < swept ? BarState::Sorted : BarState::Placed;
 
     // Keep the pivot's identity color even when it participates in a comparison.
-    if (highlight.pivotIndex == static_cast<int>(slot))
+    if (std::cmp_equal(highlight.pivotIndex, slot))
         return BarState::Pivot;
 
     if (touchesSlot(highlight.operation, slot))
@@ -97,10 +97,10 @@ BarBatches& cleanBatches()
 [[nodiscard]] ImVec2 barAt(const BarMotion* motion, std::span<const int> data, std::size_t slot)
 {
     if (!motion)
-        return ImVec2(static_cast<float>(slot), static_cast<float>(data[slot]));
+        return { static_cast<float>(slot), static_cast<float>(data[slot]) };
 
     const std::size_t bar = motion->owner(slot);
-    return ImVec2(motion->x(bar), motion->height(bar));
+    return { motion->x(bar), motion->height(bar) };
 }
 
 [[nodiscard]] ImVec4 fillColor(BarState state, const ArrayHighlight& highlight, const ArrayPlotStyle& style)
@@ -165,7 +165,7 @@ void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlig
 
         if (!data.empty())
         {
-            const double top = std::max(1, *std::max_element(data.begin(), data.end())) * 1.1;
+            const double top = std::max(1, *std::ranges::max_element(data)) * 1.1;
             ImPlot::SetupAxesLimits(-0.5, static_cast<double>(data.size()) - 0.5, 0.0, top, ImPlotCond_Always);
             ImPlot::SetupAxisTicks(ImAxis_Y1, 0.0, top, kGuideLines);
             drawBars(data, highlight, style);

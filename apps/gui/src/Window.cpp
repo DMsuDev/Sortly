@@ -80,7 +80,10 @@ float fitScale(float wanted, int minWidth, int minHeight, const Rect& area)
 // Design-pixel size -> screen pixels, capped to the usable area and centered in it.
 Rect initialFrame(int width, int height, float scale, const Rect& area)
 {
-    Rect f{ 0, 0, std::max(1, scaled(width, scale)), std::max(1, scaled(height, scale)) };
+        Rect f{ .x=0, .y=0,
+            .width=std::max(1, scaled(width, scale)),
+            .height=std::max(1, scaled(height, scale))
+        };
     if (!area.valid())
         return f;
 
@@ -453,7 +456,7 @@ void Window::toggleFullscreen() noexcept
 
     m_WasMaximized = isMaximized(); // m_Windowed already holds the last normal geometry.
 
-    Rect screen{ 0, 0, mode->width, mode->height };
+    Rect screen{ .x=0, .y=0, .width=mode->width, .height=mode->height };
     glfwGetMonitorPos(monitor, &screen.x, &screen.y);
 
     if (m_OsFrame)

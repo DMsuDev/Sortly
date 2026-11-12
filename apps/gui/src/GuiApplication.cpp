@@ -71,9 +71,15 @@ void applyEdgeCursor(Window::Edges edges)
     // Top-left and bottom-right share a diagonal; the other two corners share the other one.
     const bool nwse = ((edges & Window::kEdgeLeft) != 0) == ((edges & Window::kEdgeTop) != 0);
 
-    ImGui::SetMouseCursor(horizontal && vertical ? (nwse ? ImGuiMouseCursor_ResizeNWSE : ImGuiMouseCursor_ResizeNESW)
-                          : horizontal           ? ImGuiMouseCursor_ResizeEW
-                                                 : ImGuiMouseCursor_ResizeNS);
+    ImGuiMouseCursor cursor = ImGuiMouseCursor_Arrow;
+    if (horizontal && vertical)
+        cursor = nwse ? ImGuiMouseCursor_ResizeNWSE : ImGuiMouseCursor_ResizeNESW;
+    else if (horizontal)
+        cursor = ImGuiMouseCursor_ResizeEW;
+    else
+        cursor = ImGuiMouseCursor_ResizeNS;
+
+    ImGui::SetMouseCursor(cursor);
 }
 
 } // namespace
@@ -201,7 +207,7 @@ void GuiApplication::drawUi()
     if (ImGui::IsKeyPressed(ImGuiKey_F11, false))
         m_Window.toggleFullscreen();
 
-    UiContext ctx{ m_Settings, m_Run };
+    UiContext ctx{ .settings = m_Settings, .run = m_Run };
     layoutPanels(ctx);
 
     ImGui::End();

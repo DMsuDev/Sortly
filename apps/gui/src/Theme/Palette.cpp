@@ -13,28 +13,28 @@ namespace {
 constexpr std::size_t kColorCount = static_cast<std::size_t>(Color::Count);
 
 constexpr std::array<ColorInfo, kColorCount> kColors{{
-    { Color::BarIdle,    "bar-idle",    {0.36f,  0.41f,  0.48f,  1.00f} },
-    { Color::Accent,     "accent",      {0.31f,  0.86f,  0.75f,  1.00f} },
-    { Color::Warning,    "warning",     {1.00f,  0.72f,  0.31f,  1.00f} },
-    { Color::Danger,     "danger",      {1.00f,  0.42f,  0.46f,  1.00f} },
-    { Color::Info,       "info",        {0.40f,  0.65f,  1.00f,  1.00f} },
-    { Color::Violet,     "violet",      {0.68f,  0.55f,  1.00f,  1.00f} },
-    { Color::Success,    "success",     {0.40f,  0.88f,  0.52f,  1.00f} },
-    { Color::Muted,      "muted",       {0.67f,  0.77f,  0.84f,  1.00f} },
-    { Color::Bar,        "bar",         {0.20f,  0.75f,  0.66f,  0.88f} },
-    { Color::Surface,    "surface",     {0.075f, 0.090f, 0.118f, 1.00f} },
-    { Color::SurfaceHi,  "surface-hi",  {0.105f, 0.125f, 0.160f, 1.00f} },
-    { Color::Clear,      "clear",       {0.047f, 0.059f, 0.082f, 1.00f} },
-    { Color::TextDim,    "text-dim",    {0.48f,  0.54f,  0.62f,  1.00f} },
-    { Color::Border,     "border",      {0.17f,  0.20f,  0.25f,  0.80f} },
-    { Color::CardBorder, "card-border", {0.20f,  0.24f,  0.30f,  0.70f} },
-    { Color::Track,      "track",       {0.13f,  0.16f,  0.21f,  1.00f} },
-    { Color::TextBright, "text-bright", {0.94f,  0.97f,  1.00f,  1.00f} },
-    { Color::OnAccent,   "on-accent",   {0.03f,  0.10f,  0.10f,  1.00f} },
-    { Color::Slot0,      "slot-0",      {0.40f,  0.65f,  1.00f,  1.00f} },
-    { Color::Slot1,      "slot-1",      {0.96f,  0.52f,  0.80f,  1.00f} },
-    { Color::Slot2,      "slot-2",      {0.31f,  0.86f,  0.75f,  1.00f} },
-    { Color::Slot3,      "slot-3",      {0.68f,  0.55f,  1.00f,  1.00f} },
+    { .id=Color::BarIdle,    .name="bar-idle",    .defaultValue={0.36f,  0.41f,  0.48f,  1.00f} },
+    { .id=Color::Accent,     .name="accent",      .defaultValue={0.31f,  0.86f,  0.75f,  1.00f} },
+    { .id=Color::Warning,    .name="warning",     .defaultValue={1.00f,  0.72f,  0.31f,  1.00f} },
+    { .id=Color::Danger,     .name="danger",      .defaultValue={1.00f,  0.42f,  0.46f,  1.00f} },
+    { .id=Color::Info,       .name="info",        .defaultValue={0.40f,  0.65f,  1.00f,  1.00f} },
+    { .id=Color::Violet,     .name="violet",      .defaultValue={0.68f,  0.55f,  1.00f,  1.00f} },
+    { .id=Color::Success,    .name="success",     .defaultValue={0.40f,  0.88f,  0.52f,  1.00f} },
+    { .id=Color::Muted,      .name="muted",       .defaultValue={0.67f,  0.77f,  0.84f,  1.00f} },
+    { .id=Color::Bar,        .name="bar",         .defaultValue={0.20f,  0.75f,  0.66f,  0.88f} },
+    { .id=Color::Surface,    .name="surface",     .defaultValue={0.075f, 0.090f, 0.118f, 1.00f} },
+    { .id=Color::SurfaceHi,  .name="surface-hi",  .defaultValue={0.105f, 0.125f, 0.160f, 1.00f} },
+    { .id=Color::Clear,      .name="clear",       .defaultValue={0.047f, 0.059f, 0.082f, 1.00f} },
+    { .id=Color::TextDim,    .name="text-dim",    .defaultValue={0.48f,  0.54f,  0.62f,  1.00f} },
+    { .id=Color::Border,     .name="border",      .defaultValue={0.17f,  0.20f,  0.25f,  0.80f} },
+    { .id=Color::CardBorder, .name="card-border", .defaultValue={0.20f,  0.24f,  0.30f,  0.70f} },
+    { .id=Color::Track,      .name="track",       .defaultValue={0.13f,  0.16f,  0.21f,  1.00f} },
+    { .id=Color::TextBright, .name="text-bright", .defaultValue={0.94f,  0.97f,  1.00f,  1.00f} },
+    { .id=Color::OnAccent,   .name="on-accent",   .defaultValue={0.03f,  0.10f,  0.10f,  1.00f} },
+    { .id=Color::Slot0,      .name="slot-0",      .defaultValue={0.40f,  0.65f,  1.00f,  1.00f} },
+    { .id=Color::Slot1,      .name="slot-1",      .defaultValue={0.96f,  0.52f,  0.80f,  1.00f} },
+    { .id=Color::Slot2,      .name="slot-2",      .defaultValue={0.31f,  0.86f,  0.75f,  1.00f} },
+    { .id=Color::Slot3,      .name="slot-3",      .defaultValue={0.68f,  0.55f,  1.00f,  1.00f} },
 }};
 
 // Every color listed once, in enum order, with a non-empty unique name.
@@ -58,7 +58,7 @@ constexpr std::size_t indexOf(Color color) noexcept
     return static_cast<std::size_t>(color);
 }
 
-std::array<ImVec4, kColorCount> makeDefaults()
+constexpr std::array<ImVec4, kColorCount> makeDefaults() noexcept
 {
     std::array<ImVec4, kColorCount> values{};
     for (std::size_t i = 0; i < values.size(); ++i)

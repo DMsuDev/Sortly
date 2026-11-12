@@ -21,6 +21,8 @@ constexpr float kMaxSize = 64.0f;
 constexpr float kMaxBorder = 8.0f;
 constexpr float kMaxWindow = 1000.0f;
 
+namespace {
+
 // Converts camelCase or PascalCase names to kebab-case for theme keys. "FrameBgHovered" --> "frame-bg-hovered"
 std::string toKebab(std::string_view name)
 {
@@ -35,8 +37,6 @@ std::string toKebab(std::string_view name)
     return out;
 }
 
-namespace {
-
 palette::Color paletteColor(std::uint32_t id)
 {
     if (id >= static_cast<std::uint32_t>(palette::Color::Count))
@@ -44,8 +44,6 @@ palette::Color paletteColor(std::uint32_t id)
 
     return static_cast<palette::Color>(id);
 }
-
-} // namespace
 
 // --- ImGui -------------------------------------------------------------------
 
@@ -165,6 +163,8 @@ void registerStyleHandlers()
         ThemeManager::addStyleHandler("implot", implotStyleMap);
     }
 }
+
+} // namespace
 
 void registerThemeHandlers()
 {

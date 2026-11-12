@@ -106,7 +106,7 @@ ImVec2 calculateButtonSize(const char* label, ImFont* font)
     const ScopedFont scoped(font ? font : fonts::Heading);
     const ImVec2 padding = ImGui::GetStyle().FramePadding;
     const ImVec2 text    = ImGui::CalcTextSize(label);
-    return ImVec2(text.x + padding.x * 2.0f, text.y + padding.y * 2.0f);
+    return { text.x + padding.x * 2.0f, text.y + padding.y * 2.0f };
 }
 
 float compactButtonHeight()
@@ -143,7 +143,10 @@ bool pillButton(const char* id, const char* label, const char* icon, const ImVec
     const bool hovered = ImGui::IsItemHovered();
     const bool held    = ImGui::IsItemActive();
 
-    const float fillAlpha   = held ? 0.30f : hovered ? 0.22f : 0.12f;
+    float fillAlpha = 0.18f;  // idle
+    if (held) fillAlpha = 0.40f;
+    else if (hovered) fillAlpha = 0.30f;
+
     const float borderAlpha = hovered ? 0.85f : 0.50f;
     const float rounding    = size.y * 0.5f;
 

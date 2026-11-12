@@ -45,23 +45,23 @@ constexpr float kMinTextGap        = 8.0f;   // Least space kept between left an
 
 struct StateTag
 {
-    const char* text;
-    ImVec4      color;
+    const char* label = nullptr;
+    ImVec4      color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
 StateTag stateOf(const Run& run)
 {
     if (!run.error.empty())
-        return { "ERROR", palette::getColor(palette::Color::Danger) };
+        return { .label = "ERROR", .color = palette::getColor(palette::Color::Danger) };
     if (run.computing || !run.session)
-        return { "BUILDING", palette::getColor(palette::Color::Warning) };
+        return { .label = "BUILDING", .color = palette::getColor(palette::Color::Warning) };
 
     const SortPlayback& playback = run.playback;
-    if (playback.isPlaying())  return { "RUNNING", palette::getColor(palette::Color::Info)    };
-    if (playback.isPaused())   return { "PAUSED",  palette::getColor(palette::Color::Warning) };
-    if (playback.isFinished()) return run.sweepDone() ? StateTag{ "SORTED",  palette::getColor(palette::Color::Success) }
-                                                      : StateTag{ "RUNNING", palette::getColor(palette::Color::Info)    };
-    return { "READY", palette::getColor(palette::Color::Muted) };
+    if (playback.isPlaying())  return { .label = "RUNNING", .color = palette::getColor(palette::Color::Info) };
+    if (playback.isPaused())   return { .label = "PAUSED",  .color = palette::getColor(palette::Color::Warning) };
+    if (playback.isFinished()) return run.sweepDone() ? StateTag{ .label = "SORTED",  .color = palette::getColor(palette::Color::Success) }
+                                                      : StateTag{ .label = "RUNNING", .color = palette::getColor(palette::Color::Info) };
+    return { .label = "READY", .color = palette::getColor(palette::Color::Muted) };
 }
 
 // Dark card background with a faint tint of the slot's identity color.
@@ -69,9 +69,9 @@ ImVec4 cardBackground(const ImVec4& accent)
 {
     constexpr float kTint = 0.03f;
     const ImVec4&   base  = palette::getColor(palette::Color::Surface);
-    return ImVec4(base.x + (accent.x - base.x) * kTint,
-                  base.y + (accent.y - base.y) * kTint,
-                  base.z + (accent.z - base.z) * kTint, 1.0f);
+    return { base.x + (accent.x - base.x) * kTint,
+             base.y + (accent.y - base.y) * kTint,
+             base.z + (accent.z - base.z) * kTint, 1.0f};
 }
 
 // The statistics are narrow, so the longest label is shortened.
@@ -121,8 +121,8 @@ void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
     ImGui::TextUnformatted(title);
     ImGui::PopFont();
 
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - pillWidth(state.text));
-    pill(state.text, state.color);
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - pillWidth(state.label));
+    pill(state.label, state.color);
 }
 
 // What the plot emphasizes. Nothing is emphasized until the run has started, so a fresh
@@ -156,8 +156,8 @@ enum class StatsLayout { Side, Inline, Compact };
 
 struct BodyLayout
 {
-    StatsLayout stats;
-    ImVec2      plot;
+    StatsLayout stats{};
+    ImVec2      plot{0.0f, 0.0f};
 };
 
 // Prefer Side or Inline when the plot stays readable. Inline is only used when every
@@ -178,13 +178,13 @@ BodyLayout chooseLayout(const ImVec2& avail)
     const bool belowOk = viable(below);
 
     if (sideOk && (!belowOk || distance(side) <= distance(below)))
-        return { StatsLayout::Side, side };
+        return { .stats = StatsLayout::Side, .plot = side };
     if (belowOk)
-        return { StatsLayout::Inline, below };
+        return { .stats = StatsLayout::Inline, .plot = below };
 
-    return { StatsLayout::Compact,
-             ImVec2(std::max(scaled(kMinPlotWidth),  avail.x),
-                    std::max(scaled(kMinPlotHeight), avail.y - scaled(kFooterHeight))) };
+    return { .stats = StatsLayout::Compact,
+             .plot = ImVec2(std::max(scaled(kMinPlotWidth),  avail.x),
+                            std::max(scaled(kMinPlotHeight), avail.y - scaled(kFooterHeight))) };
 }
 
 // Vertical list beside the plot. Rows that do not fit are dropped instead of making the card scroll.

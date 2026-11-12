@@ -21,11 +21,11 @@ void registerDefaultFonts()
 {
     FontManager::setIcons("fonts/lucide.ttf", kIconCodepoints);
 
-    FontManager::addFont("body",    { kRegular,  "",        17.0f, 1.00f, &fonts::Body    });
-    FontManager::addFont("label",   { kSemibold, kRegular,  12.5f, 1.00f, &fonts::Label   });
-    FontManager::addFont("heading", { kSemibold, kRegular,  18.0f, 1.00f, &fonts::Heading });
-    FontManager::addFont("title",   { kSemibold, kRegular,  24.0f, 0.95f, &fonts::Title   });
-    FontManager::addFont("value",   { kMono,     kSemibold, 22.0f, 0.90f, &fonts::Value   });
+    FontManager::addFont("body",    { .file=kRegular,  .fallback="",        .size=17.0f, .iconScale=1.00f, .target=&fonts::Body    });
+    FontManager::addFont("label",   { .file=kSemibold, .fallback=kRegular,  .size=12.5f, .iconScale=1.00f, .target=&fonts::Label   });
+    FontManager::addFont("heading", { .file=kSemibold, .fallback=kRegular,  .size=18.0f, .iconScale=1.00f, .target=&fonts::Heading });
+    FontManager::addFont("title",   { .file=kSemibold, .fallback=kRegular,  .size=24.0f, .iconScale=0.95f, .target=&fonts::Title   });
+    FontManager::addFont("value",   { .file=kMono,     .fallback=kSemibold, .size=22.0f, .iconScale=0.90f, .target=&fonts::Value   });
 }
 
 } // namespace Sortly::ui
