@@ -4,6 +4,81 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Conventional Commits](https://www.conventionalcommits.org/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### 🚀 Features
+
+- **submodules**: Add `sortrace` submodule ([cd4a3a2](https://github.com/DMsuDev/Sortly/commit/cd4a3a2803a458096f505a1a174d4629fff62a6c))
+
+- **logging**: Add vigil log sink for session management ([2cc53ed](https://github.com/DMsuDev/Sortly/commit/2cc53ed63dcf5566d628d3d5a61f36e2d3a61864))
+
+- **cmake**: Add version and debug definitions for SortlyGuiLib ([904b11c](https://github.com/DMsuDev/Sortly/commit/904b11c1103a48ac2bbb2025fe524a7c85b9b31d))
+
+- **cmake**: Add sortly_configure_platform function for OS-specific target definitions ([1f0f3ab](https://github.com/DMsuDev/Sortly/commit/1f0f3abd7de0aac1bc20fbf73bb5b9665e24d13f))
+
+- **cmake**: Update SortlyGuiLib dependencies and add platform configuration for Windows ([ab70999](https://github.com/DMsuDev/Sortly/commit/ab70999f5a5ce8ca9e8ab76f6fa26093ce548d9e))
+
+- **system**: Implement global scale management and system information retrieval ([d65f01b](https://github.com/DMsuDev/Sortly/commit/d65f01b1d143e74c2a90470a04467fe023c0591f))
+
+- **Window**: Enhance window management with improved scaling and geometry handling ([b73c5ae](https://github.com/DMsuDev/Sortly/commit/b73c5aeb41ef475977af56ebdbd23fd69ef08670))
+
+- **fonts**: Implement FontManager and FontRegistry for font handling and registration ([33251ae](https://github.com/DMsuDev/Sortly/commit/33251ae98271435160323b1716b91c0166435512))
+
+- **theme**: Enhance ThemeManager with JSON theme handling and style management ([e6f2047](https://github.com/DMsuDev/Sortly/commit/e6f2047a34514a8be498860d8fb48a4fef53e113))
+
+- **theme**: Implement theme handler registration and update theme JSON files ([8545d5c](https://github.com/DMsuDev/Sortly/commit/8545d5ce4a99087da22a1d0988831ca0201d6aa6))
+
+  - Updated `UiTheme.hpp` to remove global scale variable and related functions.
+  - Move UiTheme.hpp/cpp into the theme module.
+
+- **palette**: Introduce centralized color palette ([51ef881](https://github.com/DMsuDev/Sortly/commit/51ef881a89d8eb99ea769c15b63f83072a180067))
+
+  - Move the color definitions from UiTheme.hpp into a separate Palette API, centralizing color defaults and access.
+  - Update theme handling and UI components to use the new palette API for color retrieval and modification.
+
+- **cmake**: Add CMake presets for Visual Studio and Ninja builds ([0f79f1b](https://github.com/DMsuDev/Sortly/commit/0f79f1b40b60a32f2545c807e29542fe79f94ed2))
+
+### 🐛 Bug Fixes
+
+- **gui**: Pin dataset size to the requested count ([80cafd0](https://github.com/DMsuDev/Sortly/commit/80cafd037701725640f2bffed97e7d24bcca3b6a))
+
+### 🚜 Refactor
+
+- Remove sorting library and link to sortrace instead ([11b6976](https://github.com/DMsuDev/Sortly/commit/11b69760cc431d319f5a910e1225190bf931db43))
+
+- **backend**: Adopt sortrace as the sorting backend ([1a6c3d4](https://github.com/DMsuDev/Sortly/commit/1a6c3d4fd070ff24d3e90433096b1847ffcb3cf6))
+
+- **cmake**: Remove version header generation and associated library ([5e79ae9](https://github.com/DMsuDev/Sortly/commit/5e79ae9a9dedff1bdf471cb66811e1ed42ae39f2))
+
+- **gui**: Simplify ImGuiLayer initialization and rescaling ([5043045](https://github.com/DMsuDev/Sortly/commit/50430453c28d79a4cf209a5d87fad58ea8f8f628))
+
+- **theme**: Remove redundant theme handlers header ([9d323ae](https://github.com/DMsuDev/Sortly/commit/9d323aec8705ec9f0e61d5f983ac2ddf4a26e61b))
+
+- **gui**: Update include directives and replace vigil headers with logging system ([4368a63](https://github.com/DMsuDev/Sortly/commit/4368a63a08b0a61f66d33090f51778b0b9a8777d))
+
+### 🛠️ Build System
+
+- Remove `sorting` library and related files ([438d050](https://github.com/DMsuDev/Sortly/commit/438d05005492008d9dbf3e85a415e96358433ca6))
+
+- **cmake**: Integrate sortrace submodule and configure build options ([22c4467](https://github.com/DMsuDev/Sortly/commit/22c4467cb986b94558b32974fcf75f70678be368))
+
+- **cmake**: Add clang-tidy configuration and CMake integration ([2aecce1](https://github.com/DMsuDev/Sortly/commit/2aecce11ab8d88a5a49b4b8e8d3200aac6098587))
+
+  - .clang-tidy with curated checks (bugprone, modernize, readability, etc.)
+  - WarningsAsErrors for critical diagnostics only
+  - SORTLY_ENABLE_CLANG_TIDY CMake option (default OFF)
+  - MSVC: pass --extra-arg=/EHsc for try/throw support
+
+### 🔧 Maintenance
+
+- **main**: Update Windows preprocessor directive to use OS_WINDOWS ([16598e2](https://github.com/DMsuDev/Sortly/commit/16598e29d1cc3095488a7be5925256cd4ac9819d))
+
+- **Application**: Update version logging to use System::getSortlyVersion ([2a49feb](https://github.com/DMsuDev/Sortly/commit/2a49feb58cff70d7adfdd20b8df821423adc6d99))
+
+### ◀️ Reverts
+
+- **branding**: Revert logo to a single image and remove theme variant ([7f3e81e](https://github.com/DMsuDev/Sortly/commit/7f3e81ecdcb446be4938501e412a33601597524f))
+
 ## [0.4.0] - 2026-10-30
 
 ### 💥 Breaking Changes
