@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
-#include "Sortly/Gui/Theme/UiTheme.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 
 #include <imgui.h>
 #include <implot.h>
@@ -10,7 +10,7 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
-#include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -35,162 +35,142 @@ std::string toKebab(std::string_view name)
     return out;
 }
 
-ThemeManager::Style number(float* value, float min, float max, bool needsScaling = true)
+namespace {
+
+palette::Color paletteColor(std::uint32_t id)
 {
-    return { value, min, max, needsScaling };
-}
+    if (id >= static_cast<std::uint32_t>(palette::Color::Count))
+        throw std::out_of_range("Invalid Sortly palette color ID");
 
-ThemeManager::Style pair(ImVec2* value, float min, float max, bool needsScaling = true)
-{
-    return { value, min, max, needsScaling };
-}
-
-// --- ImGui -------------------------------------------------------------------
-
-void registerImGui()
-{
-    ThemeManager::ColorMap colorMap;
-    for (int i = 0; i < ImGuiCol_COUNT; ++i)
-        colorMap[toKebab(ImGui::GetStyleColorName(i))] = static_cast<std::uint32_t>(i);
-
-    ThemeManager::addThemeHandler("imgui", colorMap,
-        [](std::uint32_t id) { return ImGui::GetStyle().Colors[id]; },
-        [](std::uint32_t id, ImVec4 color) { ImGui::GetStyle().Colors[id] = color; });
-
-    ImGuiStyle& s = ImGui::GetStyle();
-    ThemeManager::addStyleHandler("imgui", {
-        { "alpha", number(&s.Alpha, 0.1f, 1.0f, false) },
-        { "disabled-alpha", number(&s.DisabledAlpha, 0.0f, 1.0f, false) },
-        { "window-padding", pair(&s.WindowPadding, 0.0f, kMaxSize) },
-        { "window-rounding", number(&s.WindowRounding, 0.0f, kMaxSize) },
-        { "window-border-size", number(&s.WindowBorderSize, 0.0f, kMaxBorder) },
-        { "window-min-size", pair(&s.WindowMinSize, 0.0f, kMaxWindow) },
-        { "window-title-align", pair(&s.WindowTitleAlign, 0.0f, 1.0f, false) },
-        { "child-rounding", number(&s.ChildRounding, 0.0f, kMaxSize) },
-        { "child-border-size", number(&s.ChildBorderSize, 0.0f, kMaxBorder) },
-        { "popup-rounding", number(&s.PopupRounding, 0.0f, kMaxSize) },
-        { "popup-border-size", number(&s.PopupBorderSize, 0.0f, kMaxBorder) },
-        { "frame-padding", pair(&s.FramePadding, 0.0f, kMaxSize) },
-        { "frame-rounding", number(&s.FrameRounding, 0.0f, kMaxSize) },
-        { "frame-border-size", number(&s.FrameBorderSize, 0.0f, kMaxBorder) },
-        { "item-spacing", pair(&s.ItemSpacing, 0.0f, kMaxSize) },
-        { "item-inner-spacing", pair(&s.ItemInnerSpacing, 0.0f, kMaxSize) },
-        { "cell-padding", pair(&s.CellPadding, 0.0f, kMaxSize) },
-        { "touch-extra-padding", pair(&s.TouchExtraPadding, 0.0f, 10.0f) },
-        { "indent-spacing", number(&s.IndentSpacing, 0.0f, kMaxSize) },
-        { "columns-min-spacing", number(&s.ColumnsMinSpacing, 0.0f, kMaxSize) },
-        { "scrollbar-size", number(&s.ScrollbarSize, 0.0f, kMaxSize) },
-        { "scrollbar-rounding", number(&s.ScrollbarRounding, 0.0f, kMaxSize) },
-        { "grab-min-size", number(&s.GrabMinSize, 0.0f, kMaxSize) },
-        { "grab-rounding", number(&s.GrabRounding, 0.0f, kMaxSize) },
-        { "log-slider-deadzone", number(&s.LogSliderDeadzone, 0.0f, kMaxSize) },
-        { "tab-rounding", number(&s.TabRounding, 0.0f, kMaxSize) },
-        { "tab-border-size", number(&s.TabBorderSize, 0.0f, kMaxBorder) },
-        { "separator-text-border-size", number(&s.SeparatorTextBorderSize, 0.0f, kMaxBorder) },
-        { "separator-text-align", pair(&s.SeparatorTextAlign, 0.0f, 1.0f, false) },
-        { "separator-text-padding", pair(&s.SeparatorTextPadding, 0.0f, kMaxSize) },
-        { "display-window-padding", pair(&s.DisplayWindowPadding, 0.0f, kMaxSize) },
-        { "display-safe-area-padding", pair(&s.DisplaySafeAreaPadding, 0.0f, kMaxSize) },
-        { "mouse-cursor-scale", number(&s.MouseCursorScale, 0.1f, 10.0f) },
-    });
-}
-
-// --- ImPlot ------------------------------------------------------------------
-// ImPlot 1.0 moved line weight, marker size, fill alpha... to ImPlotSpec: they are per item,
-// not part of the style, so they are not themed here.
-
-void registerImPlot()
-{
-    ThemeManager::ColorMap colorMap;
-    for (int i = 0; i < ImPlotCol_COUNT; ++i)
-        colorMap[toKebab(ImPlot::GetStyleColorName(i))] = static_cast<std::uint32_t>(i);
-
-    ThemeManager::addThemeHandler("implot", colorMap,
-        [](std::uint32_t id) { return ImPlot::GetStyle().Colors[id]; },
-        [](std::uint32_t id, ImVec4 color) { ImPlot::GetStyle().Colors[id] = color; });
-
-    ImPlotStyle& s = ImPlot::GetStyle();
-    ThemeManager::addStyleHandler("implot", {
-        { "plot-border-size", number(&s.PlotBorderSize, 0.0f, kMaxBorder) },
-        { "minor-alpha", number(&s.MinorAlpha, 0.0f, 1.0f, false) },
-        { "major-tick-len", pair(&s.MajorTickLen, 0.0f, kMaxSize) },
-        { "minor-tick-len", pair(&s.MinorTickLen, 0.0f, kMaxSize) },
-        { "major-tick-size", pair(&s.MajorTickSize, 0.0f, kMaxBorder) },
-        { "minor-tick-size", pair(&s.MinorTickSize, 0.0f, kMaxBorder) },
-        { "major-grid-size", pair(&s.MajorGridSize, 0.0f, kMaxBorder) },
-        { "minor-grid-size", pair(&s.MinorGridSize, 0.0f, kMaxBorder) },
-        { "plot-padding", pair(&s.PlotPadding, 0.0f, kMaxSize) },
-        { "label-padding", pair(&s.LabelPadding, 0.0f, kMaxSize) },
-        { "legend-padding", pair(&s.LegendPadding, 0.0f, kMaxSize) },
-        { "legend-inner-padding", pair(&s.LegendInnerPadding, 0.0f, kMaxSize) },
-        { "legend-spacing", pair(&s.LegendSpacing, 0.0f, kMaxSize) },
-        { "mouse-pos-padding", pair(&s.MousePosPadding, 0.0f, kMaxSize) },
-        { "annotation-padding", pair(&s.AnnotationPadding, 0.0f, kMaxSize) },
-        { "fit-padding", pair(&s.FitPadding, 0.0f, 0.2f, false) },
-        { "plot-default-size", pair(&s.PlotDefaultSize, 0.0f, kMaxWindow) },
-        { "plot-min-size", pair(&s.PlotMinSize, 0.0f, kMaxWindow) },
-    });
-}
-
-// --- Sortly tokens -----------------------------------------------------------
-// Adding a token = one line here + the same key in the theme JSON files.
-
-struct Token
-{
-    const char* key;
-    ImVec4* color;
-};
-
-std::span<const Token> sortlyTokens()
-{
-    static const Token tokens[] = {
-        { "bar-idle", &colors::BarIdle },
-        { "accent", &colors::Accent },
-        { "warning", &colors::Warning },
-        { "danger", &colors::Danger },
-        { "info", &colors::Info },
-        { "violet", &colors::Violet },
-        { "success", &colors::Success },
-        { "muted", &colors::Muted },
-        { "bar", &colors::Bar },
-        { "surface", &colors::Surface },
-        { "surface-hi", &colors::SurfaceHi },
-        { "clear", &colors::Clear },
-        { "text-dim", &colors::TextDim },
-        { "border", &colors::Border },
-        { "card-border", &colors::CardBorder },
-        { "track", &colors::Track },
-        { "text-bright", &colors::TextBright },
-        { "on-accent", &colors::OnAccent },
-        { "slot-0", &colors::Slot0 },
-        { "slot-1", &colors::Slot1 },
-        { "slot-2", &colors::Slot2 },
-        { "slot-3", &colors::Slot3 },
-    };
-    return tokens;
-}
-
-void registerSortly()
-{
-    const std::span<const Token> tokens = sortlyTokens();
-
-    ThemeManager::ColorMap colorMap;
-    for (std::size_t i = 0; i < tokens.size(); ++i)
-        colorMap[tokens[i].key] = static_cast<std::uint32_t>(i);
-
-    ThemeManager::addThemeHandler("sortly", colorMap,
-        [](std::uint32_t id) { return *sortlyTokens()[id].color; },
-        [](std::uint32_t id, ImVec4 color) { *sortlyTokens()[id].color = color; });
+    return static_cast<palette::Color>(id);
 }
 
 } // namespace
 
+// --- ImGui -------------------------------------------------------------------
+
+void registerColorHandlers()
+{
+    ThemeManager::ColorMap imguiColorMap;
+    for (int i = 0; i < ImGuiCol_COUNT; ++i)
+        imguiColorMap[toKebab(ImGui::GetStyleColorName(i))] = static_cast<std::uint32_t>(i);
+
+    ThemeManager::addThemeHandler("imgui", imguiColorMap,
+        [](std::uint32_t id) -> ImColor {
+            return ImGui::GetStyle().Colors[id];
+        },
+        [](std::uint32_t id, ImVec4 color) {
+            ImGui::GetStyle().Colors[id] = color;
+        }
+    );
+
+    // --- ImPlot colors -------------------------------------------------------
+    ThemeManager::ColorMap implotColorMap;
+    for (int i = 0; i < ImPlotCol_COUNT; ++i)
+        implotColorMap[toKebab(ImPlot::GetStyleColorName(i))] = static_cast<std::uint32_t>(i);
+
+    ThemeManager::addThemeHandler("implot", implotColorMap,
+        [](std::uint32_t id) -> ImColor {
+            return ImPlot::GetStyle().Colors[id];
+        },
+        [](std::uint32_t id, ImVec4 color) {
+            ImPlot::GetStyle().Colors[id] = color;
+        }
+    );
+
+    // --- Sortly colors -------------------------------------------------------
+    ThemeManager::ColorMap sortlyColorMap;
+    for (const auto& color : palette::getColors())
+        sortlyColorMap.emplace(color.name, static_cast<std::uint32_t>(color.id));
+
+    ThemeManager::addThemeHandler("sortly", sortlyColorMap,
+        [](std::uint32_t id) -> ImColor {
+            return palette::getColor(paletteColor(id));
+        },
+        [](std::uint32_t id, ImVec4 color) {
+            palette::setColor(paletteColor(id), color);
+        }
+    );
+}
+
+void registerStyleHandlers()
+{
+    {
+        ImGuiStyle& style = ImGui::GetStyle();
+        ThemeManager::StyleMap imguiStyleMap = {
+            { "alpha",                      { .value=&style.Alpha,                      .min=0.1F,    .max=1.0F,          .needsScaling=false } },
+            { "disabled-alpha",             { .value=&style.DisabledAlpha,              .min=0.0F,    .max=1.0F,          .needsScaling=false } },
+            { "window-padding",             { .value=&style.WindowPadding,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "window-rounding",            { .value=&style.WindowRounding,             .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "window-border-size",         { .value=&style.WindowBorderSize,           .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "window-min-size",            { .value=&style.WindowMinSize,              .min=0.0F,    .max=kMaxWindow,    .needsScaling=true  } },
+            { "window-title-align",         { .value=&style.WindowTitleAlign,           .min=0.0F,    .max=1.0F,          .needsScaling=false } },
+            { "child-rounding",             { .value=&style.ChildRounding,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "child-border-size",          { .value=&style.ChildBorderSize,            .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "popup-rounding",             { .value=&style.PopupRounding,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "popup-border-size",          { .value=&style.PopupBorderSize,            .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "frame-padding",              { .value=&style.FramePadding,               .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "frame-rounding",             { .value=&style.FrameRounding,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "frame-border-size",          { .value=&style.FrameBorderSize,            .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "item-spacing",               { .value=&style.ItemSpacing,                .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "item-inner-spacing",         { .value=&style.ItemInnerSpacing,           .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "cell-padding",               { .value=&style.CellPadding,                .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "touch-extra-padding",        { .value=&style.TouchExtraPadding,          .min=0.0F,    .max=10.0F,         .needsScaling=true  } },
+            { "indent-spacing",             { .value=&style.IndentSpacing,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "columns-min-spacing",        { .value=&style.ColumnsMinSpacing,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "scrollbar-size",             { .value=&style.ScrollbarSize,              .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "scrollbar-rounding",         { .value=&style.ScrollbarRounding,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "grab-min-size",              { .value=&style.GrabMinSize,                .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "grab-rounding",              { .value=&style.GrabRounding,               .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "log-slider-deadzone",        { .value=&style.LogSliderDeadzone,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "tab-rounding",               { .value=&style.TabRounding,                .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "tab-border-size",            { .value=&style.TabBorderSize,              .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "separator-text-border-size", { .value=&style.SeparatorTextBorderSize,    .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "separator-text-align",       { .value=&style.SeparatorTextAlign,         .min=0.0F,    .max=1.0F,          .needsScaling=false } },
+            { "separator-text-padding",     { .value=&style.SeparatorTextPadding,       .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "display-window-padding",     { .value=&style.DisplayWindowPadding,       .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "display-safe-area-padding",  { .value=&style.DisplaySafeAreaPadding,     .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "mouse-cursor-scale",         { .value=&style.MouseCursorScale,           .min=0.1F,    .max=10.0F,         .needsScaling=true  } },
+        };
+
+        ThemeManager::addStyleHandler("imgui", imguiStyleMap);
+    }
+
+    // --- ImPlot styles -------------------------------------------------------
+    // ImPlot 1.0 moved line weight, marker size, fill alpha... to ImPlotSpec: they are per item,
+    // not part of the style, so they are not themed here.
+    {
+        ImPlotStyle& style = ImPlot::GetStyle();
+        ThemeManager::StyleMap implotStyleMap = {
+            { "plot-border-size",     { .value=&style.PlotBorderSize,        .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "minor-alpha",          { .value=&style.MinorAlpha,            .min=0.0F,    .max=1.0F,          .needsScaling=false } },
+            { "major-tick-len",       { .value=&style.MajorTickLen,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "minor-tick-len",       { .value=&style.MinorTickLen,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "major-tick-size",      { .value=&style.MajorTickSize,         .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "minor-tick-size",      { .value=&style.MinorTickSize,         .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "major-grid-size",      { .value=&style.MajorGridSize,         .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "minor-grid-size",      { .value=&style.MinorGridSize,         .min=0.0F,    .max=kMaxBorder,    .needsScaling=true  } },
+            { "plot-padding",         { .value=&style.PlotPadding,           .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "label-padding",        { .value=&style.LabelPadding,          .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "legend-padding",       { .value=&style.LegendPadding,         .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "legend-inner-padding", { .value=&style.LegendInnerPadding,    .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "legend-spacing",       { .value=&style.LegendSpacing,         .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "mouse-pos-padding",    { .value=&style.MousePosPadding,       .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "annotation-padding",   { .value=&style.AnnotationPadding,     .min=0.0F,    .max=kMaxSize,      .needsScaling=true  } },
+            { "fit-padding",          { .value=&style.FitPadding,            .min=0.0F,    .max=0.2F,          .needsScaling=false } },
+            { "plot-default-size",    { .value=&style.PlotDefaultSize,       .min=0.0F,    .max=kMaxWindow,    .needsScaling=true  } },
+            { "plot-min-size",        { .value=&style.PlotMinSize,           .min=0.0F,    .max=kMaxWindow,    .needsScaling=true  } },
+        };
+
+        ThemeManager::addStyleHandler("implot", implotStyleMap);
+    }
+}
+
 void registerThemeHandlers()
 {
     ThemeManager::clearHandlers();
-    registerImGui();
-    registerImPlot();
-    registerSortly();
+    registerColorHandlers();
+    registerStyleHandlers();
 }
 
 } // namespace Sortly::ui

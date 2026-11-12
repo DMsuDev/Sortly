@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "TopBarPanel.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 
 #include "Sortly/Gui/Icons.hpp"
@@ -14,11 +15,12 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>
 
 namespace Sortly {
 
 namespace {
+
+namespace palette = ui::palette;
 
 constexpr float kBarHeight = 60.0f; // Minimum; grows with the font (see barHeight()).
 constexpr float kMargin    = 20.0f;
@@ -86,8 +88,8 @@ void drawLogo()
     const float  rounding = 10_scaled;
     const float  fill     = held ? 0.40f : hovered ? 0.30f : 0.18f;
     const float  border   = hovered ? 0.90f : 0.50f;
-    dl->AddRectFilled(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, fill)), rounding);
-    dl->AddRect(min, max, ui::toU32(ui::colors::withAlpha(ui::colors::Accent, border)), rounding);
+    dl->AddRectFilled(min, max, ui::toU32(palette::withAlpha(palette::getColor(palette::Color::Accent), fill)), rounding);
+    dl->AddRect(min, max, ui::toU32(palette::withAlpha(palette::getColor(palette::Color::Accent), border)), rounding);
 
     float titleHeight = 0.0f;
     {
@@ -95,7 +97,7 @@ void drawLogo()
         const ImVec2 icon = ImGui::CalcTextSize(ICON_CHART);
         titleHeight = ImGui::GetTextLineHeight();
         dl->AddText(ImVec2(min.x + (badge - icon.x) * 0.5f, min.y + (badge - icon.y) * 0.5f),
-                    ui::toU32(ui::colors::Accent), ICON_CHART);
+                    palette::getColorU32(palette::Color::Accent), ICON_CHART);
     }
 
     float captionHeight = 0.0f;
@@ -144,7 +146,7 @@ void drawViewSelector(UiContext& ctx)
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddRectFilled(
         ImVec2(origin.x - pad, origin.y - pad), ImVec2(origin.x + total + pad, origin.y + size.y + pad),
-        ui::toU32(ui::colors::Track), 12_scaled);
+        palette::getColorU32(palette::Color::Track), 12_scaled);
 
     for (std::size_t i = 0; i < kViewOptions.size(); ++i)
     {
@@ -238,7 +240,7 @@ void drawWindowControls(Window& window)
     const bool fullscreen = window.isFullscreen();
     if (ui::pillButton("##Fullscreen", fullscreen ? kExitFullscreenLabel : kEnterFullscreenLabel,
                         fullscreen ? ICON_MINIMIZE_2 : ICON_FULLSCREEN,
-                        ui::colors::Accent, ImVec2(pillWidth, height)))
+                        palette::getColor(palette::Color::Accent), ImVec2(pillWidth, height)))
         window.toggleFullscreen();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
         ui::setTooltip("%s (F11)", fullscreen ? "Leave fullscreen" : "Fill the whole screen");

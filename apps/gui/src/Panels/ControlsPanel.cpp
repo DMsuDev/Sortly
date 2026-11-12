@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "ControlsPanel.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
@@ -33,7 +34,7 @@ bool drawAlgorithmList(RunSettings& settings)
     {
         const ui::ScopedFont font(ui::fonts::Label);
         ui::rightAlignedOnLine(std::to_string(settings.algorithms.size()) + " / " + std::to_string(settings.capacity()) + " selected",
-                            settings.complete() ? ui::colors::Muted : ui::colors::Warning);
+                            settings.complete() ? ui::palette::getColor(ui::palette::Color::Muted) : ui::palette::getColor(ui::palette::Color::Warning));
     }
     ImGui::Spacing();
 
@@ -48,10 +49,10 @@ bool drawAlgorithmList(RunSettings& settings)
         int colorPushes = 0;
         if (selected)
         {
-            const ImVec4 color = ui::colors::slot(static_cast<std::size_t>(found - settings.algorithms.begin()));
+            const ImVec4 color = ui::palette::getSlotColor(static_cast<std::size_t>(found - settings.algorithms.begin()));
             ImGui::PushStyleColor(ImGuiCol_CheckMark, color);
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, ui::colors::withAlpha(color, 0.22f));
-            ImGui::PushStyleColor(ImGuiCol_Border, ui::colors::withAlpha(color, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ui::palette::withAlpha(color, 0.22f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ui::palette::withAlpha(color, 0.7f));
             colorPushes = 3;
         }
 
@@ -69,7 +70,7 @@ bool drawAlgorithmList(RunSettings& settings)
     {
         const std::size_t missing = settings.capacity() - settings.algorithms.size();
         ImGui::PushFont(ui::fonts::Label);
-        ImGui::TextColored(ui::colors::Warning, "Select %zu more to start.", missing);
+        ImGui::TextColored(ui::palette::getColor(ui::palette::Color::Warning), "Select %zu more to start.", missing);
         ImGui::PopFont();
     }
     return changed;

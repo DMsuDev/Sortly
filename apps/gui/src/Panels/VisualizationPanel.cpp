@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "VisualizationPanel.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/RunCard.hpp"
@@ -12,13 +13,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <string>
 #include <vector>
 
 namespace Sortly {
 
 namespace {
+
+namespace palette = ui::palette;
 
 void drawHeader(const RunController& run)
 {
@@ -61,7 +63,7 @@ void drawLegend()
         { "Comparing", ui::operationColor(sortrace::OperationType::Compare) },
         { "Swapping",  ui::operationColor(sortrace::OperationType::Swap)    },
         { "Mark",      ui::operationColor(sortrace::OperationType::MarkSet) },
-        { "Sorted",    ui::colors::Success                                  },
+        { "Sorted",    palette::getColor(palette::Color::Success)                                          },
     }};
 
     const float dot     = ui::scaled(5.0f);
@@ -89,7 +91,7 @@ void drawLegend()
         const float  h   = ImGui::GetTextLineHeight();
         dl->AddCircleFilled(ImVec2(pos.x + dot, pos.y + h * 0.5f), dot, ImGui::ColorConvertFloat4ToU32(item.color));
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + dot * 2.0f + gapText);
-        ImGui::TextColored(ui::colors::Muted, "%s", item.label);
+        ImGui::TextColored(palette::getColor(palette::Color::Muted), "%s", item.label);
     }
     ImGui::PopFont();
 }
@@ -185,7 +187,7 @@ void VisualizationPanel::draw(UiContext& ctx)
 
     if (ctx.run.runs().empty())
     {
-        ui::centeredText(ICON_INFO "  Choose the algorithms to compare in the side panel.", ui::colors::TextDim);
+        ui::centeredText(ICON_INFO "  Choose the algorithms to compare in the side panel.", palette::getColor(palette::Color::TextDim));
     }
     else
     {

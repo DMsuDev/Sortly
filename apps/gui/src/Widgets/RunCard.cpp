@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Widgets/RunCard.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Widgets/ArrayPlot.hpp"
 #include "Sortly/Gui/Widgets/RunMetrics.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
@@ -50,23 +51,23 @@ struct StateTag
 StateTag stateOf(const Run& run)
 {
     if (!run.error.empty())
-        return { "ERROR", colors::Danger };
+        return { "ERROR", palette::getColor(palette::Color::Danger) };
     if (run.computing || !run.session)
-        return { "BUILDING", colors::Warning };
+        return { "BUILDING", palette::getColor(palette::Color::Warning) };
 
     const SortPlayback& playback = run.playback;
-    if (playback.isPlaying())  return { "RUNNING", colors::Info    };
-    if (playback.isPaused())   return { "PAUSED",  colors::Warning };
-    if (playback.isFinished()) return run.sweepDone() ? StateTag{ "SORTED",  colors::Success }
-                                                      : StateTag{ "RUNNING", colors::Info    };
-    return { "READY", colors::Muted };
+    if (playback.isPlaying())  return { "RUNNING", palette::getColor(palette::Color::Info)    };
+    if (playback.isPaused())   return { "PAUSED",  palette::getColor(palette::Color::Warning) };
+    if (playback.isFinished()) return run.sweepDone() ? StateTag{ "SORTED",  palette::getColor(palette::Color::Success) }
+                                                      : StateTag{ "RUNNING", palette::getColor(palette::Color::Info)    };
+    return { "READY", palette::getColor(palette::Color::Muted) };
 }
 
 // Dark card background with a faint tint of the slot's identity color.
 ImVec4 cardBackground(const ImVec4& accent)
 {
     constexpr float kTint = 0.03f;
-    const ImVec4&   base  = colors::Surface;
+    const ImVec4&   base  = palette::getColor(palette::Color::Surface);
     return ImVec4(base.x + (accent.x - base.x) * kTint,
                   base.y + (accent.y - base.y) * kTint,
                   base.z + (accent.z - base.z) * kTint, 1.0f);
@@ -94,10 +95,10 @@ float spaceLeftOnLine()
 void drawStatRow(const char* label, std::string_view value)
 {
     ImGui::PushFont(fonts::Label);
-    ImGui::TextColored(colors::Muted, "%s", label);
+    ImGui::TextColored(palette::getColor(palette::Color::Muted), "%s", label);
     ImGui::PopFont();
 
-    rightAlignedOnLine(value, colors::TextBright);
+    rightAlignedOnLine(value, palette::getColor(palette::Color::TextBright));
 }
 
 void drawHeader(std::size_t slot, const Run& run, const ImVec4& color)
@@ -192,7 +193,7 @@ void drawStatsColumn(const Run& run, float height)
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     ImGui::PushFont(fonts::Label);
-    ImGui::TextColored(colors::TextDim, "STATISTICS");
+    ImGui::TextColored(palette::getColor(palette::Color::TextDim), "STATISTICS");
     ImGui::PopFont();
     ImGui::Dummy(ImVec2(0.0f, scaled(2.0f)));
 
@@ -227,12 +228,12 @@ void drawStatsInline(const Run& run)
         const float       x      = origin.x + cellW * static_cast<float>(i);
 
         ImGui::PushFont(fonts::Label);
-        dl->AddText(ImVec2(x, origin.y), toU32(colors::Muted), shortLabel(metric));
+        dl->AddText(ImVec2(x, origin.y), palette::getColorU32(palette::Color::Muted), shortLabel(metric));
         const float captionH = ImGui::GetTextLineHeight();
         ImGui::PopFont();
 
         ImGui::PushFont(fonts::Body);
-        dl->AddText(ImVec2(x, origin.y + captionH), toU32(colors::TextBright), value.c_str());
+        dl->AddText(ImVec2(x, origin.y + captionH), palette::getColorU32(palette::Color::TextBright), value.c_str());
         ImGui::PopFont();
     }
 
@@ -243,7 +244,7 @@ void drawStatsInline(const Run& run)
 void drawStatsContent(const Run& run)
 {
     ImGui::PushFont(fonts::Label);
-    ImGui::TextColored(colors::TextDim, "STATISTICS");
+    ImGui::TextColored(palette::getColor(palette::Color::TextDim), "STATISTICS");
     ImGui::PopFont();
     ImGui::Dummy(ImVec2(0.0f, scaled(2.0f)));
 
@@ -264,8 +265,8 @@ void drawStatsButton(const Run& run, const ImVec4& color)
     ImGui::SameLine(ImGui::GetContentRegionMax().x - size);
 
     ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0, 0, 0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors::withAlpha(color, 0.18f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  colors::withAlpha(color, 0.30f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, palette::withAlpha(color, 0.18f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  palette::withAlpha(color, 0.30f));
     ImGui::PushStyleColor(ImGuiCol_Text,          color);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
     ImGui::PushFont(fonts::Label);
@@ -329,7 +330,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     }
 
     ImGui::PushFont(fonts::Label);
-    ImGui::TextColored(colors::Muted, "%s", caption);
+    ImGui::TextColored(palette::getColor(palette::Color::Muted), "%s", caption);
 
     if (compact)
     {
@@ -343,7 +344,7 @@ void drawFooter(const Run& run, const ImVec4& color, bool compact)
     const char*            begin      = complexity.data();
     const float            needed     = ImGui::CalcTextSize(begin, begin + complexity.size()).x + scaled(kMinTextGap);
     if (!complexity.empty() && spaceLeftOnLine() >= needed)
-        rightAlignedOnLine(complexity, colors::TextDim);
+        rightAlignedOnLine(complexity, palette::getColor(palette::Color::TextDim));
     ImGui::PopFont();
 }
 
@@ -373,7 +374,7 @@ void drawBody(const Run& run, const ImVec4& color)
 void drawError(const std::string& message)
 {
     ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
-    ImGui::TextColored(colors::Danger, "%s", message.c_str());
+    ImGui::TextColored(palette::getColor(palette::Color::Danger), "%s", message.c_str());
     ImGui::PopTextWrapPos();
 }
 
@@ -381,11 +382,11 @@ void drawError(const std::string& message)
 
 void drawRunCard(std::size_t slot, const Run& run, const ImVec2& size)
 {
-    const ImVec4 color = colors::slot(slot);
+    const ImVec4 color = palette::getSlotColor(slot);
 
     ImGui::PushID(static_cast<int>(slot));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, cardBackground(color));
-    ImGui::PushStyleColor(ImGuiCol_Border, colors::withAlpha(color, 0.55f));
+    ImGui::PushStyleColor(ImGuiCol_Border, palette::withAlpha(color, 0.55f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, scaled(kCardPaddingX, kCardPaddingY));
     ImGui::BeginChild("Card", size, ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

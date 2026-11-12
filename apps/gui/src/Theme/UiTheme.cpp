@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Theme/UiTheme.hpp"
-#include "Sortly/Gui/Theme/ThemeHandlers.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/System.hpp"
 
@@ -14,14 +14,14 @@ ImVec4 operationColor(sortrace::OperationType type)
 {
     switch (type)
     {
-        case sortrace::OperationType::Compare:   return colors::Warning;
+        case sortrace::OperationType::Compare:   return palette::getColor(palette::Color::Warning);
         case sortrace::OperationType::Swap:
-        case sortrace::OperationType::Overwrite: return colors::Danger;
+        case sortrace::OperationType::Overwrite: return palette::getColor(palette::Color::Danger);
         case sortrace::OperationType::MarkSet:
-        case sortrace::OperationType::MarkClear: return colors::Violet;
-        case sortrace::OperationType::Sorted:    return colors::Success;
+        case sortrace::OperationType::MarkClear: return palette::getColor(palette::Color::Violet);
+        case sortrace::OperationType::Sorted:    return palette::getColor(palette::Color::Success);
     }
-    return colors::Accent;
+    return palette::getColor(palette::Color::Accent);
 }
 
 void applyTheme()

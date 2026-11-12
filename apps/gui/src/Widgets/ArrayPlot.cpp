@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Widgets/ArrayPlot.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/BarMotion.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 
@@ -105,13 +106,13 @@ BarBatches& cleanBatches()
 {
     switch (state)
     {
-        case BarState::Idle:   return colors::withAlpha(colors::BarIdle, 0.9f);
-        case BarState::Placed: return colors::withAlpha(style.color, 0.88f);
-        case BarState::Pivot:  return colors::Violet;
+        case BarState::Idle:   return palette::withAlpha(palette::getColor(palette::Color::BarIdle), 0.9f);
+        case BarState::Placed: return palette::withAlpha(style.color, 0.88f);
+        case BarState::Pivot:  return palette::getColor(palette::Color::Violet);
         case BarState::Active: return operationColor(highlight.operation->type);
-        case BarState::Sorted: return colors::withAlpha(colors::Success, 0.88f);
+        case BarState::Sorted: return palette::withAlpha(palette::getColor(palette::Color::Success), 0.88f);
     }
-    return colors::Accent;
+    return palette::getColor(palette::Color::Accent);
 }
 
 void drawBars(std::span<const int> data, const ArrayHighlight& highlight, const ArrayPlotStyle& style)
@@ -149,8 +150,8 @@ void drawArrayPlot(const char* id, std::span<const int> data, const ArrayHighlig
     constexpr int   kColorPushes = 4;
     constexpr int   kGuideLines  = 5;
     ImPlot::PushStyleColor(ImPlotCol_FrameBg,    ImVec4(0, 0, 0, 0));
-    ImPlot::PushStyleColor(ImPlotCol_PlotBg,     colors::withAlpha(colors::Clear, 0.80f));
-    ImPlot::PushStyleColor(ImPlotCol_PlotBorder, colors::Border);
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg,     palette::withAlpha(palette::getColor(palette::Color::Clear), 0.80f));
+    ImPlot::PushStyleColor(ImPlotCol_PlotBorder, palette::getColor(palette::Color::Border));
     ImPlot::PushStyleColor(ImPlotCol_AxisGrid,   ImVec4(1, 1, 1, 0.07f));
     ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, scaled(6.0f, 6.0f));
 

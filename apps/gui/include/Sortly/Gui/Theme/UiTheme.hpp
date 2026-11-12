@@ -11,47 +11,6 @@
 
 namespace Sortly::ui {
 
-namespace colors {
-inline ImVec4 BarIdle   {0.36f, 0.41f, 0.48f, 1.0f};
-inline ImVec4 Accent    {0.31f, 0.86f, 0.75f, 1.0f};
-inline ImVec4 Warning   {1.00f, 0.72f, 0.31f, 1.0f};
-inline ImVec4 Danger    {1.00f, 0.42f, 0.46f, 1.0f};
-inline ImVec4 Info      {0.40f, 0.65f, 1.00f, 1.0f};
-inline ImVec4 Violet    {0.68f, 0.55f, 1.00f, 1.0f};
-inline ImVec4 Success   {0.40f, 0.88f, 0.52f, 1.0f};
-inline ImVec4 Muted     {0.67f, 0.77f, 0.84f, 1.0f};
-inline ImVec4 Bar       {0.20f, 0.75f, 0.66f, 0.88f};
-inline ImVec4 Surface   {0.075f, 0.090f, 0.118f, 1.0f};
-inline ImVec4 SurfaceHi {0.105f, 0.125f, 0.160f, 1.0f};
-inline ImVec4 Clear     {0.047f, 0.059f, 0.082f, 1.0f};
-inline ImVec4 TextDim   {0.48f, 0.54f, 0.62f, 1.0f};
-inline ImVec4 Border    {0.17f, 0.20f, 0.25f, 0.80f};
-inline ImVec4 CardBorder{0.20f, 0.24f, 0.30f, 0.70f};
-inline ImVec4 Track     {0.13f, 0.16f, 0.21f, 1.0f};
-inline ImVec4 TextBright{0.94f, 0.97f, 1.00f, 1.0f};
-inline ImVec4 OnAccent  {0.03f, 0.10f, 0.10f, 1.0f};
-
-inline ImVec4 withAlpha(const ImVec4& c, float a) { return ImVec4(c.x, c.y, c.z, a); }
-
-// One identity color per comparison slot. They avoid the operation colors (amber compare,
-// red swap, green sorted) so the highlighted bars never blend into the base bars.
-inline ImVec4 Slot0{0.40f, 0.65f, 1.00f, 1.0f};
-inline ImVec4 Slot1{0.96f, 0.52f, 0.80f, 1.0f};
-inline ImVec4 Slot2{0.31f, 0.86f, 0.75f, 1.0f};
-inline ImVec4 Slot3{0.68f, 0.55f, 1.00f, 1.0f};
-
-[[nodiscard]] inline const ImVec4& slot(std::size_t index)
-{
-    switch (index % 4)
-    {
-        case 0:  return Slot0;
-        case 1:  return Slot1;
-        case 2:  return Slot2;
-        default: return Slot3;
-    }
-}
-} // namespace colors
-
 // Fonts are baked once in loadFonts(); every one of them also contains the Lucide icons.
 namespace fonts
 {

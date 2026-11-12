@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Widgets/UiKit.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 
 #include <algorithm>
@@ -39,7 +40,7 @@ void pushOverlayStyle()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   scaled(10.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,    scaled(10.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, scaled(1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Border, colors::withAlpha(colors::Accent, 0.30f));
+    ImGui::PushStyleColor(ImGuiCol_Border, palette::withAlpha(palette::getColor(palette::Color::Accent), 0.30f));
 }
 
 void popOverlayStyle()
@@ -94,9 +95,9 @@ void rightAlignedOnLine(std::string_view text, const ImVec4& color)
 void sectionLabel(const char* icon, const char* label)
 {
     const ScopedFont font(fonts::Label);
-    ImGui::TextColored(colors::Accent, "%s", icon);
+    ImGui::TextColored(palette::getColor(palette::Color::Accent), "%s", icon);
     ImGui::SameLine(0.0f, scaled(8.0f));
-    ImGui::TextColored(colors::Muted, "%s", label);
+    ImGui::TextColored(palette::getColor(palette::Color::Muted), "%s", label);
 }
 
 ImVec2 calculateButtonSize(const char* label, ImFont* font)
@@ -120,7 +121,7 @@ bool iconButton(const char* label, const ImVec2& size, ButtonKind kind, ImFont* 
     const ScopedColor base   (ImGuiCol_Button,        kPrimary,         primary);
     const ScopedColor hovered(ImGuiCol_ButtonHovered, kPrimaryHover,    primary);
     const ScopedColor active (ImGuiCol_ButtonActive,  kPrimaryActive,   primary);
-    const ScopedColor text   (ImGuiCol_Text,          colors::OnAccent, primary);
+    const ScopedColor text   (ImGuiCol_Text,          palette::getColor(palette::Color::OnAccent), primary);
     const ScopedFont  scoped (font ? font : fonts::Heading);
 
     return ImGui::Button(label, size);
@@ -146,8 +147,8 @@ bool pillButton(const char* id, const char* label, const char* icon, const ImVec
     const float rounding    = size.y * 0.5f;
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    dl->AddRectFilled(pos, end, toU32(colors::withAlpha(tint, fillAlpha)), rounding);
-    dl->AddRect(pos, end, toU32(colors::withAlpha(tint, borderAlpha)), rounding);
+    dl->AddRectFilled(pos, end, toU32(palette::withAlpha(tint, fillAlpha)), rounding);
+    dl->AddRect(pos, end, toU32(palette::withAlpha(tint, borderAlpha)), rounding);
 
     const ScopedFont font(fonts::Body);
 
@@ -172,7 +173,7 @@ void verticalDivider(float height)
     const float  inset = height * 0.2f;
 
     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y + inset), ImVec2(pos.x + width, pos.y + height - inset),
-                                              toU32(colors::Border));
+                                              palette::getColorU32(palette::Color::Border));
     ImGui::Dummy(ImVec2(width, height));
 }
 
@@ -194,8 +195,8 @@ void pill(const char* text, const ImVec4& color)
     const ImVec2 end(pos.x + size.x, pos.y + size.y);
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    dl->AddRectFilled(pos, end, toU32(colors::withAlpha(color, 0.16f)), size.y * 0.5f);
-    dl->AddRect(pos, end, toU32(colors::withAlpha(color, 0.45f)), size.y * 0.5f);
+    dl->AddRectFilled(pos, end, toU32(palette::withAlpha(color, 0.16f)), size.y * 0.5f);
+    dl->AddRect(pos, end, toU32(palette::withAlpha(color, 0.45f)), size.y * 0.5f);
     dl->AddText(ImVec2(pos.x + padX, pos.y + padY), toU32(color), text);
 
     ImGui::Dummy(size);
@@ -209,8 +210,8 @@ void statCard(const char* icon, const char* label, const std::string& value,
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
     const float rounding = scaled(10.0f);
-    dl->AddRectFilled(pos, end, toU32(colors::SurfaceHi), rounding);
-    dl->AddRect(pos, end, toU32(colors::CardBorder), rounding);
+    dl->AddRectFilled(pos, end, palette::getColorU32(palette::Color::SurfaceHi), rounding);
+    dl->AddRect(pos, end, palette::getColorU32(palette::Color::CardBorder), rounding);
     // Thin accent strip on the left edge ties the card to its metric color.
     dl->AddRectFilled(ImVec2(pos.x + 1.0f, pos.y + scaled(10.0f)), ImVec2(pos.x + scaled(4.0f), end.y - scaled(10.0f)),
                       toU32(color), scaled(2.0f));
@@ -223,7 +224,7 @@ void statCard(const char* icon, const char* label, const std::string& value,
         const ScopedFont font(fonts::Label);
         const ImVec2 iconSize = ImGui::CalcTextSize(icon);
         dl->AddText(ImVec2(pos.x + padX, pos.y + padY), toU32(color), icon);
-        dl->AddText(ImVec2(pos.x + padX + iconSize.x + scaled(6.0f), pos.y + padY), toU32(colors::Muted), label);
+        dl->AddText(ImVec2(pos.x + padX + iconSize.x + scaled(6.0f), pos.y + padY), palette::getColorU32(palette::Color::Muted), label);
     }
 
     ImVec2 valuePos;
@@ -232,7 +233,7 @@ void statCard(const char* icon, const char* label, const std::string& value,
         const ScopedFont font(fonts::Value);
         valueSize = ImGui::CalcTextSize(value.c_str());
         valuePos  = ImVec2(pos.x + padX, end.y - padY - valueSize.y);
-        dl->AddText(valuePos, toU32(colors::TextBright), value.c_str());
+        dl->AddText(valuePos, palette::getColorU32(palette::Color::TextBright), value.c_str());
     }
 
     if (unit && *unit)
@@ -240,7 +241,7 @@ void statCard(const char* icon, const char* label, const std::string& value,
         const ScopedFont font(fonts::Body);
         const ImVec2 unitSize = ImGui::CalcTextSize(unit);
         dl->AddText(ImVec2(valuePos.x + valueSize.x + scaled(6.0f), end.y - padY - unitSize.y - scaled(2.0f)),
-                    toU32(colors::TextDim), unit);
+                    palette::getColorU32(palette::Color::TextDim), unit);
     }
 
     ImGui::Dummy(size);
@@ -254,10 +255,10 @@ void progressBar(float fraction, float height, const ImVec4* color)
     fraction = std::clamp(fraction, 0.0f, 1.0f);
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), toU32(colors::Track), rounding);
+    dl->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), palette::getColorU32(palette::Color::Track), rounding);
     if (fraction > 0.0f)
         dl->AddRectFilled(pos, ImVec2(pos.x + std::max(height, width * fraction), pos.y + height),
-                          toU32(color ? *color : colors::Accent), rounding);
+                          toU32(color ? *color : palette::getColor(palette::Color::Accent)), rounding);
 
     ImGui::Dummy(ImVec2(width, height));
 }
@@ -278,7 +279,7 @@ void cornerGlow(const ImVec2& min, float radius, float rounding, const ImVec4& c
         const float t    = static_cast<float>(ring) / static_cast<float>(kGlowRings);
         const float rho  = radius * t;
         const float fade = (1.0f - t) * (1.0f - t);
-        const ImU32 col  = toU32(colors::withAlpha(color, peakAlpha * fade));
+        const ImU32 col  = toU32(palette::withAlpha(color, peakAlpha * fade));
 
         for (int seg = 0; seg <= kGlowSegments; ++seg)
         {

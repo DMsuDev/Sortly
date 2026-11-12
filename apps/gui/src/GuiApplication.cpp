@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/GuiApplication.hpp"
+#include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/System.hpp"
@@ -176,7 +177,7 @@ void GuiApplication::teardown() noexcept
 
 void GuiApplication::renderFrame()
 {
-    const ImVec4& clear = ui::colors::Clear;
+    const ImVec4& clear = ui::palette::getColor(ui::palette::Color::Clear);
     m_Window.clear(clear.x, clear.y, clear.z, clear.w);
 
     m_Gui.beginFrame();
