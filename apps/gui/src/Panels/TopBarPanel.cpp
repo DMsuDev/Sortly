@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "TopBarPanel.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 
@@ -9,7 +10,7 @@
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 #include "Sortly/Gui/Window.hpp"
-#include <sortrace/algorithms/algorithm.hpp>
+#include <sortrace/algorithms/registry.hpp>
 
 #include <imgui.h>
 

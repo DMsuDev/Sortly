@@ -4,10 +4,8 @@
 #pragma once
 
 #include <sortrace/core/operation.hpp>
-#include "Sortly/Gui/Scaling.hpp"
 
 #include <imgui.h>
-#include <cstddef>
 
 namespace Sortly::ui {
 

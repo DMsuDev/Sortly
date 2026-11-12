@@ -3,6 +3,7 @@
 
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 

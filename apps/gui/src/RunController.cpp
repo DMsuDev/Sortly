@@ -3,10 +3,9 @@
 
 #include "Sortly/Gui/RunController.hpp"
 
-#include <vigil/vigil.h>
+#include <vigil/logging/log_system.h>
 
 #include <chrono>
-#include <cstddef>
 #include <utility>
 
 namespace Sortly {

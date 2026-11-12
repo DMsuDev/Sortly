@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 #include "Sortly/Gui/Window.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/System.hpp"
 
 #include <GLFW/glfw3.h>
 
-#include <vigil/vigil.h>
+#include <vigil/logging/log_system.h>
 #include <foundry/memory/scope_guard.h>
 
 #include <algorithm>

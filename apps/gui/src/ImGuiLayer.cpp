@@ -11,7 +11,8 @@
 #include <imgui_impl_opengl3.h>
 #include <implot.h>
 
-#include <vigil/vigil.h>
+#include <vigil/assert.h>
+#include <vigil/logging/log_system.h>
 #include <foundry/memory/scope_guard.h>
 
 namespace Sortly {

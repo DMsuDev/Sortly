@@ -4,7 +4,8 @@
 #include "Sortly/Gui/Application.hpp"
 #include "Sortly/Gui/System.hpp"
 
-#include <vigil/vigil.h>
+#include <vigil/crash_guard.h>
+#include <vigil/logging/log_system.h>
 
 #include <exception>
 #include <utility>

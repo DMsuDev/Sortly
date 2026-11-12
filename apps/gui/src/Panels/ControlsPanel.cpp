@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 #include "ControlsPanel.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 #include "Sortly/Gui/Widgets/PlaybackBar.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
 
-#include <sortrace/algorithms/algorithm.hpp>
+#include <sortrace/algorithms/registry.hpp>
 
 #include <imgui.h>
 

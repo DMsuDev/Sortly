@@ -3,7 +3,9 @@
 
 #include "Sortly/Gui/SessionManager.hpp"
 
-#include <vigil/vigil.h>
+#include <sortrace/algorithms/factory.hpp>
+
+#include <vigil/logging/log_system.h>
 
 #include <string>
 #include <string_view>

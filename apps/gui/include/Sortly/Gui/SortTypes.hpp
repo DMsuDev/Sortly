@@ -6,10 +6,8 @@
 // The GUI sorts plain ints. These aliases pin sortrace's value type in one place, so the rest of the
 // app never spells `<int>`. Changing what the GUI sorts means changing SortValue.
 
-#include <sortrace/algorithms/algorithm.hpp>
-#include <sortrace/algorithms/factory.hpp>
+#include <sortrace/algorithms/registry.hpp>
 #include <sortrace/core/log.hpp>
-#include <sortrace/core/mark.hpp>
 #include <sortrace/core/operation.hpp>
 #include <sortrace/core/recording.hpp>
 #include <sortrace/core/statistics.hpp>

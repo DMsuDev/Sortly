@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "VisualizationPanel.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"

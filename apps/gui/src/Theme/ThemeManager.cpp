@@ -4,7 +4,7 @@
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
 #include "Sortly/Gui/Scaling.hpp"
 
-#include <vigil/vigil.h>
+#include <vigil/logging/log_system.h>
 
 #include <algorithm>
 #include <charconv>

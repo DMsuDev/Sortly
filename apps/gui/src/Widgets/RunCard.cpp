@@ -6,6 +6,7 @@
 #include "Sortly/Gui/Widgets/ArrayPlot.hpp"
 #include "Sortly/Gui/Widgets/RunMetrics.hpp"
 #include "Sortly/Gui/Widgets/UiKit.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/Icons.hpp"
 #include "Sortly/Gui/Theme/UiTheme.hpp"
 

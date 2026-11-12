@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include "Sortly/Gui/SessionManager.hpp"
+#include "Sortly/Gui/SortTypes.hpp"
 
-#include <cstddef>
 #include <cstdint>
 #include <random>
 #include <vector>

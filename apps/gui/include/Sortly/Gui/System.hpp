@@ -4,8 +4,8 @@
 #pragma once
 
 #include <foundry/types/semantic_version.h>
-#include <foundry/platform/paths.h>
 
+#include <filesystem>
 #include <string_view>
 #include <optional>
 #include <string>

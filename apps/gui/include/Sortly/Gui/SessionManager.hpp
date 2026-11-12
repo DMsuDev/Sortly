@@ -5,7 +5,7 @@
 
 #include "Sortly/Gui/SortTypes.hpp"
 
-#include <cstdint>
+#include <cstddef>
 #include <memory>
 
 namespace Sortly {

@@ -4,7 +4,7 @@
 #include "Sortly/Gui/GuiApplication.hpp"
 #include "Sortly/Gui/Theme/Palette.hpp"
 #include "Sortly/Gui/Theme/ThemeManager.hpp"
-#include "Sortly/Gui/Theme/UiTheme.hpp"
+#include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/System.hpp"
 
 #include "Panels/ControlsPanel.hpp"
@@ -16,7 +16,6 @@
 
 #include <foundry/memory/scope_guard.h>
 #include <vigil/logging/log_system.h>
-#include <vigil/vigil.h>
 
 #include <algorithm>
 #include <chrono>

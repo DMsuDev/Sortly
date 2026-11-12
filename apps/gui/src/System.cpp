@@ -3,11 +3,11 @@
 
 #include "Sortly/Gui/System.hpp"
 
-#include <vigil/vigil.h>
+#include <foundry/platform/paths.h>
+#include <vigil/logging/log_system.h>
 
 #include <cerrno>
 #include <cstring>
-#include <utility>
 
 #if defined(OS_WINDOWS)
     #include <Windows.h>

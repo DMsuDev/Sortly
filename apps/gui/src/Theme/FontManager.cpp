@@ -5,7 +5,7 @@
 #include "Sortly/Gui/Scaling.hpp"
 #include "Sortly/Gui/System.hpp"
 
-#include <vigil/vigil.h>
+#include <vigil/logging/log_system.h>
 
 #include <map>
 #include <vector>
