@@ -42,7 +42,7 @@
 #define ICON_X             "\xee\x86\xb2"  // U+e1b2
 #define ICON_FULLSCREEN    "\xee\x88\x9a"  // U+e21a (expand)
 #define ICON_MINIMIZE_2    "\xee\x84\x9b"  // U+e11b
-#define ICON_SUN_MOON      "\xee\x8a\xb2"// U+e2b2
+#define ICON_SUN_MOON      "\xee\x8a\xb2"  // U+e2b2
 
 namespace Sortly::ui {
 
