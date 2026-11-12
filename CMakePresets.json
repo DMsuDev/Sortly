@@ -1,0 +1,94 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SORTLY_ENABLE_UNIT_TESTS": "ON"
+      }
+    },
+    {
+      "name": "vs-base",
+      "hidden": true,
+      "inherits": "base",
+      "generator": "Visual Studio 18 2026",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "vs-static",
+      "displayName": "VS 2026 (static)",
+      "inherits": "vs-base",
+      "cacheVariables": { "BUILD_SHARED_LIBS": "OFF" }
+    },
+    {
+      "name": "vs-shared",
+      "displayName": "VS 2026 (shared)",
+      "inherits": "vs-base",
+      "cacheVariables": { "BUILD_SHARED_LIBS": "ON" }
+    },
+    {
+      "name": "ninja-base",
+      "hidden": true,
+      "inherits": "base",
+      "generator": "Ninja",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "cacheVariables": { "BUILD_SHARED_LIBS": "OFF" }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug",
+      "inherits": "ninja-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release",
+      "inherits": "ninja-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "ninja-debug-tidy",
+      "displayName": "Ninja Debug (clang-tidy)",
+      "description": "Debug + compile_commands.json + clang-tidy on Sortly targets",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SORTLY_ENABLE_CLANG_TIDY": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "vs-static-debug",          "displayName": "Static Debug",          "configurePreset": "vs-static", "configuration": "Debug" },
+    { "name": "vs-static-release",        "displayName": "Static Release",        "configurePreset": "vs-static", "configuration": "Release" },
+    { "name": "vs-static-relwithdebinfo", "displayName": "Static RelWithDebInfo", "configurePreset": "vs-static", "configuration": "RelWithDebInfo" },
+    { "name": "vs-shared-debug",          "displayName": "Shared Debug",          "configurePreset": "vs-shared", "configuration": "Debug" },
+    { "name": "vs-shared-release",        "displayName": "Shared Release",        "configurePreset": "vs-shared", "configuration": "Release" },
+    { "name": "vs-shared-relwithdebinfo", "displayName": "Shared RelWithDebInfo", "configurePreset": "vs-shared", "configuration": "RelWithDebInfo" },
+    { "name": "ninja-debug",      "displayName": "Ninja Debug",              "configurePreset": "ninja-debug" },
+    { "name": "ninja-release",    "displayName": "Ninja Release",            "configurePreset": "ninja-release" },
+    { "name": "ninja-debug-tidy", "displayName": "Ninja Debug (clang-tidy)", "configurePreset": "ninja-debug-tidy" }
+  ],
+  "testPresets": [
+    {
+      "name": "test-base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "timeout": 120 }
+    },
+    { "name": "vs-static-debug",          "inherits": "test-base", "configurePreset": "vs-static", "configuration": "Debug" },
+    { "name": "vs-static-release",        "inherits": "test-base", "configurePreset": "vs-static", "configuration": "Release" },
+    { "name": "vs-static-relwithdebinfo", "inherits": "test-base", "configurePreset": "vs-static", "configuration": "RelWithDebInfo" },
+    { "name": "vs-shared-debug",          "inherits": "test-base", "configurePreset": "vs-shared", "configuration": "Debug" },
+    { "name": "vs-shared-release",        "inherits": "test-base", "configurePreset": "vs-shared", "configuration": "Release" },
+    { "name": "vs-shared-relwithdebinfo", "inherits": "test-base", "configurePreset": "vs-shared", "configuration": "RelWithDebInfo" },
+    { "name": "ninja-debug",      "inherits": "test-base", "configurePreset": "ninja-debug" },
+    { "name": "ninja-release",    "inherits": "test-base", "configurePreset": "ninja-release" },
+    { "name": "ninja-debug-tidy", "inherits": "test-base", "configurePreset": "ninja-debug-tidy" }
+  ]
+}
