@@ -1,0 +1,98 @@
+#  Run:   clang-tidy -p build <file>      (needs build/compile_commands.json)
+#         run-clang-tidy -p build apps libs
+
+Checks:
+- -*
+- bugprone-*
+- -bugprone-easily-swappable-parameters
+- -bugprone-exception-escape               # False positives on STL container move constructors (std::map, std::vector).
+- -bugprone-throwing-static-initialization # Only fails on OOM at startup; noisy with STL globals.
+- clang-analyzer-*
+- -clang-analyzer-optin.performance.Padding
+- concurrency-*
+- misc-*
+- -misc-include-cleaner
+- -misc-non-private-member-variables-in-classes
+- -misc-no-recursion
+- -misc-const-correctness
+- -misc-use-anonymous-namespace
+- modernize-*
+- -modernize-use-trailing-return-type
+- -modernize-avoid-c-arrays               # To allow using C-style arrays where necessary.
+- -modernize-use-std-print                # We want to avoid using std::print, use fmt::print instead.
+- -modernize-avoid-variadic-functions     # ImGui-style printf wrappers need C variadics.
+- -modernize-use-integer-sign-comparison  # Noisy for small fixed-size arrays; casts are always guarded.
+- performance-*
+- -performance-enum-size # Avoid forcing std::uint8_t for small enums; negligible memory benefit.
+- portability-*
+- -portability-avoid-pragma-once
+- -portability-restrict-system-includes
+- readability-*
+- -readability-identifier-length
+- -readability-identifier-naming
+- -readability-magic-numbers
+- -readability-braces-around-statements
+- -readability-function-size
+- -readability-function-cognitive-complexity
+- -readability-implicit-bool-conversion
+- -readability-named-parameter
+- -readability-isolate-declaration
+- -readability-qualified-auto
+- -readability-use-std-min-max
+- -readability-math-missing-parentheses
+- -readability-uppercase-literal-suffix
+- -readability-convert-member-functions-to-static
+- -readability-use-concise-preprocessor-directives # We do not use #ifdef (is ugly as shit)
+- -readability-use-anyofallof
+- -readability-else-after-return
+- -readability-redundant-access-specifiers
+- -readability-redundant-preprocessor
+- -readability-static-accessed-through-instance
+
+- cppcoreguidelines-narrowing-conversions
+- cppcoreguidelines-prefer-member-initializer
+- cppcoreguidelines-pro-type-member-init # We want to use default member initializers
+- cppcoreguidelines-slicing
+- cppcoreguidelines-special-member-functions
+- cppcoreguidelines-virtual-class-destructor
+- cppcoreguidelines-avoid-capturing-lambda-coroutines
+- cppcoreguidelines-rvalue-reference-param-not-moved
+
+# TODO: review later
+- -readability-make-member-function-const # False positives on methods that only touch global ImGui state.
+
+# Only fail the analysis on particularly serious diagnostics.
+WarningsAsErrors: >
+  bugprone-use-after-move,
+  bugprone-dangling-handle,
+  bugprone-infinite-loop,
+  bugprone-undefined-memory-manipulation,
+  clang-analyzer-core.*
+
+# Report diagnostics from Sortly's own headers.
+HeaderFilterRegex: '(^|.*[\\/])(apps|libs)[\\/].*\.(h|hpp|inl)$'
+HeaderFileExtensions:
+  - h
+  - hpp
+  - inl
+
+SystemHeaders: false
+FormatStyle: none
+
+CheckOptions:
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: true
+  - key: cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value: true
+  - key: bugprone-narrowing-conversions.WarnOnIntegerToFloatingPointNarrowingConversion
+    value: false
+  - key: bugprone-narrowing-conversions.IgnoreConversionFromTypes
+    value: 'size_t;ptrdiff_t;size_type;difference_type'
+  - key: modernize-use-default-member-init.UseAssignment
+    value: true
+  - key: modernize-pass-by-value.ValuesOnly
+    value: true
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'ImVec2;ImVec4;string_view;span'

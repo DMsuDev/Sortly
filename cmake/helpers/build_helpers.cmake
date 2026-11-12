@@ -193,6 +193,16 @@ function(sortly_configure_compiler target)
 
   _sortly_target_scope("${target}" _scope)
 
+  if(SORTLY_ENABLE_CLANG_TIDY AND _scope STREQUAL "PRIVATE")
+    find_program(SORTLY_CLANG_TIDY_EXE NAMES clang-tidy REQUIRED)
+    set(_tidy_command "${SORTLY_CLANG_TIDY_EXE}")
+    if(MSVC)
+      # clang-tidy does not pick up /EHsc from the cl.exe command line and rejects try/throw.
+      list(APPEND _tidy_command "--extra-arg=/EHsc")
+    endif()
+    set_target_properties("${target}" PROPERTIES CXX_CLANG_TIDY "${_tidy_command}")
+  endif()
+
   set(_options)
   set(_definitions)
 

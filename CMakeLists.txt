@@ -17,6 +17,7 @@ option(SORTLY_ENABLE_LTO          "Enables Link Time Optimizations if possible" 
 option(SORTLY_ENABLE_CXX_MODULES  "Enable C++20 Module compilation. Testing only!"           OFF)
 option(SORTLY_ENABLE_UNIT_TESTS   "Enable building unit tests"                               ON )
 option(SORTLY_STRICT_WARNINGS     "Enable most available warnings and treat them as errors"  OFF)
+option(SORTLY_ENABLE_CLANG_TIDY   "Run clang-tidy on Sortly targets" OFF)
 
 # ------------------------------------------------------------------------------
 #  Paths, Modules & Helpers
